@@ -202,15 +202,21 @@ Arayüz web teknolojisiyle yazıldığı için Faz 2'de çevrimiçi odaya taşı
 
 ### Adımlar
 
-1. İskelet: Electron uygulaması, ana menü, iki pencere, otomatik kayıt, log ve hata kodu altyapısı
-2. Ayarlar: 4 profil kartı
-3. Kütüphane: 8 bölme, yükle / sil, İtem ↔ Takım Eşyası geçişi
-4. Oyun ekranı: kilitli portre sütunu, arka plan, görsel koyma, taşı / oranlı boyutlandır / sil, etiket
-5. Pencereler: tanımlama, atama tuşlarıyla geçiş
-6. Kontrol paneli: can, seviye, notlar, pencere geçişi
-7. Kalem: kırmızı / siyah çizim, fareye dönünce otomatik silme
-8. d20: zar atma animasyonu ve atış geçmişi
-9. Paketleme: Windows için kurulabilir .exe
+Her adım ayrı dalda yapılır, kullanıcı deneyip onaylayınca `main`'e birleştirilir ve
+sürüm etiketi verilir. Her adımın sonunda uygulama çalışır durumdadır.
+
+| Adım | İçerik | Sürüm |
+|------|--------|-------|
+| 0 | Repo hazırlığı: README, CHANGELOG, .gitignore, HATA_KODLARI | — |
+| 1 | İskelet: Electron uygulaması, ana menü, iki pencere, otomatik kayıt, log ve hata kodu altyapısı | v0.1 |
+| 2 | Oyuncular: 4 profil kartı, kilitli portre sütunu, kontrol panelinde can / seviye / not | v0.2 |
+| 3 | Kütüphane: 8 bölme, yükle / sil, İtem ↔ Takım Eşyası geçişi | v0.3 |
+| 4 | Oyun alanı: arka plan, görsel koyma, taşı / oranlı boyutlandır / sil, etiket, ekrandakiler listesi | v0.4 |
+| 5 | Pencereler: tanımlama, atama tuşlarıyla geçiş | v0.5 |
+| 6 | Kalem: kırmızı / siyah çizim, fareye dönünce otomatik silme | v0.6 |
+| 7 | d20: zar atma animasyonu ve atış geçmişi | v0.7 |
+| 8 | Paketleme: Windows için kurulabilir .exe | v0.8 |
+| 9 | Gerçek oturum denemesi ve düzeltmeler | v1.0 |
 
 ## Faz 1 sonrası (küçük eklemeler)
 
