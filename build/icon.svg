@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Uygulama simgesi: koyu zemin üstünde altın d20 (ana menüdeki amblemle aynı çizim).
+     build/icon.ico bu dosyadan üretilir: node scripts/make-icon.mjs -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="zemin" cx="50%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#2b231a"/>
+      <stop offset="0.6" stop-color="#14110e"/>
+      <stop offset="1" stop-color="#0c0a08"/>
+    </radialGradient>
+    <linearGradient id="altin" gradientUnits="userSpaceOnUse" x1="12" y1="2.5" x2="12" y2="21.5">
+      <stop offset="0" stop-color="#f6e7bb"/>
+      <stop offset="0.55" stop-color="#d4a84b"/>
+      <stop offset="1" stop-color="#a87c2c"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="6" y="6" width="244" height="244" rx="54" fill="url(#zemin)"/>
+  <rect x="11" y="11" width="234" height="234" rx="49" fill="none" stroke="#d4a84b" stroke-opacity="0.45" stroke-width="3"/>
+
+  <!-- 24 birimlik simge çizimi 256'lık alana ortalanır. -->
+  <g id="zar" transform="translate(128 128) scale(9.6) translate(-12 -12)" fill="none" stroke="url(#altin)"
+     stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2.5 20.2 7.25v9.5L12 21.5l-8.2-4.75v-9.5L12 2.5z" fill="#d4a84b" fill-opacity="0.07"/>
+    <path id="ince" stroke-width="0.6" opacity="0.8"
+          d="M12 2.5v3.9M16.85 14.8l3.35 1.95M7.15 14.8 3.8 16.75M12 6.4 3.8 7.25M12 6.4l8.2.85M7.15 14.8 3.8 7.25M7.15 14.8 12 21.5M16.85 14.8l3.35-7.55M16.85 14.8 12 21.5"/>
+    <path d="M12 6.4l4.85 8.4H7.15L12 6.4z" fill="#d4a84b" fill-opacity="0.16"/>
+  </g>
+</svg>

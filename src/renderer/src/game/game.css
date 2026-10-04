@@ -1,0 +1,291 @@
+/*
+ * Oyun ekranı: oyuncuların gördüğü pencere. Sanal 1920x1080 kutu pencereye sığdırılır;
+ * içindeki DOM katmanı (portreler, zar) CSS ile, Konva sahnesi kendi ölçeğiyle büyür.
+ * `.game-virtual` içindeki bütün ölçüler sanal pikseldir.
+ */
+
+.game-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Ölçeklenmiş 16:9 kutu (gerçek piksel). */
+.game-frame {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background: var(--bg-0);
+}
+
+/* Arka plan görseli yokken (ya da örtmediği yerde) görünen zemin: koyu, kenarlara doğru kararan. */
+.game-backdrop {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 45%, var(--accent-soft), transparent 75%),
+    radial-gradient(ellipse 80% 80% at 50% 50%, var(--bg-3) 0%, var(--bg-1) 55%, var(--bg-0) 100%);
+}
+
+.game-stage {
+  position: absolute;
+  inset: 0;
+}
+
+/* Sanal 1920x1080 DOM katmanı; sahnenin üstünde durur ama fareyi sahneye bırakır. */
+.game-virtual {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+/* --- Portre sütunu --------------------------------------------------------- */
+
+.game-portraits {
+  /* Dört kart için ölçüler; daha az kartta aşağıda büyütülür. */
+  --game-portrait: 154px;
+  --game-name: 27px;
+  --game-level: 17px;
+  --game-pip: 13px;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  border-right: 2px solid color-mix(in srgb, var(--accent) 62%, black);
+  background:
+    radial-gradient(140% 45% at 50% 0%, var(--accent-soft), transparent 70%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 55%, var(--bg-0) 100%);
+  /* Sütun oyun alanının üstünde duruyormuş gibi: sağa doğru yumuşak gölge. */
+  box-shadow:
+    1px 0 0 rgba(0, 0, 0, 0.85),
+    14px 0 30px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.game-portraits[data-count='3'] {
+  --game-portrait: 214px;
+  --game-name: 30px;
+  --game-level: 18px;
+  --game-pip: 15px;
+}
+
+.game-portraits[data-count='2'],
+.game-portraits[data-count='1'] {
+  --game-portrait: 246px;
+  --game-name: 32px;
+  --game-level: 19px;
+  --game-pip: 16px;
+}
+
+/* Her kart sütunu eşit paylaşır; içeriği kendi payının ortasında durur. */
+.game-card {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+}
+
+/* Kartlar arasında ince altın ayraç ve ortasında küçük bir baklava. */
+.game-card + .game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 34px;
+  right: 34px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 55%, transparent) 22%,
+    color-mix(in srgb, var(--accent) 55%, transparent) 78%,
+    transparent
+  );
+}
+
+.game-card + .game-card::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  transform: rotate(45deg);
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--bg-1);
+}
+
+.game-card__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  transition:
+    filter 450ms ease,
+    opacity 450ms ease;
+}
+
+/* Can 0: kartın tamamı soluk ve renksiz. */
+.game-card.is-down .game-card__body {
+  filter: grayscale(1) brightness(0.7);
+  opacity: 0.6;
+}
+
+/* Altın çerçeve: dış kutu çerçevenin kendisi, içteki kutu portre. */
+.game-card__frame {
+  position: relative;
+  flex: none;
+  width: var(--game-portrait);
+  height: var(--game-portrait);
+  padding: 5px;
+  border-radius: 12px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent-hover) 70%, white) 0%,
+    var(--accent) 24%,
+    color-mix(in srgb, var(--accent-active) 62%, black) 50%,
+    var(--accent) 76%,
+    color-mix(in srgb, var(--accent-hover) 70%, white) 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.75),
+    0 10px 22px rgba(0, 0, 0, 0.55);
+}
+
+.game-card__portrait {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 7px;
+  background: radial-gradient(circle at 50% 32%, var(--bg-4), var(--bg-2) 72%);
+}
+
+/* Görselin üstünde ince iç çizgi ve hafif kararma: çerçeve görsele gömülü dursun. */
+.game-card__portrait::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.8),
+    inset 0 0 26px rgba(0, 0, 0, 0.45);
+}
+
+.game-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-card__initial {
+  font-family: var(--font-heading);
+  font-size: calc(var(--game-portrait) * 0.5);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0.85;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
+}
+
+/* Seviye plakası çerçevenin alt kenarına biner. */
+.game-card__level {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 50%);
+  padding: 2px 16px 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent) 55%, var(--accent-active));
+  color: var(--accent-ink);
+  font-size: var(--game-level);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 3px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.game-card__name {
+  width: 100%;
+  /* Satır yüksekliği yazı küçülse de aynı kalır; kartlar hizasını korur. */
+  height: calc(var(--game-name) * 1.25);
+  margin-top: calc(var(--game-level) * 0.65 + 10px);
+  overflow: hidden;
+  font-size: var(--game-name);
+  line-height: calc(var(--game-name) * 1.25);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.65);
+}
+
+.game-card__name.is-long {
+  font-size: calc(var(--game-name) * 0.8);
+}
+
+.game-card__name.is-xlong {
+  font-size: calc(var(--game-name) * 0.64);
+}
+
+.game-card__hp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.game-card__heart {
+  flex: none;
+  width: calc(var(--game-pip) + 9px);
+  height: calc(var(--game-pip) + 9px);
+  color: var(--hp);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.7));
+}
+
+.game-card__pips {
+  flex: 1;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 6px;
+  background: var(--bg-0);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.game-card__pip {
+  height: var(--game-pip);
+  border-radius: 2px;
+  background: var(--hp-empty);
+}
+
+.game-card__pip.is-filled {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--hp) 68%, white) 0%, var(--hp) 48%, var(--danger-active) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}

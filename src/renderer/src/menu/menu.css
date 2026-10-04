@@ -1,0 +1,293 @@
+/* Menü penceresi: ana menü ve ayarlar kabuğu. Sınıf öneki: menu- */
+
+.menu-root {
+  position: relative;
+  height: 100%;
+}
+
+/* ---------- Ana menü ---------- */
+
+.menu-main {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  /* Masanın üstündeki mum ışığı: yukarıda sıcak altın, aşağıda sönük kor. */
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 22%, rgba(212, 168, 75, 0.13), transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 115%, rgba(192, 68, 58, 0.1), transparent 70%),
+    var(--bg-0);
+}
+
+.menu-main__scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  overflow: auto;
+}
+
+/* Kitap kapağı gibi ince çift çerçeve. */
+.menu-main::before,
+.menu-main::after {
+  content: '';
+  position: absolute;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+
+.menu-main::before {
+  inset: 14px;
+  border: 1px solid rgba(212, 168, 75, 0.22);
+}
+
+.menu-main::after {
+  inset: 20px;
+  border: 1px solid rgba(212, 168, 75, 0.08);
+}
+
+.menu-main__center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto 0;
+  padding: 40px var(--space-5);
+  text-align: center;
+}
+
+.menu-emblem {
+  display: inline-flex;
+  margin-bottom: var(--space-3);
+  color: var(--accent);
+  filter: drop-shadow(0 0 18px rgba(212, 168, 75, 0.35));
+}
+
+.menu-title {
+  /* Altın varak: açık tondan koyuya inen yazı dolgusu. */
+  background: linear-gradient(180deg, #f6e7bb 0%, #d4a84b 55%, #9a7226 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-size: clamp(44px, 8vw, 72px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.55));
+}
+
+.menu-tagline {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-style: italic;
+}
+
+.menu-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(320px, 70vw);
+  margin: var(--space-5) 0;
+}
+
+.menu-divider::before,
+.menu-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+}
+
+.menu-divider::before {
+  background: linear-gradient(90deg, transparent, var(--accent-ring));
+}
+
+.menu-divider::after {
+  background: linear-gradient(90deg, var(--accent-ring), transparent);
+}
+
+.menu-divider > span {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(320px, 80vw);
+}
+
+.menu-action.ui-btn {
+  --btn-h: 56px;
+  width: 100%;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  letter-spacing: 0.03em;
+}
+
+.menu-action--play.ui-btn {
+  box-shadow:
+    0 0 0 1px rgba(246, 231, 187, 0.35) inset,
+    0 10px 28px rgba(212, 168, 75, 0.22);
+}
+
+.menu-action--play.ui-btn:not(:disabled):hover {
+  box-shadow:
+    0 0 0 1px rgba(246, 231, 187, 0.5) inset,
+    0 12px 32px rgba(212, 168, 75, 0.34);
+}
+
+.menu-hint {
+  margin: calc(var(--space-1) * -1) 0 var(--space-1);
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.menu-version {
+  position: absolute;
+  right: 32px;
+  bottom: 28px;
+  z-index: 1;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+
+/* Geçen sefer çökme uyarısı (DND-903) */
+.menu-crash {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(720px, calc(100% - 64px));
+  margin-top: 36px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid rgba(224, 161, 58, 0.45);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius);
+  background: #2a2114;
+  box-shadow: var(--shadow-2);
+}
+
+.menu-crash__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--warning);
+}
+
+.menu-crash__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+/* ---------- Ayarlar ---------- */
+
+.menu-settings {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-1);
+}
+
+.menu-settings__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5) var(--space-2) var(--space-3);
+  background: var(--bg-2);
+}
+
+.menu-settings__title {
+  font-size: var(--text-xl);
+}
+
+.menu-settings__tabs {
+  flex: none;
+  padding: 0 var(--space-5);
+  background: var(--bg-2);
+}
+
+.menu-settings__content {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-5);
+  overflow: auto;
+}
+
+/* ---------- Ayarlar › Genel ---------- */
+
+.menu-general {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.menu-general__stack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.menu-general__folders {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-4) var(--space-3);
+}
+
+.menu-general__folder-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.menu-general__label {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.menu-path {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-md);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-0);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.menu-general__about {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+}
+
+.menu-general__about dt {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.menu-general__about dd {
+  margin: 0;
+}

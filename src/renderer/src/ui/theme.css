@@ -1,0 +1,210 @@
+/*
+ * Tasarım belirteçleri (CSS değişkenleri) ve temel stiller.
+ * Üç pencere de (menü, oyun ekranı, kontrol paneli) bu dosyayı yükler.
+ * Yön: gece vakti oyun masası — koyu mürekkep zemin, parşömen tonlu yazı, tek altın vurgu.
+ */
+
+:root {
+  /* Yerel açılır listeler ve kaydırma çubukları da koyu çizilsin. */
+  color-scheme: dark;
+
+  /* Zemin: 0 en derin (kuyu, küçük resim arkası), 4 en açık (üzerine gelinen kontrol). */
+  --bg-0: #0c0a08;
+  --bg-1: #14110e;
+  --bg-2: #1c1814;
+  --bg-3: #26211b;
+  --bg-4: #322b23;
+
+  --border: #352e25;
+  --border-strong: #4d4336;
+
+  /* Yazı */
+  --text: #ede3d0;
+  --text-muted: #b9ac95;
+  --text-faint: #8f8370;
+
+  /* Altın vurgu */
+  --accent: #d4a84b;
+  --accent-hover: #e4bd66;
+  --accent-active: #b98f38;
+  --accent-ink: #1b1407;
+  --accent-soft: rgba(212, 168, 75, 0.14);
+  --accent-ring: rgba(212, 168, 75, 0.5);
+
+  /* Tehlike kırmızısı */
+  --danger: #c0443a;
+  --danger-hover: #d4574c;
+  --danger-active: #a3382f;
+  --danger-ink: #fff4ef;
+  --danger-text: #ec8479;
+  --danger-soft: rgba(192, 68, 58, 0.16);
+
+  /* Durum renkleri (bildirim seviyeleri) */
+  --success: #7fb069;
+  --warning: #e0a13a;
+  --info: #7ea6cf;
+
+  /* Can barı: kontrol paneli ve oyun ekranı aynı tonu kullansın. */
+  --hp: #c0443a;
+  --hp-empty: #3a2a25;
+
+  --overlay: rgba(5, 4, 3, 0.72);
+
+  /* Yazı tipleri: uygulama çevrimdışı çalışır, yalnızca sistem yazı tipleri. */
+  --font-heading: Georgia, 'Palatino Linotype', 'Book Antiqua', serif;
+  --font-body: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: Consolas, 'Cascadia Mono', 'Courier New', monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-2xl: 34px;
+
+  /* Boşluk ölçeği */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  /* Kontrol yükseklikleri: oyun sırasında hızlı tıklanabilsin diye cömert. */
+  --control-sm: 30px;
+  --control-md: 38px;
+  --control-lg: 48px;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 14px 36px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+
+  --ease: 120ms ease;
+
+  --z-toast: 1000;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: var(--bg-1);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Pencere çerçevesi gibi davranan arayüzde yazı seçilmez; girişlerde seçilir. */
+  user-select: none;
+  cursor: default;
+}
+
+/* Oyun ekranında 16:9 dışında kalan şeritler siyah görünür. */
+html[data-role='game'] body {
+  background: #000;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+textarea,
+select,
+[contenteditable='true'],
+.selectable {
+  user-select: text;
+}
+
+.selectable {
+  cursor: text;
+}
+
+a {
+  color: var(--accent-hover);
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-ring);
+  color: var(--text);
+}
+
+/* Kaydırma çubukları */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-color: var(--border-strong);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-faint);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

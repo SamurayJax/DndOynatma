@@ -1,0 +1,19 @@
+node_modules/
+out/
+dist/
+release/
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Test ve deneme çıktıları
+e2e/.cikti/
+.tmp/
+# Kişisel veriler ve gizli bilgiler repoya girmez
+.env
+.env.*
+
+# Claude uygulamasının yerel ayarları
+.claude/

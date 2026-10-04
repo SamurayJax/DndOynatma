@@ -1,0 +1,43 @@
+{
+  "name": "dndoynatma",
+  "productName": "DndOynatma",
+  "version": "0.8.0",
+  "description": "DnD oturumlari icin sahne yonetim uygulamasi",
+  "author": "SamurayJax",
+  "private": true,
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "npm run typecheck && electron-vite build",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "e2e": "electron-vite build && node e2e/tumu.mjs",
+    "icon": "node scripts/make-icon.mjs",
+    "pack": "npm run build && electron-builder --win --x64 --dir --publish never --config electron-builder.config.cjs",
+    "dist": "npm run build && electron-builder --win --x64 --publish never --config electron-builder.config.cjs",
+    "test:paket": "node e2e/paket/paket.mjs"
+  },
+  "dependencies": {
+    "konva": "^10.7.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-konva": "^19.3.0",
+    "use-image": "^1.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "playwright-core": "^1.63.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.11"
+  }
+}

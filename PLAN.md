@@ -113,8 +113,10 @@ Kontrol panelindeki d20 düğmesine basılınca oyun ekranında zar atılır: za
 düşer, yuvarlanır, durur ve üste gelen sayı büyük olarak gösterilir. Birkaç saniye
 sonra kaybolur. Kontrol panelinde son atışların kısa geçmişi durur.
 
-3B zar için hazır açık kaynak kütüphane (`@3d-dice/dice-box`, MIT) denenecek;
-Electron içinde sorun çıkarırsa aynı akış basit 2B animasyonla yapılır.
+Zar, uygulamanın kendi çizdiği üç boyutlu 20 yüzlü zardır; hareketi bir fizik
+benzetimiyle hesaplanır (yerçekimi, sekme, sürtünme). Hazır 3B zar kütüphanesi
+kullanılmadı: o kütüphane sonucu kendi fiziğiyle belirliyor, burada ise sonuç atıştan
+önce ana süreçte belirlenip kaydediliyor ve animasyon o sayıda bitmek zorunda.
 
 ### Kontrol paneli (görsel)
 
