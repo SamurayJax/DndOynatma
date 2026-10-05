@@ -452,7 +452,7 @@ describe('oyunu bitirme', () => {
     expect(control.destroyed).toBe(true)
     expect(menu.visible).toBe(true)
     expect(menu.focused).toBe(true)
-    expect(store.getState().session).toEqual({ phase: 'menu', tool: 'mouse', drawingNonce: nonceBefore + 1, diceHistory: [] })
+    expect(store.getState().session).toEqual({ phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: nonceBefore + 1, diceHistory: [] })
     expect(clearDice).toHaveBeenCalledTimes(1)
     expect(quit).not.toHaveBeenCalled()
   })

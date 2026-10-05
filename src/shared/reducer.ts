@@ -22,6 +22,7 @@ import {
   MAX_PLAYERS,
   MIN_ITEM_SIZE,
   MIN_LEVEL,
+  PenWidth,
   PlayerProfile,
   SceneWindow,
   SessionState,
@@ -41,7 +42,8 @@ export const TEXT_LIMITS = {
 export const MIN_HOTKEY = 1
 export const MAX_HOTKEY = 9
 
-const TOOLS: readonly Tool[] = ['mouse', 'pen-red', 'pen-black']
+const TOOLS: readonly Tool[] = ['mouse', 'pen-red', 'pen-black', 'eraser']
+const PEN_WIDTHS: readonly PenWidth[] = ['thin', 'medium', 'thick']
 const REORDER_TARGETS = ['front', 'back', 'forward', 'backward'] as const
 const GEOMETRY_KEYS = ['x', 'y', 'width', 'height', 'rotation'] as const
 const FALLBACK_SCENE_NAME = 'Pencere 1'
@@ -107,6 +109,8 @@ export function reduce(state: FullState, action: Action): ReduceResult {
 
     case 'session/setTool':
       return setTool(state, action)
+    case 'session/setPenWidth':
+      return setPenWidth(state, action)
     case 'session/clearDrawing':
       return { state: withSession(state, bumpNonce(state.session)) }
 
@@ -689,6 +693,13 @@ function setTool(state: FullState, action: ActionOf<'session/setTool'>): ReduceR
   if (tool === session.tool) return { state }
   // Araç değişimi çizimlere dokunmaz: çizdikten sonra fareye geçip görsel taşımak gerekebilir.
   return { state: withSession(state, { ...session, tool }) }
+}
+
+function setPenWidth(state: FullState, action: ActionOf<'session/setPenWidth'>): ReduceResult {
+  const width = action.width
+  if (!PEN_WIDTHS.includes(width)) return reject(state, 'DND-306', `session/setPenWidth: kalınlık geçersiz: ${show(width)}`)
+  if (width === state.session.penWidth) return { state }
+  return { state: withSession(state, { ...state.session, penWidth: width }) }
 }
 
 // --- Ortak yardımcılar -------------------------------------------------------

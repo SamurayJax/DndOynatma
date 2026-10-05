@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.9.0 (Windows)
+**Sürüm:** 0.9.1 (Windows)
 
 ## Ne yapar
 
@@ -16,7 +16,8 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
 - **Oyun alanı:** görseller taşınır, oranı bozulmadan boyutlandırılır, döndürülür,
   öne/arkaya alınır, etiket alır ("7 LVL").
 - **Pencereler:** "Kraliyet İçi", "Orman Yolu" gibi hazır düzenler; 1–9 tuşlarıyla geçilir.
-- **Kalem:** kırmızı ve siyah; çizim yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
+- **Kalem:** kırmızı ve siyah, üç kalınlık; silgi çizginin değdiği kısmını siler. Çizimin tamamı
+  yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
 - **d20:** kontrol panelinden atılır, oyun ekranında zar düşer ve sonucu gösterir.
 - **Otomatik kayıt:** her değişiklik kaydedilir; bilgisayar kapanıp açılsa da kaldığı yerden devam eder.
 - **Log ve hata kodları:** yapılan işlemler ve hatalar kodlarıyla log dosyasına yazılır.
@@ -49,6 +50,7 @@ Oyun ekranında:
 | Tıkla, sürükle | görseli seç, taşı |
 | Köşeden sürükle | boyutlandır (oran korunur) |
 | R / Shift+R | seçili görseli 90° döndür (saat yönü / ters yön) |
+| Ctrl+Z | kalem ya da silgi seçiliyken son izi geri al |
 | Üstteki tutamaç | serbest döndür (düz açılara yapışır) |
 | Çift tıkla (boş alana) | arka planı seç |
 | Delete | seçili görseli kaldır |

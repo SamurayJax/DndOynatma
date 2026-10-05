@@ -104,7 +104,13 @@ export interface AppState {
   settings: AppSettings
 }
 
-export type Tool = 'mouse' | 'pen-red' | 'pen-black'
+export type Tool = 'mouse' | 'pen-red' | 'pen-black' | 'eraser'
+
+export type PenWidth = 'thin' | 'medium' | 'thick'
+
+/** Kalem kalınlıkları (sanal piksel). Silgi aynı ayarda kalemden geniştir. */
+export const PEN_WIDTH_PX: Record<PenWidth, number> = { thin: 3, medium: 6, thick: 12 }
+export const ERASER_WIDTH_FACTOR = 4
 
 export interface DiceRoll {
   id: ID
@@ -118,6 +124,8 @@ export interface DiceRoll {
 export interface SessionState {
   phase: 'menu' | 'playing'
   tool: Tool
+  /** Kalemin ve silginin kalınlığı; araç değişse de korunur. */
+  penWidth: PenWidth
   /** Her artışında oyun ekranı, o an açık olan pencerenin çizimlerini siler ("Çizimi temizle"). */
   drawingNonce: number
   /** En yeni atış başta. */
@@ -146,7 +154,7 @@ export function createInitialAppState(): AppState {
 }
 
 export function createInitialSession(): SessionState {
-  return { phase: 'menu', tool: 'mouse', drawingNonce: 0, diceHistory: [] }
+  return { phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: 0, diceHistory: [] }
 }
 
 export function createInitialState(): FullState {

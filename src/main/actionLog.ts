@@ -81,6 +81,8 @@ function describe(action: Action): string {
     }
     case 'session/setTool':
       return `araç=${id(action.tool)}`
+    case 'session/setPenWidth':
+      return `kalınlık=${id(action.width)}`
     case 'session/clearDrawing':
       return ''
     default:

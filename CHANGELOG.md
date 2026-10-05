@@ -1,5 +1,19 @@
 # Sürüm Geçmişi
 
+## 0.9.1 — 2026-10-05
+
+### Eklenenler
+
+- Kalem kalınlığı: ince, orta, kalın. Kontrol panelinden seçilir; çizilmiş çizgiler kendi
+  kalınlığını korur.
+- Silgi: çizginin yalnızca üstünden geçilen kısmını siler, alttaki görsellere dokunmaz. İmleç
+  silginin çapını gösterir. Silgi izi de Ctrl+Z ile geri alınır.
+
+### Değişenler
+
+- Kontrol panelindeki araç düğmeleri tek satırda dört araç olacak şekilde yeniden düzenlendi
+  (Fare, Kırmızı, Siyah, Silgi). "Çizimi temizle" açıklaması düğmenin ipucuna taşındı.
+
 ## 0.9.0 — 2026-10-05
 
 Sürüm 1.0 yolunun ilk adımı: kayıt yeri.

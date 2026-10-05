@@ -232,7 +232,7 @@ await run(async () => {
     await session.send({ type: 'scene/activateHotkey', hotkey: 2 })
     await sleep(300)
     check('diğer pencerenin çizimleri duruyor', (await session.probe('strokes')) === second)
-    check('kontrol panelindeki açıklama güncel', (await control.getByText('Çizim yalnızca bu düğmeyle silinir').count()) === 1)
+    check('"Çizimi temizle" ipucu kuralı anlatıyor', ((await clear.getAttribute('title')) ?? '').includes('fareye geçince çizim kalır'))
     await session.send({ type: 'scene/activateHotkey', hotkey: 1 })
   }
 

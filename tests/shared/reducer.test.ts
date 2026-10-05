@@ -90,7 +90,7 @@ function makeState(): FullState {
       generalNote: 'genel not',
       settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true }
     },
-    session: { phase: 'playing', tool: 'pen-red', drawingNonce: 3, diceHistory: [] }
+    session: { phase: 'playing', tool: 'pen-red', penWidth: 'medium', drawingNonce: 3, diceHistory: [] }
   })
 }
 
@@ -186,6 +186,7 @@ const ALL_ACTION_TYPES: Record<Action['type'], true> = {
   'note/setGeneral': true,
   'settings/update': true,
   'session/setTool': true,
+  'session/setPenWidth': true,
   'session/clearDrawing': true
 }
 
@@ -284,7 +285,11 @@ function everyAction(): Action[] {
     { type: 'session/setTool', tool: 'mouse' },
     { type: 'session/setTool', tool: 'pen-black' },
     { type: 'session/setTool', tool: 'pen-red' },
-    bad({ type: 'session/setTool', tool: 'eraser' }),
+    { type: 'session/setTool', tool: 'eraser' },
+    bad({ type: 'session/setTool', tool: 'firca' }),
+    { type: 'session/setPenWidth', width: 'thick' },
+    { type: 'session/setPenWidth', width: 'medium' },
+    bad({ type: 'session/setPenWidth', width: 'dev' }),
     { type: 'session/clearDrawing' },
     bad({ type: 'bilinmeyen/islem' }),
     bad({}),
@@ -1807,9 +1812,37 @@ describe('session/setTool', () => {
     expectNoop(emptyState(), { type: 'session/setTool', tool: 'mouse' })
   })
 
+  it('silgi de bir araçtır; seçilince çizimler ve kalınlık değişmez', () => {
+    const state = makeState()
+    const next = apply(state, { type: 'session/setTool', tool: 'eraser' })
+    expect(next.session).toEqual({ ...state.session, tool: 'eraser' })
+  })
+
   it('geçersiz araç DND-306 verir', () => {
-    expectRejected(makeState(), bad({ type: 'session/setTool', tool: 'eraser' }), 'DND-306')
+    expectRejected(makeState(), bad({ type: 'session/setTool', tool: 'firca' }), 'DND-306')
     expectRejected(makeState(), bad({ type: 'session/setTool' }), 'DND-306')
+  })
+})
+
+describe('session/setPenWidth', () => {
+  it('kalınlığı değiştirir; araca ve çizim sayacına dokunmaz', () => {
+    const state = makeState()
+    const next = apply(state, { type: 'session/setPenWidth', width: 'thick' })
+    expect(next.session).toEqual({ ...state.session, penWidth: 'thick' })
+    expect(next.app).toBe(state.app)
+  })
+
+  it('araç değişince kalınlık korunur', () => {
+    let state = apply(makeState(), { type: 'session/setPenWidth', width: 'thin' })
+    state = apply(state, { type: 'session/setTool', tool: 'eraser' })
+    state = apply(state, { type: 'session/setTool', tool: 'mouse' })
+    expect(state.session.penWidth).toBe('thin')
+  })
+
+  it('aynı kalınlık aynı durumu döndürür; geçersiz kalınlık DND-306 verir', () => {
+    expectNoop(makeState(), { type: 'session/setPenWidth', width: 'medium' })
+    expectRejected(makeState(), bad({ type: 'session/setPenWidth', width: 'dev' }), 'DND-306')
+    expectRejected(makeState(), bad({ type: 'session/setPenWidth' }), 'DND-306')
   })
 })
 

@@ -5,7 +5,7 @@
  * Yeni kimlikler (id) işlemi gönderen tarafça üretilir; böylece `reduce` saf kalır.
  */
 import { ErrorCode } from './errors'
-import { AppSettings, FullState, ID, LibraryImage, PlayerProfile, StageItem, Tool } from './types'
+import { AppSettings, FullState, ID, LibraryImage, PenWidth, PlayerProfile, StageItem, Tool } from './types'
 
 export type AppAction =
   // --- Oyuncular ---
@@ -53,6 +53,8 @@ export type AppAction =
 export type SessionAction =
   /** Araç değişimi çizimlere dokunmaz; çizim dururken fareyle görsel taşınabilir. */
   | { type: 'session/setTool'; tool: Tool }
+  /** Kalemin ve silginin kalınlığı. Çizilmiş çizgileri etkilemez. */
+  | { type: 'session/setPenWidth'; width: PenWidth }
   /** O an açık olan pencerenin çizimlerini siler (drawingNonce artar). Çizimleri silen tek işlem budur. */
   | { type: 'session/clearDrawing' }
 

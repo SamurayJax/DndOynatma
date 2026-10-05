@@ -1,25 +1,35 @@
 import type { JSX, ReactNode } from 'react'
-import type { Tool } from '@shared/types'
+import type { PenWidth, Tool } from '@shared/types'
 import { dispatch, useSession } from '@renderer/lib/useAppState'
-import { Button, CursorIcon, EraserIcon, Panel, PencilIcon, cx } from '@renderer/ui'
+import { Button, CursorIcon, EraserIcon, Panel, PencilIcon, TrashIcon, cx } from '@renderer/ui'
 
 interface ToolChoice {
   id: Tool
-  name: string
-  /** İkinci satırda gösterilen ek (kalemin rengi). */
-  detail?: string
+  /** Düğmenin altında görünen kısa ad. */
+  short: string
+  /** Ekran okuyucu ve ipucu için tam ad. */
+  full: string
   icon: ReactNode
 }
 
 const TOOLS: readonly ToolChoice[] = [
-  { id: 'mouse', name: 'Fare', icon: <CursorIcon size={18} /> },
-  { id: 'pen-red', name: 'Kalem', detail: '(kırmızı)', icon: <PencilIcon size={16} /> },
-  { id: 'pen-black', name: 'Kalem', detail: '(siyah)', icon: <PencilIcon size={16} /> }
+  { id: 'mouse', short: 'Fare', full: 'Fare', icon: <CursorIcon size={18} /> },
+  { id: 'pen-red', short: 'Kırmızı', full: 'Kalem (kırmızı)', icon: <PencilIcon size={16} /> },
+  { id: 'pen-black', short: 'Siyah', full: 'Kalem (siyah)', icon: <PencilIcon size={16} /> },
+  { id: 'eraser', short: 'Silgi', full: 'Silgi', icon: <EraserIcon size={16} /> }
 ]
 
-/** Araç seçimi: Fare / Kalem kırmızı / Kalem siyah ve "Çizimi temizle". */
+const WIDTHS: readonly { id: PenWidth; label: string }[] = [
+  { id: 'thin', label: 'İnce' },
+  { id: 'medium', label: 'Orta' },
+  { id: 'thick', label: 'Kalın' }
+]
+
+const CLEAR_HINT = 'Çizimi yalnızca bu düğme siler; fareye geçince çizim kalır. Açık olan pencerenin çizimi silinir.'
+
+/** Araç seçimi (fare, iki kalem, silgi), kalınlık ve "Çizimi temizle". */
 export function ToolsPanel(): JSX.Element {
-  const { tool } = useSession()
+  const { tool, penWidth } = useSession()
 
   return (
     <Panel className="ctl-panel" title="Araçlar">
@@ -29,25 +39,36 @@ export function ToolsPanel(): JSX.Element {
             key={choice.id}
             className={cx('ctl-tool', `ctl-tool--${choice.id}`)}
             active={tool === choice.id}
+            aria-label={choice.full}
+            title={choice.full}
             icon={<span className="ctl-tool__swatch">{choice.icon}</span>}
             onClick={() => dispatch({ type: 'session/setTool', tool: choice.id })}
           >
-            {choice.name}
-            {choice.detail !== undefined && (
-              <>
-                {' '}
-                <span className="ctl-tool__detail">{choice.detail}</span>
-              </>
-            )}
+            {choice.short}
           </Button>
         ))}
       </div>
       <div className="ctl-tools__footer">
+        {/* Kalınlık kalem ve silgi için ortaktır; silgi aynı ayarda kalemden geniştir. */}
+        <div className="ctl-widths" role="group" aria-label="Kalınlık">
+          {WIDTHS.map((width) => (
+            <Button
+              key={width.id}
+              size="sm"
+              className={cx('ctl-width', `ctl-width--${width.id}`)}
+              active={penWidth === width.id}
+              aria-label={`Kalınlık: ${width.label.toLocaleLowerCase('tr')}`}
+              title={`Kalem ve silgi kalınlığı: ${width.label.toLocaleLowerCase('tr')}`}
+              onClick={() => dispatch({ type: 'session/setPenWidth', width: width.id })}
+            >
+              <span className="ctl-width__line" aria-hidden="true" />
+            </Button>
+          ))}
+        </div>
         {/* Çizimler oyun ekranında tutulur; burada var olup olmadıkları bilinmez, düğme hep açıktır. */}
-        <Button size="sm" icon={<EraserIcon size={16} />} onClick={() => dispatch({ type: 'session/clearDrawing' })}>
+        <Button size="sm" icon={<TrashIcon size={16} />} title={CLEAR_HINT} onClick={() => dispatch({ type: 'session/clearDrawing' })}>
           Çizimi temizle
         </Button>
-        <p className="ctl-hint">Çizim yalnızca bu düğmeyle silinir; fareye geçince kalır.</p>
       </div>
     </Panel>
   )

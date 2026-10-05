@@ -274,11 +274,14 @@ bağlı olduğu için kayıt, görseller ve log buluta eşitleniyordu. Kayıt ye
 (görseller dahil). Klasör değiştirilince hiçbir şey kaybolmaz. Seçilen klasör yokken açılış veri
 kaybettirmez.
 
-### 2. Kalem: kalınlık ve silgi (0.9.1)
+### 2. Kalem: kalınlık ve silgi (0.9.1) — yapıldı
 
-- Kalınlık: ince / orta / kalın, kontrol panelinden seçilir; her çizgi çizildiği kalınlığı korur.
+- Kalınlık: ince / orta / kalın (3 / 6 / 12 birim), kontrol panelinden seçilir; her çizgi çizildiği
+  kalınlığı korur. Ayar kalem ve silgi için ortaktır; silgi aynı ayarda kalemin dört katı geniştir.
 - Silgi: ayrı bir araç. Üstünden geçilen yerdeki çizimi siler (çizginin tamamını değil, silginin
-  değdiği kısmı). Silgi yalnızca çizimleri etkiler; görsellere dokunmaz.
+  değdiği kısmı). Silgi yalnızca çizimleri etkiler; görsellere dokunmaz. İmleç silginin çapını
+  gösteren bir dairedir.
+- Ctrl+Z son izi geri alır; silgi izi de geri alınabilir (silinen kısım geri gelir).
 - "Çizimi temizle" ve çizimin pencereye ait olması aynen kalır.
 
 **Bitti sayılır:** Üç kalınlık oyun ekranında ayırt edilir. Silgi çizginin bir kısmını siler,
