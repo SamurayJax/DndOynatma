@@ -65,6 +65,21 @@ export const ERROR_CODES = {
     title: 'Eski kayıt klasörü kaldırılamadı',
     description: 'Kayıt yeni klasöre taşındı ama eski klasör Geri Dönüşüm Kutusu\'na gönderilemedi. Eski klasör yerinde duruyor; elle silinebilir.'
   },
+  'DND-111': {
+    level: 'HATA',
+    title: 'Karakter dosyası yazılamadı',
+    description: 'Dışa aktarılan karakter dosyası seçilen yere yazılamadı (disk dolu, klasör kilitli ya da izin yok). Kayıt etkilenmez; başka bir yer seçin.'
+  },
+  'DND-112': {
+    level: 'UYARI',
+    title: 'Karakter dosyası okunamadı',
+    description: 'Seçilen dosya bir DndOynatma karakter dosyası değil ya da bozuk. Kartlara dokunulmadı.'
+  },
+  'DND-113': {
+    level: 'UYARI',
+    title: 'Karakter dosyası daha yeni bir sürüme ait',
+    description: 'Dosya bu sürümün tanımadığı bir biçimle yazılmış. Kartlara dokunulmadı; uygulamayı güncelleyin.'
+  },
   'DND-201': {
     level: 'UYARI',
     title: 'Desteklenmeyen dosya türü',

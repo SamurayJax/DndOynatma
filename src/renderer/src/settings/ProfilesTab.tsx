@@ -3,6 +3,7 @@ import { filledPlayers, findImage } from '@shared/layout'
 import { MAX_PLAYERS } from '@shared/types'
 import { useApp } from '@renderer/lib/useAppState'
 import { cx } from '@renderer/ui'
+import { CharacterTransfer } from './CharacterTransfer'
 import { PlayerCard } from './PlayerCard'
 import './settings.css'
 
@@ -23,6 +24,7 @@ export function ProfilesTab(): JSX.Element {
         <span className={cx('set-chip', filledCount > 0 && 'set-chip--on')}>
           {filledCount} / {MAX_PLAYERS} oyuncu oyunda
         </span>
+        <CharacterTransfer players={app.players} />
       </header>
 
       <div className="set-profiles__grid">

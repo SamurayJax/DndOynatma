@@ -1,5 +1,22 @@
 # Sürüm Geçmişi
 
+## 0.9.3 — 2026-10-05
+
+### Eklenenler
+
+- Karakterleri dışa / içe aktarma (Ayarlar › Oyuncular). "Dışa aktar" dolu kartları (isim, seviye,
+  can, not, portre) tek bir `.dndkarakter` dosyasına yazar. "İçe aktar" dosyayı okur, hangi
+  kartların değişeceğini gösterir ve onaydan sonra uygular.
+- İçe aktarmada dosyadaki kart aynı numaralı kartın yerine geçer; dosyada olmayan karta
+  dokunulmaz, zaten aynı olan kart yeniden yazılmaz. Yerine geçilen kartın eski portresi Geri
+  Dönüşüm Kutusu'na gider.
+- Bozuk, kesik ya da başka türde bir dosya kartlara dokunmadan reddedilir. Yeni hata kodları:
+  DND-111 (dosya yazılamadı), DND-112 (dosya okunamadı), DND-113 (dosya daha yeni bir sürüme ait).
+
+### Değişmeyenler
+
+- Kütüphane, pencereler ve ayarlar dosyaya girmez; yalnızca dört kart taşınır.
+
 ## 0.9.2 — 2026-10-05
 
 ### Eklenenler

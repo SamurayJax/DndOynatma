@@ -3,9 +3,10 @@
  */
 import { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, app, ipcMain, screen, shell } from 'electron'
 import { ERROR_CODES, ErrorCode, LogLevel } from '@shared/errors'
-import { AppInfo, IPC, ImportResult, StorageCheck, StorageResult, WindowRole } from '@shared/ipc'
+import { AppInfo, CharacterExportResult, CharacterImportPreview, CharacterImportResult, IPC, ImportResult, StorageCheck, StorageResult, WindowRole } from '@shared/ipc'
 import { CATEGORIES } from '@shared/layout'
 import { LibraryCategory, MAX_PLAYERS, isDiceSides } from '@shared/types'
+import { CharacterDeps, applyCharacterImport, cancelCharacterImport, exportCharacters, pickCharacterImport } from './characters'
 import { rollDice } from './dice'
 import { describeDisplays } from './displays'
 import { LibraryDeps, importFiles, importPortrait, importPortraitFile, importWithDialog } from './library'
@@ -47,6 +48,7 @@ function openFolder(folder: string): void {
 export function registerIpc(deps: IpcDeps): void {
   const { store, windows, paths } = deps
   const library: LibraryDeps = { store, imagesDir: paths.imagesDir }
+  const characters: CharacterDeps = { store, imagesDir: paths.imagesDir, appVersion: () => deps.getInfo().version }
 
   /** Tek yönlü ileti. Uygulamanın açmadığı içerikten gelen iletiler yok sayılır; hata ana süreci düşürmez. */
   const on = (channel: string, listener: (role: WindowRole, event: IpcMainEvent, ...args: unknown[]) => void): void => {
@@ -138,6 +140,31 @@ export function registerIpc(deps: IpcDeps): void {
       return null
     }
     return rollDice(store, paths.diceFile, sides)
+  })
+
+  // Karakter aktarma yalnızca ayarlardan (ana menü) yapılır; oyun sırasında kartlar topluca değişmez.
+  const fromMenu = (role: WindowRole, what: string): boolean => {
+    if (role !== 'menu') report('DND-306', `${what}: yalnızca ana menüden yapılır`)
+    return role === 'menu'
+  }
+
+  handle(IPC.charactersExport, (role, event): Promise<CharacterExportResult> | CharacterExportResult => {
+    if (!fromMenu(role, 'karakter dışa aktarma')) return { ok: false, canceled: false, code: 'DND-306', fileName: null, count: 0, missingPortraits: [] }
+    return exportCharacters(characters, BrowserWindow.fromWebContents(event.sender))
+  })
+
+  handle(IPC.charactersPickImport, (role, event): Promise<CharacterImportPreview> | CharacterImportPreview => {
+    if (!fromMenu(role, 'karakter içe aktarma')) return { ok: false, canceled: false, code: 'DND-306', token: null, fileName: '', exportedAt: null, cards: [] }
+    return pickCharacterImport(characters, BrowserWindow.fromWebContents(event.sender))
+  })
+
+  handle(IPC.charactersApplyImport, (role, _event, token): Promise<CharacterImportResult> | CharacterImportResult => {
+    if (!fromMenu(role, 'karakter içe aktarma')) return { ok: false, code: 'DND-306', slots: [] }
+    return applyCharacterImport(characters, token)
+  })
+
+  on(IPC.charactersCancelImport, (_role, _event, token) => {
+    cancelCharacterImport(token)
   })
 
   on(IPC.appQuit, () => {

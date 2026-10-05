@@ -20,6 +20,7 @@ Başka bir derlemeyi denemek için: `DND_E2E_MAIN=out/main/index.js node e2e/mai
 | `01-pencereler.mjs` | `window.dnd` ve rolü, sandbox, pencere başlıkları, CSP, monitör yerleşimi, tam ekran (düğme + F11), oyunu başlat/bitir yarışları, X ile kapatma, arayüz çökmesi (DND-305 / DND-902), oyun açıkken çıkış |
 | `02-medya-kutuphane.mjs` | `dnd-media` (`<img>`, `fetch`, tuval, 404, klasör dışına çıkma denemeleri), yükleme uç durumları (DND-201 / 202 / 204), portre değiştirme, kütüphaneden silme, çöpe taşıma hatası (DND-205) |
 | `04-kayit-yeri.mjs` | ilk açılışta kayıt klasörü sorusu, bulunamayan klasör (DND-107), eski kaydı taşıma, ayarlardan klasör değiştirme, var olan kaydı kullanma, bulut uyarısı, yazılamayan yer (DND-108) |
+| `05-karakter-aktarma.mjs` | Ayarlar › Oyuncular'daki "Dışa aktar" / "İçe aktar": dosyanın yazılması, başka bir kayıt klasöründe onay kutusu ve kartların portreleriyle gelmesi, aynı dosyanın ikinci kez seçilmesi, dolu kartların üzerine aktarma, bozuk ve yabancı dosya (DND-112), kontrol panelinden reddedilme (DND-306), yeniden açılışta kalıcılık |
 | `03-kayit.mjs` | otomatik kayıt ve geri yükleme, yedek, `zar.json`, zorla kapatma sonrası açılış (DND-903), bozuk kayıt (DND-101 / 102), yeni şema (DND-106), kilitli dosya (DND-103), kullanılamayan klasör (DND-104), yakalanmamış hata (DND-901), log biçimi ve logda isim/not olmaması |
 
 ## Bilinmesi gerekenler
@@ -36,6 +37,6 @@ Başka bir derlemeyi denemek için: `DND_E2E_MAIN=out/main/index.js node e2e/mai
 - Monitör denetimleri iki monitör varsa "farklı monitörde" olmayı, tek monitör varsa yan yana
   açılmayı bekler; bulunan monitörler ve pencerelerin yeri `BILGI` satırlarında yazılır.
 - Sınanmayanlar: ikinci kopyanın engellenmesi (tek kopya kilidi `DND_DATA_DIR` verilince
-  kapalıdır), Windows oturumu kapanırken kayıt (`session-end`), dosya seçme pencereleri ve
-  "klasörü aç" düğmeleri.
+  kapalıdır), Windows oturumu kapanırken kayıt (`session-end`), dosya seçme ve kaydetme
+  pencereleri (yerlerine verilen yolu döndüren sahteleri konur) ve "klasörü aç" düğmeleri.
 - Betik yarıda kesilirse açık kalan `electron.exe` süreçleri elle kapatılmalıdır.

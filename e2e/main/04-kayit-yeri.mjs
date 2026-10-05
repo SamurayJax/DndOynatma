@@ -85,7 +85,9 @@ await run(async () => {
   check('seçilen klasörle uygulama açılır', appInfo.dataDir === target && appInfo.dataDirFixed === false && appInfo.dataDirCloud === null, JSON.stringify(appInfo))
   check('seçim ayar dosyasına yazılır', configOf(work).dataDir === target)
   check('kayıt klasörü ve log oluşur', existsSync(join(target, 'log')) && existsSync(join(target, 'gorseller')))
-  check('kayıt klasörü penceresi kapanır', session.app.windows().every((win) => roleOf(win) !== 'setup'))
+  // Pencere, yanıt arayüze ulaşsın diye menü açıldıktan kısa süre sonra kapatılır.
+  const setupGone = await waitFor(() => session.app.windows().every((win) => roleOf(win) !== 'setup'), (gone) => gone, 5000)
+  check('kayıt klasörü penceresi kapanır', setupGone)
 
   const sample = join(work.samplesDir, 'kurt.png')
   writeFileSync(sample, makePng(64, 96, [120, 120, 130], [40, 40, 50]))

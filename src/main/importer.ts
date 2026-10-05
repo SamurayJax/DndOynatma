@@ -8,7 +8,7 @@ import path from 'node:path'
 import { ErrorCode } from '@shared/errors'
 import { ImageKind, LibraryImage } from '@shared/types'
 import { isSupportedImageName } from './fileNames'
-import { ImageType, readImageSize } from './imageSize'
+import { ImageSize, ImageType, readImageSize } from './imageSize'
 
 export const MAX_IMAGE_BYTES = 50 * 1024 * 1024
 
@@ -70,27 +70,36 @@ export async function copyImagesIntoLibrary(
       continue
     }
 
-    // Uzantı dosyanın gerçek türünden gelir; adı .png olup içi JPEG olan dosya doğru türle sunulur.
-    const fileName = `${randomUUID()}.${EXTENSION_BY_TYPE[size.type]}`
     try {
-      // 'wx': aynı adda dosya varsa üzerine yazmaz.
-      await fs.promises.writeFile(path.join(imagesDir, fileName), data, { flag: 'wx' })
+      outcome.added.push(await writeLibraryImage(imagesDir, kind, data, size, path.basename(name, path.extname(name))))
     } catch (error) {
       skip('DND-202', `kopyalanamadı (${errorMessage(error)})`)
-      continue
     }
-
-    outcome.added.push({
-      id: randomUUID(),
-      kind,
-      fileName,
-      originalName: path.basename(name, path.extname(name)),
-      width: size.width,
-      height: size.height,
-      addedAt: new Date().toISOString()
-    })
   }
   return outcome
+}
+
+/** Görselin baytlarını `gorseller/` altına benzersiz adla yazar ve kütüphane kaydını üretir. Yazılamazsa fırlatır. */
+export async function writeLibraryImage(
+  imagesDir: string,
+  kind: ImageKind,
+  data: Buffer,
+  size: ImageSize,
+  originalName: string
+): Promise<LibraryImage> {
+  // Uzantı dosyanın gerçek türünden gelir; adı .png olup içi JPEG olan dosya doğru türle sunulur.
+  const fileName = `${randomUUID()}.${EXTENSION_BY_TYPE[size.type]}`
+  // 'wx': aynı adda dosya varsa üzerine yazmaz.
+  await fs.promises.writeFile(path.join(imagesDir, fileName), data, { flag: 'wx' })
+  return {
+    id: randomUUID(),
+    kind,
+    fileName,
+    originalName,
+    width: size.width,
+    height: size.height,
+    addedAt: new Date().toISOString()
+  }
 }
 
 /** Kütüphaneye eklenemeyen kopyayı geri alır. Dosyayı az önce biz oluşturduk; kullanıcı verisi değildir. */

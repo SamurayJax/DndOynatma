@@ -2,9 +2,9 @@ import { memo, useId, useRef, useState } from 'react'
 import type { DragEvent, JSX } from 'react'
 import { ERROR_CODES } from '@shared/errors'
 import type { ImportResult } from '@shared/ipc'
-import { isPlayerFilled } from '@shared/layout'
+import { isPlayerFilled, isPlayerPristine } from '@shared/layout'
 import { TEXT_LIMITS } from '@shared/reducer'
-import { createEmptyPlayer, MAX_LEVEL, MIN_LEVEL } from '@shared/types'
+import { MAX_LEVEL, MIN_LEVEL } from '@shared/types'
 import type { LibraryImage, PlayerProfile } from '@shared/types'
 import { reportError } from '@renderer/lib/reportError'
 import { dispatch } from '@renderer/lib/useAppState'
@@ -30,17 +30,6 @@ export interface PlayerCardProps {
   player: PlayerProfile
   /** Portre görseli; yoksa ya da kütüphanede bulunamadıysa `undefined`. */
   portrait: LibraryImage | undefined
-}
-
-const EMPTY_PLAYER = createEmptyPlayer()
-const PLAYER_KEYS = Object.keys(EMPTY_PLAYER) as (keyof PlayerProfile)[]
-
-/**
- * "Kartı boşalt" bir şey değiştirir mi? Yalnızca görünen alanlara bakılmaz: oyunda alınmış not
- * ve can da kartta durur, isim silinmiş olsa bile boşaltılabilmelidir.
- */
-function isPristine(player: PlayerProfile): boolean {
-  return PLAYER_KEYS.every((key) => player[key] === EMPTY_PLAYER[key])
 }
 
 function carriesFiles(event: DragEvent<HTMLElement>): boolean {
@@ -153,7 +142,8 @@ export const PlayerCard = memo(function PlayerCard({ slot, player, portrait }: P
             className="set-player__clear set-quiet-danger"
             variant="ghost"
             size="sm"
-            disabled={isPristine(player)}
+            // Yalnızca görünen alanlara bakılmaz: oyunda alınmış not ve can da kartta durur.
+            disabled={isPlayerPristine(player)}
             onClick={() => void clearCard()}
           >
             Kartı boşalt

@@ -27,6 +27,9 @@ Kodların kaynağı `src/shared/errors.ts` dosyasıdır; bu liste onunla aynı t
 | DND-108 | HATA | Kayıt klasörü kullanılamıyor | Seçilen yerde klasör oluşturulamadı ya da klasöre yazılamıyor. Başka bir klasör seçin. |
 | DND-109 | HATA | Kayıt taşınamadı | Kayıt yeni klasöre kopyalanamadı ya da kopya doğrulanamadı. Eski kayıt yerinde duruyor ve kullanılmaya devam ediyor. |
 | DND-110 | UYARI | Eski kayıt klasörü kaldırılamadı | Kayıt yeni klasöre taşındı ama eski klasör Geri Dönüşüm Kutusu'na gönderilemedi. Eski klasör yerinde duruyor; elle silinebilir. |
+| DND-111 | HATA | Karakter dosyası yazılamadı | Dışa aktarılan karakter dosyası seçilen yere yazılamadı (disk dolu, klasör kilitli ya da izin yok). Kayıt etkilenmez; başka bir yer seçin. |
+| DND-112 | UYARI | Karakter dosyası okunamadı | Seçilen dosya bir DndOynatma karakter dosyası değil ya da bozuk. Kartlara dokunulmadı. |
+| DND-113 | UYARI | Karakter dosyası daha yeni bir sürüme ait | Dosya bu sürümün tanımadığı bir biçimle yazılmış. Kartlara dokunulmadı; uygulamayı güncelleyin. |
 | DND-106 | HATA | Kayıt daha yeni bir sürüme ait | `kayit.json` bu sürümün tanımadığı bir şemayla yazılmış. Dosyaya dokunulmadı; uygulamayı güncelleyin. |
 
 ## 2xx — Kütüphane ve görseller

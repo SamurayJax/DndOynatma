@@ -72,6 +72,28 @@ export function UploadIcon(props: IconProps): JSX.Element {
   )
 }
 
+/** Kutudan dışarı çıkan ok: dışa aktarma. */
+export function ExportIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M14 4h6v6" />
+      <path d="M20 4l-8.5 8.5" />
+      <path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10" />
+    </Svg>
+  )
+}
+
+/** Kutunun içine giren ok: içe aktarma. */
+export function ImportIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M11.5 6.5v6h6" />
+      <path d="M20 4l-8.5 8.5" />
+      <path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H8" />
+    </Svg>
+  )
+}
+
 export function CloseIcon(props: IconProps): JSX.Element {
   return (
     <Svg {...props}>

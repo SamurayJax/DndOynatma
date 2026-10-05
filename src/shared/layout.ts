@@ -7,6 +7,8 @@ import {
   ImageKind,
   LibraryCategory,
   LibraryImage,
+  MAX_HP,
+  MIN_LEVEL,
   PlayerProfile,
   PORTRAIT_COLUMN_WIDTH,
   SceneWindow,
@@ -47,6 +49,14 @@ export function categoryInfo(kind: ImageKind): CategoryInfo | undefined {
 /** Portresi ya da adı olan kart "dolu" sayılır ve oyunda görünür. */
 export function isPlayerFilled(player: PlayerProfile): boolean {
   return player.portraitId !== null || player.name.trim() !== ''
+}
+
+/**
+ * Kartta hiçbir şey yoksa true. "Dolu" olmaktan farklıdır: adı ve portresi silinmiş bir kartta
+ * oyunda alınmış not ya da eksilmiş can durabilir; o kart oyunda görünmez ama boş da değildir.
+ */
+export function isPlayerPristine(player: PlayerProfile): boolean {
+  return player.portraitId === null && player.name === '' && player.note === '' && player.level === MIN_LEVEL && player.hp === MAX_HP
 }
 
 /** Dolu oyuncular, yuva numaralarıyla (0..3) birlikte. */

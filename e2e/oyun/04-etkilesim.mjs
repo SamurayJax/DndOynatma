@@ -79,7 +79,13 @@ await run(async () => {
     const through = [item.x + item.width / 2, item.y + item.height / 2]
     await session.drag([through[0] - 200, through[1] - 90], [through[0] + 100, through[1] + 45], { steps: 14 })
     check('zar uçarken kalem çiziyor', (await session.probe('strokes')) === 1 && (await session.probe('dice')).canvas)
-    check('çizgi görselin üstünde görünüyor', isRed(await session.colorAt(through[0] - 50, through[1] - 22.5)), show(await session.colorAt(through[0] - 50, through[1] - 22.5)))
+    // Uçan zar ya da gölgesi tam o anda bu noktanın üstünden geçiyor olabilir; öyleyse zar durunca yeniden bakılır.
+    let lineColor = await session.colorAt(through[0] - 50, through[1] - 22.5)
+    if (!isRed(lineColor)) {
+      await waitResult()
+      lineColor = await session.colorAt(through[0] - 50, through[1] - 22.5)
+    }
+    check('çizgi görselin üstünde görünüyor', isRed(lineColor), show(lineColor))
     const still = await session.item(a)
     check('kalemle üstünden geçilen görsel taşınmadı', near(still.x, item.x, 0.001) && near(still.y, item.y, 0.001))
     await waitResult()

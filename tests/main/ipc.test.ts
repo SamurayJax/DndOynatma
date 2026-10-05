@@ -38,7 +38,7 @@ vi.mock('electron', () => {
       on: (channel: string, listener: (...args: unknown[]) => void) => listeners.set(channel, listener)
     },
     BrowserWindow: { getAllWindows: () => [win], fromWebContents: () => win },
-    dialog: { showOpenDialog: vi.fn() },
+    dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn() },
     shell: { openPath: vi.fn(() => Promise.resolve('')) },
     screen: { getAllDisplays: () => displays, getPrimaryDisplay: () => displays[0] },
     app: { quit: vi.fn(), isPackaged: false },
@@ -56,7 +56,7 @@ const fake = electron as unknown as {
     contents: object
     win: object
   }
-  dialog: { showOpenDialog: Mock }
+  dialog: { showOpenDialog: Mock; showSaveDialog: Mock }
   shell: { openPath: Mock }
   app: { quit: Mock }
 }
@@ -120,6 +120,7 @@ beforeEach(() => {
   fake.testing.listeners.clear()
   fake.testing.sent.length = 0
   fake.dialog.showOpenDialog.mockReset()
+  fake.dialog.showSaveDialog.mockReset()
   fake.shell.openPath.mockClear()
   fake.app.quit.mockReset()
 
@@ -380,6 +381,41 @@ describe('zar', () => {
     const notices = fake.testing.sent.filter((entry) => entry.channel === IPC.notice)
     expect(notices).toHaveLength(1)
     expect(notices[0].payload).toMatchObject({ code: 'DND-105', level: 'UYARI' })
+  })
+})
+
+describe('karakter aktarma', () => {
+  it('ana menü dışındaki pencereden çalışmaz (DND-306)', async () => {
+    store.dispatch({ type: 'player/update', slot: 0, patch: { name: 'Kenji' } })
+
+    expect(await invoke(IPC.charactersExport)).toMatchObject({ ok: false, canceled: false, code: 'DND-306', count: 0 })
+    expect(await invoke(IPC.charactersPickImport)).toMatchObject({ ok: false, canceled: false, code: 'DND-306', token: null })
+    expect(await invoke(IPC.charactersApplyImport, 'anahtar')).toEqual({ ok: false, code: 'DND-306', slots: [] })
+
+    expect(fake.dialog.showSaveDialog).not.toHaveBeenCalled()
+    expect(fake.dialog.showOpenDialog).not.toHaveBeenCalled()
+    expect(logLines().filter((line) => line.includes('[DND-306]'))).toHaveLength(3)
+  })
+
+  it('ana menüden dosya pencerelerini o pencereye bağlı açar', async () => {
+    windows.roleOf.mockReturnValue('menu')
+    store.dispatch({ type: 'player/update', slot: 0, patch: { name: 'Kenji' } })
+    fake.dialog.showSaveDialog.mockResolvedValue({ canceled: true, filePath: '' })
+    fake.dialog.showOpenDialog.mockResolvedValue({ canceled: true, filePaths: [] })
+
+    expect(await invoke(IPC.charactersExport)).toMatchObject({ ok: false, canceled: true, code: null })
+    expect(await invoke(IPC.charactersPickImport)).toMatchObject({ ok: false, canceled: true, code: null })
+
+    expect(fake.dialog.showSaveDialog).toHaveBeenCalledWith(fake.testing.win, expect.objectContaining({ title: 'Karakterleri dışa aktar' }))
+    expect(fake.dialog.showOpenDialog).toHaveBeenCalledWith(fake.testing.win, expect.objectContaining({ title: 'Karakterleri içe aktar' }))
+  })
+
+  it('okunmuş dosya yokken uygulama ve vazgeçme isteği sorun çıkarmaz', async () => {
+    windows.roleOf.mockReturnValue('menu')
+    send(IPC.charactersCancelImport, 'anahtar')
+    send(IPC.charactersCancelImport, undefined)
+    expect(await invoke(IPC.charactersApplyImport, 'anahtar')).toEqual({ ok: false, code: 'DND-306', slots: [] })
+    expect(store.getState().app.players.every((player) => player.name === '')).toBe(true)
   })
 })
 

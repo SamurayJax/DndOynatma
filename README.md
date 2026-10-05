@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.9.2 (Windows)
+**Sürüm:** 0.9.3 (Windows)
 
 ## Ne yapar
 
@@ -20,6 +20,8 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
   yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
 - **Zarlar:** d20, d10 ve d3 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
   sonucu gösterir. Geçmişte hangi zarın atıldığı yazar.
+- **Karakter aktarma:** dört oyuncu kartı (isim, seviye, can, not, portre) tek dosyaya aktarılır ve
+  başka bir bilgisayarda geri alınır. Kütüphane ve pencereler taşınmaz.
 - **Otomatik kayıt:** her değişiklik kaydedilir; bilgisayar kapanıp açılsa da kaldığı yerden devam eder.
 - **Log ve hata kodları:** yapılan işlemler ve hatalar kodlarıyla log dosyasına yazılır.
 
@@ -36,7 +38,8 @@ Kurulum dosyasının nasıl üretildiği: [docs/PAKETLEME.md](docs/PAKETLEME.md)
 ## Kullanım
 
 1. **Ayarlar › Oyuncular:** oyuncuların portresini, adını ve seviyesini gir. Dolu kartlar oyunda
-   görünür, boş kartlar görünmez.
+   görünür, boş kartlar görünmez. "Dışa aktar" kartları tek bir `.dndkarakter` dosyasına yazar;
+   "İçe aktar" o dosyadaki kartları, hangilerinin değişeceğini gösterip onay aldıktan sonra getirir.
 2. **Ayarlar › Kütüphane:** görselleri bölmelere yükle (PNG, JPG, WEBP).
 3. **Ayarlar › Pencereler:** sahnelerini oluştur, arka plan ve atama tuşu ver.
 4. **Ayarlar › Genel:** oyun ekranının ve kontrol panelinin açılacağı monitörü seç

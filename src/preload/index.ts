@@ -53,6 +53,13 @@ const api: DndApi = {
     roll: (sides) => ipcRenderer.invoke(IPC.diceRollRequest, sides)
   },
 
+  characters: {
+    export: () => ipcRenderer.invoke(IPC.charactersExport),
+    pickImport: () => ipcRenderer.invoke(IPC.charactersPickImport),
+    applyImport: (token) => ipcRenderer.invoke(IPC.charactersApplyImport, token),
+    cancelImport: (token) => ipcRenderer.send(IPC.charactersCancelImport, token)
+  },
+
   app: {
     quit: () => ipcRenderer.send(IPC.appQuit),
     openDataFolder: () => ipcRenderer.send(IPC.appOpenDataFolder),

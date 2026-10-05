@@ -73,7 +73,7 @@ src/renderer/   arayüz
   src/lib/        useAppState, ortak yardımcılar
   src/ui/         ortak arayüz parçaları (düğme, panel, sekme, bildirim)
   src/menu/       ana menü
-  src/settings/   ayarlar: oyuncu profilleri, pencereler
+  src/settings/   ayarlar: oyuncu profilleri (ve kartları dışa / içe aktarma), pencereler
   src/library/    kütüphane paneli (ayarlarda ve kontrol panelinde kullanılır)
   src/game/       oyun ekranı: portre sütunu, oyun alanı, çizim, zar animasyonu
     dice/           zarlar: biçim (geometry), fizik, atış planı, çizim; üç zar aynı kodu kullanır
@@ -82,7 +82,7 @@ tests/          birim testleri (vitest)
   shared/ main/   ortak kod ve ana süreç
   renderer/       zarın tuvale dokunmayan kısmı: biçim, fizik, atış planı
 e2e/            uçtan uca testler (playwright + electron)
-  main/           ana süreç: kayıt, çökme, bozuk dosya, pencereler, görsel protokolü
+  main/           ana süreç: kayıt, çökme, bozuk dosya, pencereler, görsel protokolü, karakter aktarma
   oyun/           oyun ekranı: tam ekran, büyük görseller, iki pencere arası, zar
   kontrol/        kontrol paneli, kütüphane, ayarlar
   paket/          paketlenmiş uygulama

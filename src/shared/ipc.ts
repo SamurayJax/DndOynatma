@@ -24,6 +24,10 @@ export const IPC = {
   gameStart: 'dnd:game:start',
   gameEnd: 'dnd:game:end',
   diceRollRequest: 'dnd:dice:roll',
+  charactersExport: 'dnd:characters:export',
+  charactersPickImport: 'dnd:characters:pickImport',
+  charactersApplyImport: 'dnd:characters:applyImport',
+  charactersCancelImport: 'dnd:characters:cancelImport',
   appQuit: 'dnd:app:quit',
   appOpenDataFolder: 'dnd:app:openDataFolder',
   appOpenLogFolder: 'dnd:app:openLogFolder',
@@ -57,6 +61,54 @@ export interface ImportResult {
   skipped: { name: string; code: ErrorCode }[]
   /** Kullanıcı dosya seçme penceresini iptal etti. */
   canceled: boolean
+}
+
+export interface CharacterExportResult {
+  ok: boolean
+  /** Kaydetme penceresi iptal edildi. */
+  canceled: boolean
+  code: ErrorCode | null
+  /** Yazılan dosyanın adı (yol değil). */
+  fileName: string | null
+  /** Dosyaya yazılan kart sayısı. */
+  count: number
+  /** Portre dosyası bulunamadığı için portresiz yazılan kartların yuvaları. */
+  missingPortraits: number[]
+}
+
+/** Karakter dosyasındaki bir kartın, onay kutusunda gösterilecek kadar özeti. */
+export interface IncomingCard {
+  /** 0..3 */
+  slot: number
+  name: string
+  level: number
+  hp: number
+  hasNote: boolean
+  hasPortrait: boolean
+  /** Kart şu an zaten aynı (portresi dahil); içe aktarma bu karta dokunmaz. */
+  unchanged: boolean
+}
+
+/** Seçilen karakter dosyasının içeriği. Kayda henüz dokunulmamıştır. */
+export interface CharacterImportPreview {
+  ok: boolean
+  /** Dosya seçme penceresi iptal edildi. */
+  canceled: boolean
+  code: ErrorCode | null
+  /** `applyImport`'a verilecek anahtar; dosya okunamadıysa null. */
+  token: string | null
+  fileName: string
+  /** Dosyanın yazıldığı an (ISO); bilinmiyorsa null. */
+  exportedAt: string | null
+  /** Dosyadaki kartlar. Dosyada olmayan yuvalara dokunulmaz. */
+  cards: IncomingCard[]
+}
+
+export interface CharacterImportResult {
+  ok: boolean
+  code: ErrorCode | null
+  /** Değişen kartların yuvaları. */
+  slots: number[]
 }
 
 /** Kayıt klasörü sorulurken açılış penceresine verilen bilgi. */
@@ -170,6 +222,18 @@ export interface DndApi {
   dice: {
     /** Seçilen zarı atar. Sonuç ana süreçte üretilir, kaydedilir ve onDiceRoll ile yayılır. */
     roll(sides: DiceSides): Promise<DiceRoll | null>
+  }
+
+  /** Oyuncu kartlarını (bilgiler + portreler) tek dosyaya aktarma. Yalnızca ana menüden çalışır. */
+  characters: {
+    /** Kaydetme penceresi açar ve dolu kartları seçilen dosyaya yazar. */
+    export(): Promise<CharacterExportResult>
+    /** Dosya seçtirir, okur ve denetler. Kartlara dokunmaz; onay için özet döndürür. */
+    pickImport(): Promise<CharacterImportPreview>
+    /** `pickImport`'un okuduğu dosyadaki kartları, aynı numaralı kartların yerine koyar. */
+    applyImport(token: string): Promise<CharacterImportResult>
+    /** Onay kutusunda vazgeçildi; okunan dosya bellekten atılır. */
+    cancelImport(token: string): void
   }
 
   app: {

@@ -43,6 +43,10 @@ diğerinde açılır.
 Dolu kartlar oyunda görünür, boş kartlar hiç görünmez. Soldaki portre sütunu dolu
 kart sayısına göre otomatik dizilir. En fazla 4 oyuncu.
 
+Kartlar tek bir dosyaya aktarılıp başka bir bilgisayarda geri alınabilir ("Dışa aktar" /
+"İçe aktar"). Dosyada yalnızca kartlar vardır: isim, seviye, can, not ve portre. Kütüphane,
+pencereler ve yerleşimler taşınmaz.
+
 ### Kütüphane
 
 Kontrol panelinde durur; oyuncular kütüphaneyi hiç görmez (ileride gelecek boss
@@ -309,14 +313,23 @@ Yalnızca üç zar var: d3, d10, d20. Başka zar ve formül yok.
 **Bitti sayılır:** Üç zar da atılır, yuvarlanır ve üstte gelen sayı gösterilen sonuçla aynıdır
 (her zar için en az 30 atışlık otomatik denetim). d20'nin bugünkü davranışı değişmez.
 
-### 4. Karakterleri dışa / içe aktarma (0.9.3)
+### 4. Karakterleri dışa / içe aktarma (0.9.3) — yapıldı
 
 Yalnızca karakter bilgileri taşınır: dört oyuncu kartının adı, seviyesi, canı, notu ve portresi.
 Kütüphane, pencereler ve yerleşimler taşınmaz; onları herkes kendisi kurar.
 
 - Ayarlar › Oyuncular'da "Dışa aktar": tek bir dosya üretir (bilgiler + portre görselleri).
+  Dosyanın uzantısı `.dndkarakter`; boş kartlar dosyaya girmez.
 - "İçe aktar": dosyayı okur, hangi kartların değişeceğini gösterir, onaydan sonra uygular.
+  Dosyadaki kart aynı numaralı kartın yerine geçer; dosyada olmayan karta dokunulmaz. Zaten aynı
+  olan kart "Zaten aynı" diye gösterilir ve yeniden yazılmaz. Yerine geçilen kartın eski portresi
+  Geri Dönüşüm Kutusu'na gider.
+- Aktarma yalnızca ana menüdeki ayarlardan yapılır, oyun sırasında yapılmaz.
 - Birden fazla kampanya / kayıt yok; düzen değiştirmek için pencereler yeterli.
+
+Dosya biçimi: imza satırı, başlık (kartların bilgileri, JSON) ve ardından portrelerin kendi
+baytları. Portreler olduğu gibi durur; dosya, portrelerin toplamından yalnızca biraz büyüktür.
+Dosya dışarıdan geldiği için okurken her alan denetlenir; tutarsız dosya bütünüyle reddedilir.
 
 **Bitti sayılır:** Bir bilgisayarda dışa aktarılan dosya başka bir kayıt klasöründe içe aktarılınca
 dört kart portreleriyle birlikte aynı gelir. Bozuk ya da yabancı dosya kaydı bozmaz.

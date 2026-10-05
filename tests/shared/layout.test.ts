@@ -9,6 +9,7 @@ import {
   findImage,
   findScene,
   isPlayerFilled,
+  isPlayerPristine,
   playArea,
   portraitColumnWidth,
   Rect,
@@ -73,6 +74,24 @@ describe('isPlayerFilled', () => {
 
   it('seviye, can ve not kartı doldurmaz', () => {
     expect(isPlayerFilled({ ...createEmptyPlayer(), level: 7, hp: 3, note: 'not' })).toBe(false)
+  })
+})
+
+describe('isPlayerPristine', () => {
+  it('yalnızca hiçbir alanı dolu olmayan kartı boş sayar', () => {
+    const empty = createEmptyPlayer()
+    expect(isPlayerPristine(empty)).toBe(true)
+    expect(isPlayerPristine({ ...empty, name: ' ' })).toBe(false)
+    expect(isPlayerPristine({ ...empty, note: 'not' })).toBe(false)
+    expect(isPlayerPristine({ ...empty, level: 2 })).toBe(false)
+    expect(isPlayerPristine({ ...empty, hp: empty.hp - 1 })).toBe(false)
+    expect(isPlayerPristine({ ...empty, portraitId: 'p' })).toBe(false)
+  })
+
+  it('oyunda görünmeyen ama notu kalmış kart boş değildir', () => {
+    const player = { ...createEmptyPlayer(), note: 'oyunda alındı' }
+    expect(isPlayerFilled(player)).toBe(false)
+    expect(isPlayerPristine(player)).toBe(false)
   })
 })
 
