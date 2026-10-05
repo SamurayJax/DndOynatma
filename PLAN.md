@@ -231,22 +231,125 @@ sürüm etiketi verilir. Her adımın sonunda uygulama çalışır durumdadır.
 | 8 | Paketleme: Windows için kurulabilir .exe | v0.8 |
 | 9 | Gerçek oturum denemesi ve düzeltmeler | v1.0 |
 
-## Faz 1 sonrası (küçük eklemeler)
+## Sürüm 1.0 yolu
 
-- Kontrol panelinde komut satırı (`/can 3 -5` gibi)
+Faz 1 (sürüm 0.8.1) kullanıcı tarafından denendi ve çalışıyor. Aşağıdaki beş iş bitip
+sorunsuz çalıştığı görülünce sürüm 1.0 "tam sürüm" olarak çıkar. Sıra, veri güvenliği
+önce gelecek şekilde seçildi.
+
+Her iş ayrı dalda yapılır; kullanıcı deneyip onaylayınca `main`'e birleştirilir.
+
+| Sıra | İş | Sürüm |
+|------|----|-------|
+| 0 | `faz-1` dalını `main`'e birleştir, `v0.8.1` etiketi | 0.8.1 |
+| 1 | Kayıt yeri: yerel klasör seçimi | 0.9.0 |
+| 2 | Kalem: kalınlık ve silgi | 0.9.1 |
+| 3 | Zarlar: d3 ve d10 | 0.9.2 |
+| 4 | Karakterleri dışa / içe aktarma | 0.9.3 |
+| 5 | Müzik | 0.9.4 |
+| 6 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
+
+### 1. Kayıt yeri (0.9.0)
+
+Kayıt şu an `Belgeler\DndOynatma` klasöründe; bu bilgisayarda Belgeler OneDrive'a bağlı
+olduğu için kayıt, görseller ve log buluta eşitleniyor. Kayıt yerelde durmalı.
+
+- İlk açılışta uygulama kaydın nereye yapılacağını sorar. Kullanıcı bir klasör seçer; uygulama
+  onun içine kendi klasörünü (`DndOynatma Kayıt`) açar ve her şeyi oraya yazar.
+- Önerilen varsayılan eşitlenmeyen bir yerdir (kullanıcı klasörünün kökü). Seçilen yer OneDrive,
+  Dropbox ya da Google Drive içindeyse uyarı gösterilir (engellenmez).
+- Eski yerde (`Belgeler\DndOynatma`) kayıt varsa yeni yere taşımayı önerir; taşıma önce kopyalar,
+  kopya doğrulanınca eskisini Geri Dönüşüm Kutusu'na gönderir.
+- Ayarlar › Genel'de "Kayıt klasörünü değiştir": aynı taşıma adımlarıyla.
+- Seçilen klasörün yolu küçük bir yerel ayar dosyasında (uygulamanın kendi ayar klasöründe) durur.
+  Klasör bulunamazsa (silinmiş, disk takılı değil) uygulama boş kayıt açmaz; yeniden sorar.
+- Yeni hata kodları: klasör seçilemedi / yazılamıyor, taşıma yarıda kaldı.
+
+**Bitti sayılır:** İlk açılışta klasör sorulur ve kayıt orada oluşur. Eski kayıt eksiksiz taşınır
+(görseller dahil). Klasör değiştirilince hiçbir şey kaybolmaz. Seçilen klasör yokken açılış veri
+kaybettirmez.
+
+### 2. Kalem: kalınlık ve silgi (0.9.1)
+
+- Kalınlık: ince / orta / kalın, kontrol panelinden seçilir; her çizgi çizildiği kalınlığı korur.
+- Silgi: ayrı bir araç. Üstünden geçilen yerdeki çizimi siler (çizginin tamamını değil, silginin
+  değdiği kısmı). Silgi yalnızca çizimleri etkiler; görsellere dokunmaz.
+- "Çizimi temizle" ve çizimin pencereye ait olması aynen kalır.
+
+**Bitti sayılır:** Üç kalınlık oyun ekranında ayırt edilir. Silgi çizginin bir kısmını siler,
+altındaki görsel bozulmaz. Silinen kısım pencere değişip geri gelince de silik kalır.
+
+### 3. Zarlar: d3 ve d10 (0.9.2)
+
+Yalnızca üç zar olacak: d3, d10, d20. Başka zar ve formül yok.
+
+- d10: gerçek on yüzlü zar biçimi (uçurtma yüzlü).
+- d3: fiziksel d3'lerde olduğu gibi, yüzlerinde 1-2-3 ikişer kez yazan küp.
+- Kontrol panelinde üç zar düğmesi; atış geçmişinde hangi zarın atıldığı görünür.
+- Zar kodu şu an yalnızca 20 yüzlü biçime göre yazılı; biçim (köşeler, yüzler, rakamlar,
+  simetriler) ayrı bir tanıma çıkarılıp üç zar aynı fizik ve çizim koduyla çalışacak.
+
+**Bitti sayılır:** Üç zar da atılır, yuvarlanır ve üstte gelen sayı gösterilen sonuçla aynıdır
+(her zar için en az 30 atışlık otomatik denetim). d20'nin bugünkü davranışı değişmez.
+
+### 4. Karakterleri dışa / içe aktarma (0.9.3)
+
+Yalnızca karakter bilgileri taşınır: dört oyuncu kartının adı, seviyesi, canı, notu ve portresi.
+Kütüphane, pencereler ve yerleşimler taşınmaz; onları herkes kendisi kurar.
+
+- Ayarlar › Oyuncular'da "Dışa aktar": tek bir dosya üretir (bilgiler + portre görselleri).
+- "İçe aktar": dosyayı okur, hangi kartların değişeceğini gösterir, onaydan sonra uygular.
+- Birden fazla kampanya / kayıt yok; düzen değiştirmek için pencereler yeterli.
+
+**Bitti sayılır:** Bir bilgisayarda dışa aktarılan dosya başka bir kayıt klasöründe içe aktarılınca
+dört kart portreleriyle birlikte aynı gelir. Bozuk ya da yabancı dosya kaydı bozmaz.
+
+### 5. Müzik (0.9.4)
+
+İstek: kontrol panelinden, önceden seçilmiş şarkılar uygulamanın içinde çalsın; müzik oyunculara
+uygulama üzerinden verilsin.
+
+Araştırma sonucu (2026-10-05):
+
+- YouTube Music'in resmi bir oynatma arayüzü yok; hesaba bağlanıp kütüphaneyi okumak ancak
+  resmi olmayan, kullanım koşullarına aykırı yöntemlerle mümkün. **Yapılmayacak.**
+- Google, uygulama içine gömülü tarayıcıda hesap girişini engelliyor; yani uygulama içinde
+  YouTube Music'e giriş yapılamaz (Premium hesabın reklamsızlığı uygulamaya taşınamaz).
+- Resmi yol: YouTube'un gömülü oynatıcısı. Şarkı ya da çalma listesi **bağlantısı** yapıştırılır,
+  uygulama onu çalar. Kısıtlar: bazı resmi müzik videoları gömülü oynatmaya kapalıdır; reklam
+  çıkabilir. Paketlenmiş uygulamada oynatıcının çalışması için arayüzün dosyadan değil yerel bir
+  adresten sunulması gerekir (aksi halde "Hata 153").
+- Her zaman çalışan yol: bilgisayardaki ses dosyaları (mp3, ogg, wav).
+
+Plan, iki aşama:
+
+1. **Deneme (karar öncesi):** gömülü oynatıcı paketlenmiş uygulamada çalışıyor mu; Discord'da
+   oyun ekranı penceresi sesle paylaşılınca müzik karşıya gidiyor mu. Sonuç kullanıcıya gösterilir.
+2. **Müzik paneli:** kontrol panelinde kayıtlı parça listesi. Her parça ya bir YouTube bağlantısı
+   (deneme olumluysa) ya da yerel ses dosyasıdır. Çal / duraklat, ses düzeyi, tekrar. Liste
+   kayda girer.
+
+**Bitti sayılır:** Listeye eklenen parça kontrol panelinden çalınır ve Discord'da karşı taraf duyar.
+Uygulama kapatılıp açılınca liste yerindedir. Çalınamayan bağlantı açık bir hata koduyla bildirilir.
+
+### Kararlar (2026-10-05)
+
+- Mevcut arka planın kartına tekrar tıklamak hiçbir şey yapmaz; böyle kalacak.
+- Kontrol panelindeki can denetimi olduğu gibi kalacak; komut satırı (`/can 3 -5`) yapılmayacak.
+- Birden fazla kampanya yapılmayacak.
+- Zarlar d3, d10, d20 ile sınırlı; formül (`2d6+3`) yapılmayacak.
+- Dışa aktarma yalnızca karakter bilgileri ve portreler.
+
+### İstenirse (sıraya alınmadı)
+
 - Özel kütüphane bölmesi ekleme / yeniden adlandırma
 - Eşyanın hangi oyuncuda olduğunu işaretleme
-- Diğer zarlar ve `2d6+3` gibi formüller
-- 20 ve 1 gelince özel vurgu
-- Kalem için başka renkler, kalınlık, silgi
-- Birden fazla kampanya (ayrı kayıtlar)
-- Notları Obsidian vault'una aktarma
+- Kalem için başka renkler
 - Pencere geçiş efekti
-- Dışa / içe aktarma (başka bilgisayara taşıma)
-- Müzik / ortam sesi
+- Notları Obsidian vault'una aktarma
 
-## Faz 2 — Çevrimiçi oda (ileri hedef)
+## Faz 2 — Çevrimiçi oda (ertelendi)
 
-Oyuncuların linkle katıldığı, kendi zarını attığı ortak oda.
+Oyuncuların linkle katıldığı, kendi zarını attığı ortak oda. Kullanıcı kararıyla (2026-10-05)
+süresiz ertelendi; sürüm 1.0'dan önce ele alınmayacak.
 Aday altyapı: Cloudflare Workers + Durable Objects (ücretsiz plan), zar sunucuda atılır.
-Ayrıntılar Faz 1 bittikten sonra planlanacak.
