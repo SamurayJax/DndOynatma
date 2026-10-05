@@ -316,17 +316,17 @@ describe('ana menü', () => {
 })
 
 describe('oyunu başlatma', () => {
-  it('oyun ekranını ikinci monitörde, kontrol panelini ana monitörde açar', () => {
+  it('oyun ekranını büyük monitörde, kontrol panelini diğer monitörde açar', () => {
     const { menu, game, control } = startPlaying()
 
     expect(game.options.title).toBe('DndOynatma — Oyun Ekranı')
     expect(game.options.backgroundColor).toBe('#000000')
     expect(game.options.fullscreen).toBe(true)
-    expect(game.options.x).toBeGreaterThanOrEqual(2560)
+    expect(game.options.x).toBeLessThan(2560)
     expect(game.options.webPreferences).toMatchObject({ contextIsolation: true, nodeIntegration: false, sandbox: true })
 
     expect(control.options.title).toBe('DndOynatma — Kontrol Paneli')
-    expect(control.options.x).toBeLessThan(2560)
+    expect(control.options.x).toBeGreaterThanOrEqual(2560)
     expect(control.maximized).toBe(true)
 
     expect(game.visible).toBe(true)

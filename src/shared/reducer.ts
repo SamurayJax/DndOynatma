@@ -10,6 +10,7 @@ import { Action, ReduceIssue, ReduceResult } from './actions'
 import { ErrorCode } from './errors'
 import { categoryInfo, containRect, coverRect, findImage, playArea, Rect } from './layout'
 import {
+  AppSettings,
   AppState,
   createEmptyPlayer,
   FullState,
@@ -42,13 +43,13 @@ export const MAX_HOTKEY = 9
 
 const TOOLS: readonly Tool[] = ['mouse', 'pen-red', 'pen-black']
 const REORDER_TARGETS = ['front', 'back', 'forward', 'backward'] as const
-const GEOMETRY_KEYS = ['x', 'y', 'width', 'height'] as const
+const GEOMETRY_KEYS = ['x', 'y', 'width', 'height', 'rotation'] as const
 const FALLBACK_SCENE_NAME = 'Pencere 1'
 /** Boyut farkı bunun altındaysa kayan nokta gürültüsüdür; öğe değişmemiş sayılır. */
 const SIZE_EPSILON = 1e-6
 
 type ActionOf<T extends Action['type']> = Extract<Action, { type: T }>
-type ItemPatch = Partial<Pick<StageItem, 'x' | 'y' | 'width' | 'height' | 'label'>>
+type ItemPatch = Partial<Pick<StageItem, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'label'>>
 interface Size {
   width: number
   height: number
@@ -340,9 +341,8 @@ function removeScene(state: FullState, action: ActionOf<'scene/remove'>): Reduce
   const scenes = app.scenes.filter((other) => other !== scene)
   if (app.activeSceneId !== scene.id) return { state: withApp(state, { ...app, scenes }) }
 
-  // Ekrandaki pencere değişti; eski pencerenin üstüne çizilenler yenisinde kalmamalı.
   const activeSceneId = scenes.length > 0 ? scenes[0].id : null
-  return { state: { ...state, app: { ...app, scenes, activeSceneId }, session: bumpNonce(state.session) } }
+  return { state: withApp(state, { ...app, scenes, activeSceneId }) }
 }
 
 function setActiveScene(state: FullState, action: ActionOf<'scene/setActive'>): ReduceResult {
@@ -360,10 +360,10 @@ function activateHotkey(state: FullState, action: ActionOf<'scene/activateHotkey
   return scene ? activateScene(state, scene) : { state }
 }
 
-/** Pencere gerçekten değişiyorsa çizimler de silinir (drawingNonce artar). */
+/** Çizimler pencereye aittir ve oyun ekranında tutulur; pencere değişimi onları silmez. */
 function activateScene(state: FullState, scene: SceneWindow): ReduceResult {
   if (state.app.activeSceneId === scene.id) return { state }
-  return { state: { ...state, app: { ...state.app, activeSceneId: scene.id }, session: bumpNonce(state.session) } }
+  return { state: withApp(state, { ...state.app, activeSceneId: scene.id }) }
 }
 
 function createScene(id: ID, name: string): SceneWindow {
@@ -430,10 +430,10 @@ function placeImage(state: FullState, action: ActionOf<'stage/setBackground' | '
 
   const area = playArea(app)
   const nextScene: SceneWindow = asBackground
-    ? { ...scene, background: { id: itemId, imageId: image.id, ...coverRect(image.width, image.height, area), label: '' } }
+    ? { ...scene, background: { id: itemId, imageId: image.id, ...coverRect(image.width, image.height, area), rotation: 0, label: '' } }
     : {
         ...scene,
-        items: [...scene.items, { id: itemId, imageId: image.id, ...initialItemRect(image, area), label: '' }]
+        items: [...scene.items, { id: itemId, imageId: image.id, ...initialItemRect(image, area), rotation: 0, label: '' }]
       }
   const scenes = target.isNew ? [...app.scenes, nextScene] : app.scenes.map((other) => (other === scene ? nextScene : other))
   return { state: withApp(state, { ...app, scenes, activeSceneId: target.activeSceneId }) }
@@ -569,8 +569,9 @@ function applyItemPatch(item: StageItem, patch: ItemPatch, reference: Size, area
   // Merkez oyun alanının içinde kalır; görsel dışarı sürüklenip ya da portre sütununun altına girip kaybolmaz.
   const { x, y } = clampCenter(patch.x ?? item.x, patch.y ?? item.y, width, height, area)
   const label = patch.label === undefined ? item.label : truncate(patch.label, TEXT_LIMITS.itemLabel)
+  const rotation = patch.rotation === undefined ? item.rotation : normalizeRotation(patch.rotation)
 
-  const next: StageItem = { ...item, x, y, width, height, label }
+  const next: StageItem = { ...item, x, y, width, height, rotation, label }
   return shallowEqual(item, next) ? item : next
 }
 
@@ -597,6 +598,15 @@ function fitSize(patch: ItemPatch, reference: Size): Size {
     }
   }
   return { width, height }
+}
+
+/**
+ * Açıyı 0 <= açı < 360 aralığına çeker ve yüzde bir dereceye yuvarlar: tutamaçla döndürmede
+ * 90 yerine 90.00000000000001 gibi değerler gelebiliyor, kayıtta ve karşılaştırmada temiz açı durmalı.
+ */
+function normalizeRotation(degrees: number): number {
+  const turned = Math.round((((degrees % 360) + 360) % 360) * 100) / 100
+  return turned >= 360 ? 0 : turned
 }
 
 function clampCenter(x: number, y: number, width: number, height: number, area: Rect): { x: number; y: number } {
@@ -661,12 +671,15 @@ function updateSettings(state: FullState, action: ActionOf<'settings/update'>): 
   if (!isRecord(patch)) return reject(state, 'DND-306', 'settings/update: patch bir nesne değil.')
 
   const current = state.app.settings
-  const displayId = patch.gameDisplayId
   const fullscreen = patch.gameFullscreen
-  const gameDisplayId = displayId === null || isFiniteNumber(displayId) ? displayId : current.gameDisplayId
-  const gameFullscreen = typeof fullscreen === 'boolean' ? fullscreen : current.gameFullscreen
-  if (gameDisplayId === current.gameDisplayId && gameFullscreen === current.gameFullscreen) return { state }
-  return { state: withApp(state, { ...state.app, settings: { ...current, gameDisplayId, gameFullscreen } }) }
+  const displayChoice = (value: unknown, previous: number | null): number | null =>
+    value === null || isFiniteNumber(value) ? value : previous
+  const next: AppSettings = {
+    gameDisplayId: displayChoice(patch.gameDisplayId, current.gameDisplayId),
+    controlDisplayId: displayChoice(patch.controlDisplayId, current.controlDisplayId),
+    gameFullscreen: typeof fullscreen === 'boolean' ? fullscreen : current.gameFullscreen
+  }
+  return shallowEqual(current, next) ? { state } : { state: withApp(state, { ...state.app, settings: next }) }
 }
 
 function setTool(state: FullState, action: ActionOf<'session/setTool'>): ReduceResult {
@@ -674,9 +687,8 @@ function setTool(state: FullState, action: ActionOf<'session/setTool'>): ReduceR
   if (!TOOLS.includes(tool)) return reject(state, 'DND-306', `session/setTool: araç geçersiz: ${show(tool)}`)
   const session = state.session
   if (tool === session.tool) return { state }
-  // Kalemden fareye dönünce çizimler silinir. Araç değiştiği için eski araç zaten fare değildi.
-  const next: SessionState = { ...session, tool }
-  return { state: withSession(state, tool === 'mouse' ? bumpNonce(next) : next) }
+  // Araç değişimi çizimlere dokunmaz: çizdikten sonra fareye geçip görsel taşımak gerekebilir.
+  return { state: withSession(state, { ...session, tool }) }
 }
 
 // --- Ortak yardımcılar -------------------------------------------------------

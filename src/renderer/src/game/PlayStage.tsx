@@ -9,7 +9,7 @@ import type { ID } from '@shared/types'
 import { dispatch, useApp, useSession } from '@renderer/lib/useAppState'
 import { ErrorBoundary } from '@renderer/ui'
 import { DrawingLayer } from './DrawingLayer'
-import { isInside } from './itemGeometry'
+import { isInside, quarterTurn } from './itemGeometry'
 import { ITEM_NODE_NAME, StageItemNode } from './StageItemNode'
 import { stagePalette } from './stageTheme'
 import type { FitScale } from './useFitScale'
@@ -38,6 +38,9 @@ interface Press {
 type BoundBoxFunc = NonNullable<Konva.TransformerConfig['boundBoxFunc']>
 
 const CORNER_ANCHORS = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+/** Döndürme tutamacı bu açılara yaklaşınca yapışır; ters ya da yan duran görsel tam düzelir. */
+const ROTATION_SNAPS = [0, 90, 180, 270]
+const ROTATION_SNAP_TOLERANCE = 8
 /** Basıp bırakma arasında fare bundan çok kaydıysa (ekran pikseli) çift tıklamanın parçası sayılmaz. */
 const CLICK_SLOP = 4
 /** Çift tıklama: iki tıklama arasındaki en uzun süre (ms) ve en büyük kayma (ekran pikseli). */
@@ -98,6 +101,9 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
   const sceneId = scene?.id ?? null
   const background = scene?.background ?? null
   const backgroundId = background?.id ?? null
+  // Tuş dinleyicisi her durum değişiminde yeniden kurulmasın diye güncel pencere buradan okunur.
+  const sceneRef = useRef(scene)
+  sceneRef.current = scene
 
   // Seçim ancak fare aracında, etkin pencerede ve öğe hâlâ duruyorsa geçerlidir.
   let selectedId: ID | null = null
@@ -190,6 +196,21 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
         case 'End':
           reorder('back')
           break
+        case 'r':
+        case 'R': {
+          // R: saat yönünde çeyrek tur, Shift+R: ters yönde. Ctrl+R gibi birleşimlere dokunulmaz.
+          if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return
+          const current = sceneRef.current
+          const target = backgroundSelected ? current?.background : current?.items.find((item) => item.id === itemId)
+          if (!target) return
+          dispatch({
+            type: 'stage/updateItem',
+            sceneId,
+            itemId,
+            patch: { rotation: quarterTurn(target.rotation, event.shiftKey ? -1 : 1) }
+          })
+          break
+        }
         default:
           return
       }
@@ -327,7 +348,10 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
             ref={transformerRef}
             visible={selectedId !== null}
             keepRatio
-            rotateEnabled={false}
+            rotateEnabled
+            rotationSnaps={ROTATION_SNAPS}
+            rotationSnapTolerance={ROTATION_SNAP_TOLERANCE}
+            rotateAnchorOffset={36}
             flipEnabled={false}
             ignoreStroke
             enabledAnchors={CORNER_ANCHORS}
@@ -343,7 +367,7 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
         </Layer>
         {/* Çizim katmanındaki bir hata oyun ekranının tamamını düşürmesin. */}
         <ErrorBoundary scope="çizim" fallback={null}>
-          <DrawingLayer tool={session.tool} nonce={session.drawingNonce} area={area} />
+          <DrawingLayer tool={session.tool} nonce={session.drawingNonce} area={area} sceneId={sceneId} />
         </ErrorBoundary>
       </Stage>
     </div>

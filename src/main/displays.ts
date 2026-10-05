@@ -25,15 +25,29 @@ export interface WindowPlan {
   shared: boolean
 }
 
+/** Fiziksel piksel sayısı; "en büyük monitör" karşılaştırması için. */
+function pixelCount(display: DisplayLike): number {
+  return display.bounds.width * display.bounds.height * display.scaleFactor * display.scaleFactor
+}
+
 export function pickGameDisplay(displays: readonly DisplayLike[], primaryId: number, preferredId: number | null): DisplayLike {
   const primary = displays.find((d) => d.id === primaryId) ?? displays[0]
   const preferred = preferredId === null ? undefined : displays.find((d) => d.id === preferredId)
   if (preferred) return preferred
-  // Seçim yoksa ya da seçilen monitör artık takılı değilse: paylaşılan ekran DM'in ana ekranı olmasın.
-  return displays.find((d) => d.id !== primary.id) ?? primary
+  // Seçim yoksa ya da seçilen monitör artık takılı değilse: oyuncuların izlediği ekran en büyük monitöre gider.
+  // Eşit büyüklükte ana monitör DM'e kalır.
+  return [...displays].sort((a, b) => pixelCount(b) - pixelCount(a) || Number(a.id === primary.id) - Number(b.id === primary.id))[0]
 }
 
-export function pickControlDisplay(displays: readonly DisplayLike[], primaryId: number, game: DisplayLike): DisplayLike {
+export function pickControlDisplay(
+  displays: readonly DisplayLike[],
+  primaryId: number,
+  game: DisplayLike,
+  preferredId: number | null = null
+): DisplayLike {
+  // Açıkça seçilen monitör, oyun ekranıyla aynı olsa bile kullanılır (iki pencere yan yana açılır).
+  const preferred = preferredId === null ? undefined : displays.find((d) => d.id === preferredId)
+  if (preferred) return preferred
   const primary = displays.find((d) => d.id === primaryId) ?? displays[0]
   if (primary.id !== game.id) return primary
   return displays.find((d) => d.id !== game.id) ?? game
@@ -54,10 +68,10 @@ function centered16by9(area: Bounds, fraction: number): Bounds {
 export function planGameWindows(
   displays: readonly DisplayLike[],
   primaryId: number,
-  settings: { gameDisplayId: number | null; gameFullscreen: boolean }
+  settings: { gameDisplayId: number | null; controlDisplayId: number | null; gameFullscreen: boolean }
 ): WindowPlan {
   const gameDisplay = pickGameDisplay(displays, primaryId, settings.gameDisplayId)
-  const controlDisplay = pickControlDisplay(displays, primaryId, gameDisplay)
+  const controlDisplay = pickControlDisplay(displays, primaryId, gameDisplay, settings.controlDisplayId)
   const shared = gameDisplay.id === controlDisplay.id
 
   if (!shared) {

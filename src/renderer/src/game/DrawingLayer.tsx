@@ -1,9 +1,9 @@
-import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import type Konva from 'konva'
 import { Layer, Line, Rect as HitRect } from 'react-konva'
 import type { Rect } from '@shared/layout'
-import type { Tool } from '@shared/types'
+import type { ID, Tool } from '@shared/types'
 
 type Pen = Exclude<Tool, 'mouse'>
 
@@ -74,18 +74,27 @@ const StrokeLines = memo(function StrokeLines({ stroke }: { stroke: Stroke }): J
   )
 })
 
+/** Çizgi kimlikleri pencereler ve yeniden kurulumlar arasında çakışmasın diye tek sayaçtan verilir. */
+let nextStrokeId = 1
+
+interface DrawingSurfaceProps {
+  pen: Pen | null
+  area: Rect
+  /** Bu pencerenin bitmiş çizgileri; katmanda tutulur ki pencere değişip geri gelince dursunlar. */
+  strokes: Stroke[]
+  setStrokes: (update: (previous: Stroke[]) => Stroke[]) => void
+}
+
 /**
- * Çizgileri tutar ve çizer. Katman bunu `key={nonce}` ile kurar: sayaç değişince bileşen
- * baştan kurulur, yarım kalan çizgi dahil her şey silinir.
+ * Bir pencerenin çizgilerini çizer ve yenilerini toplar. Katman bunu pencere ve sayaçla anahtarlar:
+ * pencere ya da sayaç değişince baştan kurulur, yarım kalan çizgi bırakılır.
  */
-function DrawingSurface({ pen, area }: { pen: Pen | null; area: Rect }): JSX.Element {
-  const [strokes, setStrokes] = useState<Stroke[]>([])
+function DrawingSurface({ pen, area, strokes, setStrokes }: DrawingSurfaceProps): JSX.Element {
   // Çizilmekte olan çizgi React durumuna girmez; bu iki Konva çizgisi doğrudan güncellenir.
   const haloRef = useRef<Konva.Line>(null)
   const inkRef = useRef<Konva.Line>(null)
   const activeRef = useRef<ActiveStroke | null>(null)
   const stopTrackingRef = useRef<(() => void) | null>(null)
-  const nextIdRef = useRef(1)
   const penActive = pen !== null
 
   const paint = (active: ActiveStroke): void => {
@@ -143,7 +152,7 @@ function DrawingSurface({ pen, area }: { pen: Pen | null; area: Rect }): JSX.Ele
     if (!active) return
     activeRef.current = null
     stopTracking()
-    const stroke: Stroke = { id: nextIdRef.current++, pen: active.pen, points: active.points }
+    const stroke: Stroke = { id: nextStrokeId++, pen: active.pen, points: active.points }
     // Geçici çizgi burada silinmez: React yeni çizgiyi çizene kadar ekranda kalır, yoksa bir an kaybolur.
     setStrokes((previous) => [...previous, stroke])
   }
@@ -212,7 +221,7 @@ function DrawingSurface({ pen, area }: { pen: Pen | null; area: Rect }): JSX.Ele
     // `finish` yalnızca ref'lere dokunur; hangi çizimdeki kopyası çağrılırsa çağrılsın aynı işi yapar.
   }, [penActive])
 
-  // Sökülürken (sayaç değişti ya da oyun ekranı kapandı) yarım çizgi dinleyicileriyle birlikte bırakılır.
+  // Sökülürken (pencere ya da sayaç değişti, oyun ekranı kapandı) yarım çizgi dinleyicileriyle birlikte bırakılır.
   useEffect(
     () => () => {
       stopTracking()
@@ -249,17 +258,52 @@ function DrawingSurface({ pen, area }: { pen: Pen | null; area: Rect }): JSX.Ele
   )
 }
 
+interface DrawingStore {
+  /** Çizimlerin en son temizlendiği sayaç değeri. */
+  nonce: number
+  byScene: Record<string, Stroke[]>
+}
+
+const NO_STROKES: Stroke[] = []
+/** Hiç pencere yokken çizilenlerin tutulduğu anahtar. */
+const NO_SCENE = '(pencere yok)'
+
 /**
  * Kalem çizimleri: GameScreen'deki `<Stage>` içinde en üst katman.
- * `tool`: seçili araç (kalem seçiliyken çizilir). `nonce`: her değişiminde çizimler silinir
- * (`session.drawingNonce`). `area`: çizilebilen oyun alanı (sanal koordinat).
- * Çizimler hiçbir duruma girmez; yalnızca bu pencerenin belleğinde yaşar.
+ * `tool`: seçili araç (kalem seçiliyken çizilir). `area`: çizilebilen oyun alanı (sanal koordinat).
+ * `sceneId`: çizimler pencereye aittir; başka pencereye geçince gizlenir, geri dönünce yeniden görünür.
+ * `nonce`: her değişiminde o an açık olan pencerenin çizimleri silinir ("Çizimi temizle").
+ * Araç değişimi çizimleri silmez: çizdikten sonra fareye geçip görsel taşınabilir.
+ * Çizimler hiçbir duruma girmez; yalnızca bu pencerenin belleğinde yaşar ve oyun bitince kaybolur.
  */
-export function DrawingLayer(props: { tool: Tool; nonce: number; area: Rect }): JSX.Element | null {
+export function DrawingLayer(props: { tool: Tool; nonce: number; area: Rect; sceneId: ID | null }): JSX.Element | null {
   const { tool, nonce, area } = props
+  const sceneKey = props.sceneId ?? NO_SCENE
   const pen = tool === 'mouse' ? null : tool
   const penActive = pen !== null
   const layerRef = useRef<Konva.Layer>(null)
+
+  const [store, setStore] = useState<DrawingStore>(() => ({ nonce, byScene: {} }))
+  let current = store
+  if (store.nonce !== nonce) {
+    // Sayaç arttı: yalnızca o an açık olan pencerenin çizimleri silinir. Çizim sırasında düzeltme
+    // (etki beklemeden) yapılır ki silinen çizgiler bir kare bile görünmesin.
+    const { [sceneKey]: _cleared, ...rest } = store.byScene
+    current = { nonce, byScene: rest }
+    setStore(current)
+  }
+  const strokes = current.byScene[sceneKey] ?? NO_STROKES
+
+  const setStrokes = useCallback(
+    (update: (previous: Stroke[]) => Stroke[]): void => {
+      setStore((previous) => {
+        const before = previous.byScene[sceneKey] ?? NO_STROKES
+        const after = update(before)
+        return after === before ? previous : { ...previous, byScene: { ...previous.byScene, [sceneKey]: after } }
+      })
+    },
+    [sceneKey]
+  )
 
   useEffect(() => {
     if (!penActive) return
@@ -286,7 +330,7 @@ export function DrawingLayer(props: { tool: Tool; nonce: number; area: Rect }): 
       clipWidth={area.width}
       clipHeight={area.height}
     >
-      <DrawingSurface key={nonce} pen={pen} area={area} />
+      <DrawingSurface key={`${sceneKey}:${nonce}`} pen={pen} area={area} strokes={strokes} setStrokes={setStrokes} />
     </Layer>
   )
 }

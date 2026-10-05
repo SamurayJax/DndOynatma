@@ -13,6 +13,7 @@ import {
   ImageIcon,
   ImageThumb,
   Panel,
+  RotateIcon,
   TextInput,
   TrashIcon,
   confirmDialog,
@@ -21,6 +22,15 @@ import {
 import { blurOnEnterOrEscape } from './leaveField'
 
 const MISSING_IMAGE_NAME = 'Görsel bulunamadı'
+
+/** Saat yönünde bir sonraki çeyrek tur; elle eğilmiş görsel en yakın düz açıya gelir. */
+function nextQuarterTurn(rotation: number): number {
+  return ((Math.floor(rotation / 90 + 0.001) + 1) * 90) % 360
+}
+
+function rotate(sceneId: ID, item: StageItem): void {
+  dispatch({ type: 'stage/updateItem', sceneId, itemId: item.id, patch: { rotation: nextQuarterTurn(item.rotation) } })
+}
 
 async function clearItems(scene: SceneWindow): Promise<void> {
   const confirmed = await confirmDialog({
@@ -107,6 +117,12 @@ const BackgroundRow = memo(function BackgroundRow({ sceneId, background, image }
       {background !== null && (
         <div className="ctl-stage__actions">
           <IconButton
+            label="Arka planı 90° döndür"
+            size="sm"
+            icon={<RotateIcon size={16} />}
+            onClick={() => rotate(sceneId, background)}
+          />
+          <IconButton
             label="Arka planı kaldır"
             size="sm"
             variant="ghost"
@@ -151,6 +167,7 @@ const ItemRow = memo(function ItemRow({ sceneId, item, image, canForward, canBac
         />
       </div>
       <div className="ctl-stage__actions">
+        <IconButton label={`${name} görselini 90° döndür`} size="sm" icon={<RotateIcon size={16} />} onClick={() => rotate(sceneId, item)} />
         <IconButton
           label="Öne al"
           size="sm"

@@ -56,7 +56,10 @@ export interface PlayerProfile {
   note: string
 }
 
-/** Oyun alanına konmuş bir görsel. x,y sol üst köşedir; en-boy oranı her zaman görselinkiyle aynıdır. */
+/**
+ * Oyun alanına konmuş bir görsel. x,y döndürülmemiş kutunun sol üst köşesidir; en-boy oranı
+ * her zaman görselinkiyle aynıdır. Döndürme kutunun merkezi etrafında yapılır.
+ */
 export interface StageItem {
   id: ID
   imageId: ID
@@ -64,6 +67,8 @@ export interface StageItem {
   y: number
   width: number
   height: number
+  /** Saat yönünde derece, 0 <= rotation < 360. */
+  rotation: number
   /** Görselin altında gösterilen kısa etiket ("7 LVL" gibi). Boş olabilir. */
   label: string
 }
@@ -80,8 +85,10 @@ export interface SceneWindow {
 }
 
 export interface AppSettings {
-  /** Oyun ekranının açılacağı monitör; null ise ikincil monitör tercih edilir. */
+  /** Oyun ekranının açılacağı monitör; null ise en büyük monitör seçilir. */
   gameDisplayId: number | null
+  /** Kontrol panelinin açılacağı monitör; null ise oyun ekranının olmadığı monitör seçilir. */
+  controlDisplayId: number | null
   gameFullscreen: boolean
 }
 
@@ -111,7 +118,7 @@ export interface DiceRoll {
 export interface SessionState {
   phase: 'menu' | 'playing'
   tool: Tool
-  /** Her artışında oyun ekranı çizimleri siler. */
+  /** Her artışında oyun ekranı, o an açık olan pencerenin çizimlerini siler ("Çizimi temizle"). */
   drawingNonce: number
   /** En yeni atış başta. */
   diceHistory: DiceRoll[]
@@ -134,7 +141,7 @@ export function createInitialAppState(): AppState {
     scenes: [],
     activeSceneId: null,
     generalNote: '',
-    settings: { gameDisplayId: null, gameFullscreen: true }
+    settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true }
   }
 }
 

@@ -39,11 +39,11 @@ function image(id: string, kind: ImageKind, width: number, height: number): Libr
 }
 
 function contained(id: string, source: LibraryImage, label = ''): StageItem {
-  return { id, imageId: source.id, ...containRect(source.width, source.height, AREA), label }
+  return { id, imageId: source.id, ...containRect(source.width, source.height, AREA), rotation: 0, label }
 }
 
 function covering(id: string, source: LibraryImage): StageItem {
-  return { id, imageId: source.id, ...coverRect(source.width, source.height, AREA), label: '' }
+  return { id, imageId: source.id, ...coverRect(source.width, source.height, AREA), rotation: 0, label: '' }
 }
 
 const NPC = image('npc', 'npc', 400, 800)
@@ -88,7 +88,7 @@ function makeState(): FullState {
       scenes,
       activeSceneId: 's1',
       generalNote: 'genel not',
-      settings: { gameDisplayId: null, gameFullscreen: true }
+      settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true }
     },
     session: { phase: 'playing', tool: 'pen-red', drawingNonce: 3, diceHistory: [] }
   })
@@ -252,7 +252,7 @@ function everyAction(): Action[] {
     { type: 'stage/addItem', sceneId: 's3', fallbackSceneId: 'f1', itemId: 'n2', imageId: 'team' },
     { type: 'stage/addItem', fallbackSceneId: 'f1', itemId: 'a1', imageId: 'npc' },
     { type: 'stage/addItem', fallbackSceneId: 'f1', itemId: 'n3', imageId: 'yok' },
-    { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { x: 10, y: 20, width: 500, height: 3, label: 'etiket' } },
+    { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { x: 10, y: 20, width: 500, height: 3, rotation: 0, label: 'etiket' } },
     { type: 'stage/updateItem', sceneId: 's1', itemId: 'b1', patch: { height: 2000 } },
     { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: {} },
     { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { x: Number.NaN } },
@@ -278,7 +278,7 @@ function everyAction(): Action[] {
     { type: 'note/setGeneral', text: 'yeni not' },
     { type: 'note/setGeneral', text: 'genel not' },
     bad({ type: 'note/setGeneral', text: 5 }),
-    { type: 'settings/update', patch: { gameDisplayId: 2, gameFullscreen: false } },
+    { type: 'settings/update', patch: { gameDisplayId: 2, controlDisplayId: null, gameFullscreen: false } },
     { type: 'settings/update', patch: {} },
     bad({ type: 'settings/update', patch: { gameDisplayId: 'x', gameFullscreen: 1 } }),
     { type: 'session/setTool', tool: 'mouse' },
@@ -931,13 +931,12 @@ describe('scene/remove', () => {
     expect(next.app.library).toBe(state.app.library)
   })
 
-  it('etkin pencere kaldırılınca kalanların ilki etkin olur ve çizimler silinir', () => {
+  it('etkin pencere kaldırılınca kalanların ilki etkin olur; çizim sayacına dokunulmaz', () => {
     const state = makeState()
     const next = apply(state, { type: 'scene/remove', sceneId: 's1' })
     expect(next.app.scenes.map((entry) => entry.id)).toEqual(['s2', 's3'])
     expect(next.app.activeSceneId).toBe('s2')
-    expect(next.session.drawingNonce).toBe(4)
-    expect(next.session.tool).toBe('pen-red')
+    expect(next.session).toBe(state.session)
   })
 
   it('son pencere de kaldırılınca etkin pencere kalmaz', () => {
@@ -948,7 +947,7 @@ describe('scene/remove', () => {
     state = apply(state, { type: 'scene/remove', sceneId: 's2' })
     expect(state.app.scenes).toEqual([])
     expect(state.app.activeSceneId).toBeNull()
-    expect(state.session.drawingNonce).toBe(5)
+    expect(state.session.drawingNonce).toBe(3)
   })
 
   it('bilinmeyen pencere DND-301 verir', () => {
@@ -958,12 +957,11 @@ describe('scene/remove', () => {
 })
 
 describe('scene/setActive', () => {
-  it('pencereyi etkin yapar ve çizim sayacını artırır', () => {
+  it('pencereyi etkin yapar; çizimler pencereye ait olduğu için sayaç artmaz', () => {
     const state = makeState()
     const next = apply(state, { type: 'scene/setActive', sceneId: 's3' })
     expect(next.app.activeSceneId).toBe('s3')
-    expect(next.session.drawingNonce).toBe(4)
-    expect(next.session.tool).toBe('pen-red')
+    expect(next.session).toBe(state.session)
     expect(next.app.scenes).toBe(state.app.scenes)
   })
 
@@ -978,11 +976,11 @@ describe('scene/setActive', () => {
 })
 
 describe('scene/activateHotkey', () => {
-  it('tuşa bağlı pencereyi etkin yapar ve çizim sayacını artırır', () => {
+  it('tuşa bağlı pencereyi etkin yapar; çizim sayacı artmaz', () => {
     const state = makeState()
     const next = apply(state, { type: 'scene/activateHotkey', hotkey: 2 })
     expect(next.app.activeSceneId).toBe('s2')
-    expect(next.session.drawingNonce).toBe(4)
+    expect(next.session).toBe(state.session)
   })
 
   it('tuş zaten etkin pencereninse aynı durumu döndürür', () => {
@@ -1013,7 +1011,7 @@ describe('stage/setBackground', () => {
     const state = makeState()
     const next = apply(state, { type: 'stage/setBackground', fallbackSceneId: 'f1', itemId: 'nb', imageId: 'scene' })
     const background = sceneOf(next, 's1').background
-    expect(background).toEqual({ id: 'nb', imageId: 'scene', ...coverRect(1000, 1000, AREA), label: '' })
+    expect(background).toEqual({ id: 'nb', imageId: 'scene', ...coverRect(1000, 1000, AREA), rotation: 0, label: '' })
     expect(background).toMatchObject({ x: 300, y: -270, width: 1620, height: 1620 })
     expect(sceneOf(next, 's1').items).toBe(sceneOf(state, 's1').items)
     expect(sceneOf(next, 's2')).toBe(sceneOf(state, 's2'))
@@ -1025,7 +1023,7 @@ describe('stage/setBackground', () => {
   it('sceneId verilirse o pencereye koyar, etkin pencere değişmez', () => {
     const state = makeState()
     const next = apply(state, { type: 'stage/setBackground', sceneId: 's2', fallbackSceneId: 'f1', itemId: 'nb', imageId: 'place' })
-    expect(sceneOf(next, 's2').background).toEqual({ id: 'nb', imageId: 'place', x: 150, y: 0, width: 1920, height: 1080, label: '' })
+    expect(sceneOf(next, 's2').background).toEqual({ id: 'nb', imageId: 'place', x: 150, y: 0, width: 1920, height: 1080, rotation: 0, label: '' })
     expect(sceneOf(next, 's1')).toBe(sceneOf(state, 's1'))
     expect(next.app.activeSceneId).toBe('s1')
   })
@@ -1071,7 +1069,7 @@ describe('stage/addItem', () => {
     const next = apply(state, { type: 'stage/addItem', fallbackSceneId: 'f1', itemId: 'n1', imageId: 'npc' })
     expect(itemIds(next, 's1')).toEqual(['a1', 'a2', 'a3', 'n1'])
     const added = itemOf(next, 's1', 'n1')
-    expect(added).toEqual({ id: 'n1', imageId: 'npc', ...containRect(400, 800, AREA), label: '' })
+    expect(added).toEqual({ id: 'n1', imageId: 'npc', ...containRect(400, 800, AREA), rotation: 0, label: '' })
     expect(added.width).toBeCloseTo(324)
     expect(added.height).toBeCloseTo(648)
     expect(centerOf(added).x).toBeCloseTo(300 + 1620 / 2)
@@ -1141,7 +1139,7 @@ describe('hiç pencere yokken yerleştirme', () => {
         name: 'Pencere 1',
         hotkey: null,
         background: null,
-        items: [{ id: 'n1', imageId: 'npc', ...containRect(400, 800, FULL_STAGE), label: '' }]
+        items: [{ id: 'n1', imageId: 'npc', ...containRect(400, 800, FULL_STAGE), rotation: 0, label: '' }]
       }
     ])
     expect(next.app.activeSceneId).toBe('f1')
@@ -1155,7 +1153,7 @@ describe('hiç pencere yokken yerleştirme', () => {
         id: 'f1',
         name: 'Pencere 1',
         hotkey: null,
-        background: { id: 'nb', imageId: 'place', x: 0, y: 0, width: 1920, height: 1080, label: '' },
+        background: { id: 'nb', imageId: 'place', x: 0, y: 0, width: 1920, height: 1080, rotation: 0, label: '' },
         items: []
       }
     ])
@@ -1253,7 +1251,7 @@ describe('stage/updateItem', () => {
     it('itemId arka planınsa arka planı günceller', () => {
       const state = makeState()
       const next = apply(state, { type: 'stage/updateItem', sceneId: 's1', itemId: 'b1', patch: { x: 0, y: 10, label: 'harita' } })
-      expect(sceneOf(next, 's1').background).toEqual({ id: 'b1', imageId: 'place', x: 0, y: 10, width: 1920, height: 1080, label: 'harita' })
+      expect(sceneOf(next, 's1').background).toEqual({ id: 'b1', imageId: 'place', x: 0, y: 10, width: 1920, height: 1080, rotation: 0, label: 'harita' })
       expect(sceneOf(next, 's1').items).toBe(sceneOf(state, 's1').items)
     })
 
@@ -1351,7 +1349,7 @@ describe('stage/updateItem', () => {
 
     it('yalnızca etiket değişse de merkezi alanın dışında kalmış (eski kayıt) öğe içeri çekilir', () => {
       const base = makeState()
-      const stray: StageItem = { id: 'k1', imageId: 'item', x: 0, y: 500, width: 200, height: 100, label: '' }
+      const stray: StageItem = { id: 'k1', imageId: 'item', x: 0, y: 500, width: 200, height: 100, rotation: 0, label: '' }
       const state = deepFreeze({
         ...base,
         app: { ...base.app, scenes: base.app.scenes.map((entry) => (entry.id === 's2' ? { ...entry, items: [...entry.items, stray] } : entry)) }
@@ -1438,7 +1436,7 @@ describe('stage/updateItem', () => {
 
   it('görseli kütüphanede bulunmayan öğede o anki oran korunur', () => {
     const base = makeState()
-    const orphan: StageItem = { id: 'o1', imageId: 'silinmis', x: 400, y: 400, width: 300, height: 100, label: '' }
+    const orphan: StageItem = { id: 'o1', imageId: 'silinmis', x: 400, y: 400, width: 300, height: 100, rotation: 0, label: '' }
     const state = deepFreeze({
       ...base,
       app: { ...base.app, scenes: base.app.scenes.map((entry) => (entry.id === 's2' ? { ...entry, items: [...entry.items, orphan] } : entry)) }
@@ -1457,11 +1455,11 @@ describe('oyun alanı değişince (portre sütunu belirir / kalkar)', () => {
         id: 's1',
         name: 'Bir',
         hotkey: 1,
-        background: { id: 'b1', imageId: 'place', ...coverRect(PLACE.width, PLACE.height, FULL_STAGE), label: '' },
+        background: { id: 'b1', imageId: 'place', ...coverRect(PLACE.width, PLACE.height, FULL_STAGE), rotation: 0, label: '' },
         items: [
-          { id: 'sol', imageId: 'item', x: 20, y: 500, width: 200, height: 100, label: 'solda' },
-          { id: 'sinir', imageId: 'item', x: 200, y: 100, width: 200, height: 100, label: '' },
-          { id: 'orta', imageId: 'npc', x: 900, y: 200, width: 324, height: 648, label: '' }
+          { id: 'sol', imageId: 'item', x: 20, y: 500, width: 200, height: 100, rotation: 0, label: 'solda' },
+          { id: 'sinir', imageId: 'item', x: 200, y: 100, width: 200, height: 100, rotation: 0, label: '' },
+          { id: 'orta', imageId: 'npc', x: 900, y: 200, width: 324, height: 648, rotation: 0, label: '' }
         ]
       },
       {
@@ -1469,10 +1467,10 @@ describe('oyun alanı değişince (portre sütunu belirir / kalkar)', () => {
         name: 'İki',
         hotkey: 2,
         // Elle sola çekilmiş arka plan: merkezi sütunun altında kalacak.
-        background: { id: 'b2', imageId: 'scene', x: -400, y: 0, width: 600, height: 600, label: '' },
-        items: [{ id: 'sol2', imageId: 'item', x: -100, y: -50, width: 200, height: 100, label: '' }]
+        background: { id: 'b2', imageId: 'scene', x: -400, y: 0, width: 600, height: 600, rotation: 0, label: '' },
+        items: [{ id: 'sol2', imageId: 'item', x: -100, y: -50, width: 200, height: 100, rotation: 0, label: '' }]
       },
-      { id: 's3', name: 'Üç', hotkey: null, background: null, items: [{ id: 'sag', imageId: 'item', x: 1500, y: 900, width: 200, height: 100, label: '' }] }
+      { id: 's3', name: 'Üç', hotkey: null, background: null, items: [{ id: 'sag', imageId: 'item', x: 1500, y: 900, width: 200, height: 100, rotation: 0, label: '' }] }
     ]
     return deepFreeze({
       ...base,
@@ -1512,7 +1510,7 @@ describe('oyun alanı değişince (portre sütunu belirir / kalkar)', () => {
   it('yerine dokunulmamış arka plan yeni alanı yeniden doldurur (iki yönde de)', () => {
     const state = wideState()
     const filled = apply(state, { type: 'player/update', slot: 0, patch: { name: 'A' } })
-    expect(itemOf(filled, 's1', 'b1')).toEqual({ id: 'b1', imageId: 'place', ...coverRect(PLACE.width, PLACE.height, AREA), label: '' })
+    expect(itemOf(filled, 's1', 'b1')).toEqual({ id: 'b1', imageId: 'place', ...coverRect(PLACE.width, PLACE.height, AREA), rotation: 0, label: '' })
 
     const emptied = apply(filled, { type: 'player/clear', slot: 0 })
     expect(itemOf(emptied, 's1', 'b1')).toEqual(itemOf(state, 's1', 'b1'))
@@ -1709,12 +1707,12 @@ describe('note/setGeneral', () => {
 describe('settings/update', () => {
   it('monitörü ve tam ekranı ayarlar', () => {
     const state = makeState()
-    const next = apply(state, { type: 'settings/update', patch: { gameDisplayId: 2528732444, gameFullscreen: false } })
-    expect(next.app.settings).toEqual({ gameDisplayId: 2528732444, gameFullscreen: false })
+    const next = apply(state, { type: 'settings/update', patch: { gameDisplayId: 2528732444, controlDisplayId: null, gameFullscreen: false } })
+    expect(next.app.settings).toEqual({ gameDisplayId: 2528732444, controlDisplayId: null, gameFullscreen: false })
     expect(next.app.scenes).toBe(state.app.scenes)
 
     const back = apply(next, { type: 'settings/update', patch: { gameDisplayId: null } })
-    expect(back.app.settings).toEqual({ gameDisplayId: null, gameFullscreen: false })
+    expect(back.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: null, gameFullscreen: false })
   })
 
   it('yanlış tipteki alanları yok sayar, doğru olanları uygular', () => {
@@ -1723,22 +1721,71 @@ describe('settings/update', () => {
     expectNoop(state, bad({ type: 'settings/update', patch: { gameDisplayId: Number.NaN, gameFullscreen: 0 } }))
 
     const next = apply(state, bad({ type: 'settings/update', patch: { gameDisplayId: 'x', gameFullscreen: false } }))
-    expect(next.app.settings).toEqual({ gameDisplayId: null, gameFullscreen: false })
+    expect(next.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: null, gameFullscreen: false })
   })
 
   it('değer aynıysa aynı durumu döndürür; patch nesne değilse DND-306 verir', () => {
     expectNoop(makeState(), { type: 'settings/update', patch: {} })
-    expectNoop(makeState(), { type: 'settings/update', patch: { gameDisplayId: null, gameFullscreen: true } })
+    expectNoop(makeState(), { type: 'settings/update', patch: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true } })
     expectRejected(makeState(), bad({ type: 'settings/update', patch: null }), 'DND-306')
     expectRejected(makeState(), bad({ type: 'settings/update' }), 'DND-306')
   })
 })
 
+describe('stage/updateItem: döndürme', () => {
+  it('açıyı uygular; konum ve boyut değişmez', () => {
+    const state = makeState()
+    const before = itemOf(state, 's1', 'a1')
+    const next = apply(state, { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { rotation: 90 } })
+    expect(itemOf(next, 's1', 'a1')).toEqual({ ...before, rotation: 90 })
+  })
+
+  it('açıyı 0–360 aralığına çeker', () => {
+    const turn = (rotation: number): number =>
+      itemOf(apply(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { rotation } }), 's1', 'a1').rotation
+    expect(turn(450)).toBe(90)
+    expect(turn(-90)).toBe(270)
+    expect(turn(725)).toBe(5)
+  })
+
+  it('arka plan da döndürülebilir', () => {
+    const next = apply(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'b1', patch: { rotation: 180 } })
+    expect(sceneOf(next, 's1').background?.rotation).toBe(180)
+  })
+
+  it('aynı açı aynı durumu döndürür; sayı olmayan açı DND-306 verir', () => {
+    expectNoop(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { rotation: 0 } })
+    expectNoop(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { rotation: 360 } })
+    expectRejected(makeState(), bad({ type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { rotation: 'ters' } }), 'DND-306')
+  })
+
+  it('yeni konan görsel ve arka plan döndürülmemiş başlar', () => {
+    let state = makeState()
+    state = apply(state, { type: 'stage/addItem', sceneId: 's1', fallbackSceneId: 'f', itemId: 'yeni', imageId: 'npc' })
+    state = apply(state, { type: 'stage/setBackground', sceneId: 's2', fallbackSceneId: 'f', itemId: 'yeni-bg', imageId: 'place' })
+    expect(itemOf(state, 's1', 'yeni').rotation).toBe(0)
+    expect(sceneOf(state, 's2').background?.rotation).toBe(0)
+  })
+})
+
+describe('settings/update: kontrol paneli monitörü', () => {
+  it('kontrol paneli monitörünü ayarlar ve otomatiğe döndürür', () => {
+    const chosen = apply(makeState(), { type: 'settings/update', patch: { controlDisplayId: 7 } })
+    expect(chosen.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: 7, gameFullscreen: true })
+    const auto = apply(chosen, { type: 'settings/update', patch: { controlDisplayId: null } })
+    expect(auto.app.settings.controlDisplayId).toBeNull()
+  })
+
+  it('yanlış tipte kontrol monitörünü yok sayar', () => {
+    expectNoop(makeState(), bad({ type: 'settings/update', patch: { controlDisplayId: 'sağdaki' } }))
+  })
+})
+
 describe('session/setTool', () => {
-  it('kalemden fareye dönünce çizim sayacını artırır', () => {
+  it('kalemden fareye dönünce çizimler silinmez (sayaç artmaz)', () => {
     const state = makeState()
     const next = apply(state, { type: 'session/setTool', tool: 'mouse' })
-    expect(next.session).toEqual({ ...state.session, tool: 'mouse', drawingNonce: 4 })
+    expect(next.session).toEqual({ ...state.session, tool: 'mouse' })
     expect(next.app).toBe(state.app)
   })
 
@@ -1752,7 +1799,7 @@ describe('session/setTool', () => {
     const mouse = apply(makeState(), { type: 'session/setTool', tool: 'mouse' })
     const pen = apply(mouse, { type: 'session/setTool', tool: 'pen-red' })
     expect(pen.session.tool).toBe('pen-red')
-    expect(pen.session.drawingNonce).toBe(4)
+    expect(pen.session.drawingNonce).toBe(3)
   })
 
   it('araç aynıysa aynı durumu döndürür (fare -> fare dahil)', () => {
@@ -1800,11 +1847,11 @@ describe('boş durumdan başlayan oturum', () => {
 
     expect(state.app.scenes.map((entry) => entry.name)).toEqual(['Pencere 1', 'Orman'])
     expect(state.app.activeSceneId).toBe('s2')
-    expect(state.session).toMatchObject({ tool: 'pen-black', drawingNonce: 1 })
+    expect(state.session).toMatchObject({ tool: 'pen-black', drawingNonce: 0 })
     expect(state.app.players[0]).toMatchObject({ name: 'Aragorn', hp: 6, portraitId: PORTRAIT_SOLO.id })
     // Oyuncu dolduktan sonra konduğu için arka plan portre sütununun sağındaki alana göre yerleşir.
     expect(sceneOf(state, 'f1').background).toMatchObject({ x: 150, y: 0, width: 1920, height: 1080 })
-    expect(itemOf(state, 'f1', 'i1')).toEqual({ id: 'i1', imageId: 'npc', x: 900, y: 300, width: 250, height: 500, label: 'Muhafız' })
+    expect(itemOf(state, 'f1', 'i1')).toEqual({ id: 'i1', imageId: 'npc', x: 900, y: 300, width: 250, height: 500, rotation: 0, label: 'Muhafız' })
 
     step({ type: 'library/remove', imageId: 'npc' })
     step({ type: 'player/clear', slot: 0 })

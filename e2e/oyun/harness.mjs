@@ -99,8 +99,10 @@ function installProbe() {
       if (!stage) return []
       return stage.find('.game-item').map((node) => ({
         id: node.id(),
-        x: node.x(),
-        y: node.y(),
+        // Düğüm merkezinden tutulur; durumla karşılaştırılabilsin diye sol üst köşe bildirilir.
+        x: node.x() - node.offsetX() * node.scaleX(),
+        y: node.y() - node.offsetY() * node.scaleY(),
+        rotation: node.rotation(),
         scaleX: node.scaleX(),
         dragging: node.isDragging(),
         listening: node.listening(),

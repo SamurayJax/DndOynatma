@@ -34,43 +34,79 @@ function useDisplays(): DisplayInfo[] | null {
   return displays
 }
 
-/** Ayarlar › Genel: oyun ekranının monitörü, tam ekran tercihi, klasörler ve sürüm. */
+interface DisplayChoice {
+  selected: string
+  options: SelectOption[]
+  /** Kayıtlı monitör şu an bağlı değil. */
+  missing: boolean
+}
+
+function displayChoice(displays: DisplayInfo[] | null, displayId: number | null, autoLabel: string): DisplayChoice {
+  const selected = displayId === null ? AUTO_DISPLAY : String(displayId)
+  const options: SelectOption[] = [
+    { value: AUTO_DISPLAY, label: autoLabel },
+    ...(displays ?? []).map((display) => ({ value: String(display.id), label: display.label }))
+  ]
+  // Kayıtlı monitör listede yoksa da seçim görünür kalmalı; yoksa liste yanlışlıkla "Otomatik" gösterirdi.
+  const listed = options.some((option) => option.value === selected)
+  if (!listed) {
+    options.push({ value: selected, label: displays === null ? 'Monitörler okunuyor…' : 'Kayıtlı monitör (şu an bağlı değil)' })
+  }
+  return { selected, options, missing: displays !== null && !listed }
+}
+
+const MISSING_DISPLAY_HINT = 'Kayıtlı monitör şu an bağlı değil. Başka bir monitör ya da "Otomatik" seçebilirsiniz.'
+
+/** Ayarlar › Genel: oyun ekranının ve kontrol panelinin monitörü, tam ekran tercihi, klasörler ve sürüm. */
 export function GeneralTab(): JSX.Element {
   const { settings } = useApp()
   const info = useAppInfo()
   const displays = useDisplays()
 
-  const selected = settings.gameDisplayId === null ? AUTO_DISPLAY : String(settings.gameDisplayId)
-  const options: SelectOption[] = [
-    { value: AUTO_DISPLAY, label: 'Otomatik (ikinci monitör)' },
-    ...(displays ?? []).map((display) => ({ value: String(display.id), label: display.label }))
-  ]
-  // Kayıtlı monitör listede yoksa da seçim görünür kalmalı; yoksa liste yanlışlıkla "Otomatik" gösterirdi.
-  const selectedListed = options.some((option) => option.value === selected)
-  if (!selectedListed) {
-    options.push({ value: selected, label: displays === null ? 'Monitörler okunuyor…' : 'Kayıtlı monitör (şu an bağlı değil)' })
-  }
-  const displayMissing = displays !== null && !selectedListed
+  const game = displayChoice(displays, settings.gameDisplayId, 'Otomatik (en büyük monitör)')
+  const control = displayChoice(displays, settings.controlDisplayId, 'Otomatik (oyun ekranının olmadığı monitör)')
+  const sameDisplay = settings.gameDisplayId !== null && settings.gameDisplayId === settings.controlDisplayId
 
   return (
     <div className="menu-general">
-      <Panel title="Oyun ekranı">
+      <Panel title="Monitörler">
         <div className="menu-general__stack">
           <Field
             label="Oyun ekranının açılacağı monitör"
             hint={
-              displayMissing
-                ? 'Kayıtlı monitör şu an bağlı değil. Başka bir monitör ya da "Otomatik" seçebilirsiniz.'
-                : 'Oyuncularla paylaşılan pencere bu monitörde açılır. "Otomatik" seçiliyken ikinci monitör tercih edilir.'
+              game.missing
+                ? MISSING_DISPLAY_HINT
+                : 'Oyuncularla paylaşılan pencere bu monitörde açılır. "Otomatik" seçiliyken en büyük monitör kullanılır.'
             }
           >
             <Select
-              value={selected}
-              options={options}
+              value={game.selected}
+              options={game.options}
               onChange={(value) =>
                 dispatch({
                   type: 'settings/update',
                   patch: { gameDisplayId: value === AUTO_DISPLAY ? null : Number(value) }
+                })
+              }
+            />
+          </Field>
+          <Field
+            label="Kontrol panelinin açılacağı monitör"
+            hint={
+              control.missing
+                ? MISSING_DISPLAY_HINT
+                : sameDisplay
+                  ? 'İki pencere için aynı monitör seçili: oyun ekranı solda, kontrol paneli sağda yan yana açılır.'
+                  : 'Yalnızca sizin gördüğünüz pencere bu monitörde açılır. Değişiklik bir sonraki "Oyna"da geçerli olur.'
+            }
+          >
+            <Select
+              value={control.selected}
+              options={control.options}
+              onChange={(value) =>
+                dispatch({
+                  type: 'settings/update',
+                  patch: { controlDisplayId: value === AUTO_DISPLAY ? null : Number(value) }
                 })
               }
             />

@@ -39,7 +39,7 @@ function image(id: string, kind: LibraryImage['kind'], width = 800, height = 600
 }
 
 function stageItem(id: string, imageId: string): StageItem {
-  return { id, imageId, x: 0, y: 0, width: 100, height: 100, label: '' }
+  return { id, imageId, x: 0, y: 0, width: 100, height: 100, rotation: 0, label: '' }
 }
 
 function scene(id: string, background: StageItem | null, items: StageItem[]): SceneWindow {

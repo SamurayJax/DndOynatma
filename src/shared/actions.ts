@@ -40,7 +40,7 @@ export type AppAction =
    * itemId arka planın kimliğiyse arka planı günceller. En-boy oranı her zaman görselinkine
    * çekilir; öğenin merkezi oyun alanının (portre sütununun sağı) içinde tutulur.
    */
-  | { type: 'stage/updateItem'; sceneId: ID; itemId: ID; patch: Partial<Pick<StageItem, 'x' | 'y' | 'width' | 'height' | 'label'>> }
+  | { type: 'stage/updateItem'; sceneId: ID; itemId: ID; patch: Partial<Pick<StageItem, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'label'>> }
   | { type: 'stage/removeItem'; sceneId: ID; itemId: ID }
   | { type: 'stage/reorderItem'; sceneId: ID; itemId: ID; to: 'front' | 'back' | 'forward' | 'backward' }
   /** Arka plan dışındaki tüm görselleri kaldırır. */
@@ -51,8 +51,9 @@ export type AppAction =
 
 /** Kaydedilmeyen oturum durumu üzerindeki işlemler. */
 export type SessionAction =
-  /** 'mouse' seçilince çizimler silinir (drawingNonce artar). */
+  /** Araç değişimi çizimlere dokunmaz; çizim dururken fareyle görsel taşınabilir. */
   | { type: 'session/setTool'; tool: Tool }
+  /** O an açık olan pencerenin çizimlerini siler (drawingNonce artar). Çizimleri silen tek işlem budur. */
   | { type: 'session/clearDrawing' }
 
 export type Action = AppAction | SessionAction

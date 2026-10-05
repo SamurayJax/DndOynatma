@@ -172,6 +172,8 @@ function normalizeStageItem(raw: unknown, imageIds: ReadonlySet<ID>, usedIds: Se
     y: raw.y,
     width: raw.width,
     height: raw.height,
+    // Döndürme sonradan eklendi; eski kayıtlarda bu alan yoktur.
+    rotation: isFiniteNumber(raw.rotation) ? (Math.round((((raw.rotation % 360) + 360) % 360) * 100) / 100) % 360 : 0,
     label: text(raw.label)
   }
 }
@@ -181,6 +183,7 @@ function normalizeSettings(raw: unknown): AppSettings {
   if (!isRecord(raw)) return defaults
   return {
     gameDisplayId: isFiniteNumber(raw.gameDisplayId) ? raw.gameDisplayId : null,
+    controlDisplayId: isFiniteNumber(raw.controlDisplayId) ? raw.controlDisplayId : null,
     gameFullscreen: typeof raw.gameFullscreen === 'boolean' ? raw.gameFullscreen : defaults.gameFullscreen
   }
 }

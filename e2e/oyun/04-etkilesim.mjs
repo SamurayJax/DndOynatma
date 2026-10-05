@@ -90,7 +90,9 @@ await run(async () => {
     await session.send({ type: 'session/setTool', tool: 'mouse' }, 300)
     const back = await selected()
     info(`fareye dönünce eski seçim: ${back === null ? 'geri gelmedi (seçim bilerek unutuluyor)' : 'geri geldi'}`)
-    check('fareye dönünce çizimler silindi, ortada sahipsiz tutamaç yok', (await session.probe('strokes')) === 0 && (back === null || back === b))
+    check('fareye dönünce çizimler silinmedi, ortada sahipsiz tutamaç yok', (await session.probe('strokes')) === 1 && (back === null || back === b))
+    await session.send({ type: 'session/clearDrawing' }, 250)
+    check('"Çizimi temizle" çizimleri sildi', (await session.probe('strokes')) === 0)
     await session.click(...(await centerOf(b)))
     const transformer = await session.probe('transformer')
     const node = await session.nodeOf(b)
@@ -137,8 +139,11 @@ await run(async () => {
     check('siyah kalemle çizildi', (await session.probe('strokes')) === 2)
     await game.keyboard.press('2')
     await sleep(300)
-    check('kalem etkinken 2 tuşu pencereyi değiştirdi ve çizimi sildi', (await activeId()) === s2 && (await session.probe('strokes')) === 0)
+    check('kalem etkinken 2 tuşu pencereyi değiştirdi; çizim eski pencerede kaldı', (await activeId()) === s2 && (await session.probe('strokes')) === 0)
     await game.keyboard.press('1')
+    await sleep(300)
+    check('ilk pencereye dönünce çizimi geri geldi', (await session.probe('strokes')) === 2)
+    await session.send({ type: 'session/clearDrawing' }, 200)
     await session.send({ type: 'session/setTool', tool: 'mouse' }, 250)
   }
 

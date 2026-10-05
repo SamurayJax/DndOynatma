@@ -176,7 +176,14 @@ await run(async () => {
   if (displays.length >= 2) {
     const primary = displays.find((display) => display.primary)
     check('oyun ekranı ve kontrol paneli farklı monitörlerde', gameWin.displayId !== controlWin.displayId, `oyun=${gameWin.displayId}, kontrol=${controlWin.displayId}`)
-    check('kontrol paneli ana monitörde, oyun ekranı diğerinde', controlWin.displayId === primary.id && gameWin.displayId !== primary.id)
+    // Otomatik kural: oyuncuların izlediği ekran en büyük monitöre, kontrol paneli diğerine gider.
+    const pixels = (display) => display.bounds.width * display.bounds.height * display.scaleFactor ** 2
+    const largest = [...displays].sort((a, b) => pixels(b) - pixels(a) || Number(a.primary) - Number(b.primary))[0]
+    check(
+      'oyun ekranı en büyük monitörde, kontrol paneli diğerinde',
+      gameWin.displayId === largest.id && controlWin.displayId !== largest.id,
+      `en büyük=${largest.id}, ana=${primary.id}, oyun=${gameWin.displayId}, kontrol=${controlWin.displayId}`
+    )
     check('kontrol paneli büyütülmüş açılır', controlWin.maximized === true)
   } else {
     info('tek monitör bulundu: farklı monitör denetimi atlandı')

@@ -56,12 +56,13 @@ function describe(action: Action): string {
     case 'stage/addItem':
       return `pencere=${action.sceneId === undefined ? 'etkin' : id(action.sceneId)} öğe=${id(action.itemId)} görsel=${id(action.imageId)}`
     case 'stage/updateItem': {
-      const { x, y, width, height, label } = action.patch
+      const { x, y, width, height, rotation, label } = action.patch
       const parts = [`pencere=${id(action.sceneId)}`, `öğe=${id(action.itemId)}`]
       if (x !== undefined) parts.push(`x=${num(x)}`)
       if (y !== undefined) parts.push(`y=${num(y)}`)
       if (width !== undefined) parts.push(`en=${num(width)}`)
       if (height !== undefined) parts.push(`boy=${num(height)}`)
+      if (rotation !== undefined) parts.push(`açı=${num(rotation)}`)
       if (label !== undefined) parts.push('etiket=değişti')
       return parts.join(' ')
     }
@@ -74,6 +75,7 @@ function describe(action: Action): string {
     case 'settings/update': {
       const parts: string[] = []
       if (action.patch.gameDisplayId !== undefined) parts.push(`monitör=${action.patch.gameDisplayId === null ? 'otomatik' : num(action.patch.gameDisplayId)}`)
+      if (action.patch.controlDisplayId !== undefined) parts.push(`kontrolMonitörü=${action.patch.controlDisplayId === null ? 'otomatik' : num(action.patch.controlDisplayId)}`)
       if (action.patch.gameFullscreen !== undefined) parts.push(`tamEkran=${action.patch.gameFullscreen ? 'açık' : 'kapalı'}`)
       return parts.join(' ')
     }

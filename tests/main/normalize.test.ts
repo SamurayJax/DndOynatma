@@ -183,6 +183,19 @@ describe('normalizeAppState', () => {
       expect(result).toEqual([{ ...item, id: 'f', label: '' }])
     })
 
+    it('döndürme alanı olmayan eski kayıttaki öğeyi 0 dereceyle açar, açıyı 0–360 aralığına çeker', () => {
+      const { rotation: _unused, ...oldItem } = scene.items[0]
+      const state = repaired({
+        scenes: [
+          {
+            ...scene,
+            items: [oldItem, { ...scene.items[0], id: 'item-2', rotation: 450 }, { ...scene.items[0], id: 'item-3', rotation: 'ters' }]
+          }
+        ]
+      })
+      expect(state.scenes[0].items.map((item) => item.rotation)).toEqual([0, 90, 0])
+    })
+
     it('bir pencerede aynı kimlikli ikinci öğeyi atar', () => {
       const items = [item, { ...item, x: 5 }, { ...item, id: 'item-bg' }]
       expect(repaired({ scenes: [{ ...scene, items }] }).scenes[0].items).toEqual([item])
@@ -232,8 +245,12 @@ describe('normalizeAppState', () => {
       expect(repaired({ settings: { gameDisplayId: 'iki', gameFullscreen: 'evet' } }).settings).toEqual(defaults)
       expect(repaired({ settings: { gameDisplayId: 2779098405, gameFullscreen: false } }).settings).toEqual({
         gameDisplayId: 2779098405,
+        // Kontrol paneli monitörü sonradan eklendi; eski kayıtta yoksa otomatik sayılır.
+        controlDisplayId: null,
         gameFullscreen: false
       })
+      expect(repaired({ settings: { controlDisplayId: 7, gameFullscreen: true } }).settings.controlDisplayId).toBe(7)
+      expect(repaired({ settings: { controlDisplayId: 'sol' } }).settings.controlDisplayId).toBeNull()
     })
   })
 })

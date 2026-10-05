@@ -21,13 +21,26 @@ describe('pickGameDisplay', () => {
     expect(pickGameDisplay([primary, secondary, third], 1, 3).id).toBe(3)
   })
 
-  it('seçim yoksa ana olmayan monitörü yeğler', () => {
-    expect(pickGameDisplay([primary, secondary], 1, null).id).toBe(2)
-    expect(pickGameDisplay([secondary, primary], 1, null).id).toBe(2)
+  it('seçim yoksa en büyük monitörü seçer (ana olsun olmasın)', () => {
+    expect(pickGameDisplay([primary, secondary], 1, null).id).toBe(1)
+    expect(pickGameDisplay([secondary, primary], 1, null).id).toBe(1)
+    // Büyük monitör ana değilken de o seçilir.
+    expect(pickGameDisplay([primary, secondary], 2, null).id).toBe(1)
   })
 
-  it('seçilen monitör artık yoksa ana olmayan monitöre düşer', () => {
-    expect(pickGameDisplay([primary, secondary], 1, 99).id).toBe(2)
+  it('monitörler eşit büyüklükteyse ana olmayanı seçer', () => {
+    expect(pickGameDisplay([secondary, third], 2, null).id).toBe(3)
+    expect(pickGameDisplay([third, secondary], 2, null).id).toBe(3)
+  })
+
+  it('büyüklük karşılaştırması fiziksel pikselle yapılır', () => {
+    // 1280x720 mantıksal ama %200 ölçekli monitör aslında 2560x1440'tır.
+    const scaled = display(5, 0, 1280, 720, 2)
+    expect(pickGameDisplay([scaled, secondary], 2, null).id).toBe(5)
+  })
+
+  it('seçilen monitör artık yoksa otomatik seçime düşer', () => {
+    expect(pickGameDisplay([primary, secondary], 1, 99).id).toBe(1)
   })
 
   it('tek monitörde ana monitörü kullanır', () => {
@@ -49,36 +62,60 @@ describe('pickControlDisplay', () => {
   it('tek monitörde oyunla aynı monitörde kalır', () => {
     expect(pickControlDisplay([primary], 1, primary).id).toBe(1)
   })
+
+  it('açıkça seçilen monitörü kullanır, oyunla aynı olsa bile', () => {
+    expect(pickControlDisplay([primary, secondary, third], 1, primary, 3).id).toBe(3)
+    expect(pickControlDisplay([primary, secondary], 1, primary, 1).id).toBe(1)
+  })
+
+  it('seçilen monitör artık yoksa otomatik seçime düşer', () => {
+    expect(pickControlDisplay([primary, secondary], 1, primary, 99).id).toBe(2)
+  })
 })
 
 describe('planGameWindows', () => {
   it('iki monitörde pencereleri ayrı monitörlere koyar', () => {
-    const plan = planGameWindows([primary, secondary], 1, { gameDisplayId: null, gameFullscreen: true })
+    const plan = planGameWindows([primary, secondary], 1, { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true })
     expect(plan.shared).toBe(false)
-    expect(plan.game.display.id).toBe(2)
+    // Otomatik: oyun ekranı büyük monitörde (2560x1440), kontrol paneli diğerinde.
+    expect(plan.game.display.id).toBe(1)
     expect(plan.game.fullscreen).toBe(true)
-    expect(plan.control.display.id).toBe(1)
+    expect(plan.control.display.id).toBe(2)
     expect(plan.control.maximize).toBe(true)
 
     // Tam ekrandan çıkınca dönülecek pencere oyun monitörünün içinde ve 16:9 olmalı.
     const { x, y, width, height } = plan.game.bounds
-    expect(x).toBeGreaterThanOrEqual(secondary.workArea.x)
-    expect(x + width).toBeLessThanOrEqual(secondary.workArea.x + secondary.workArea.width)
-    expect(y + height).toBeLessThanOrEqual(secondary.workArea.height)
+    expect(x).toBeGreaterThanOrEqual(primary.workArea.x)
+    expect(x + width).toBeLessThanOrEqual(primary.workArea.x + primary.workArea.width)
+    expect(y + height).toBeLessThanOrEqual(primary.workArea.height)
     expect(width / height).toBeCloseTo(16 / 9, 1)
 
     const control = plan.control.bounds
-    expect(control.x).toBeGreaterThanOrEqual(0)
-    expect(control.x + control.width).toBeLessThanOrEqual(primary.workArea.width)
+    expect(control.x).toBeGreaterThanOrEqual(secondary.workArea.x)
+    expect(control.x + control.width).toBeLessThanOrEqual(secondary.workArea.x + secondary.workArea.width)
+  })
+
+  it('iki monitör de elle seçilebilir', () => {
+    const plan = planGameWindows([primary, secondary], 1, { gameDisplayId: 2, controlDisplayId: 1, gameFullscreen: true })
+    expect(plan.game.display.id).toBe(2)
+    expect(plan.control.display.id).toBe(1)
+    expect(plan.shared).toBe(false)
+  })
+
+  it('ikisi için aynı monitör seçilirse pencereler yan yana açılır', () => {
+    const plan = planGameWindows([primary, secondary], 1, { gameDisplayId: 1, controlDisplayId: 1, gameFullscreen: false })
+    expect(plan.shared).toBe(true)
+    expect(plan.control.maximize).toBe(false)
+    expect(plan.game.bounds.x + plan.game.bounds.width).toBeLessThanOrEqual(plan.control.bounds.x)
   })
 
   it('tam ekran ayarını olduğu gibi aktarır', () => {
-    expect(planGameWindows([primary, secondary], 1, { gameDisplayId: null, gameFullscreen: false }).game.fullscreen).toBe(false)
-    expect(planGameWindows([primary], 1, { gameDisplayId: null, gameFullscreen: true }).game.fullscreen).toBe(true)
+    expect(planGameWindows([primary, secondary], 1, { gameDisplayId: null, controlDisplayId: null, gameFullscreen: false }).game.fullscreen).toBe(false)
+    expect(planGameWindows([primary], 1, { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true }).game.fullscreen).toBe(true)
   })
 
   it('tek monitörde pencereleri çakışmadan yan yana koyar', () => {
-    const plan = planGameWindows([secondary], 2, { gameDisplayId: null, gameFullscreen: false })
+    const plan = planGameWindows([secondary], 2, { gameDisplayId: null, controlDisplayId: null, gameFullscreen: false })
     const area = secondary.workArea
     expect(plan.shared).toBe(true)
     expect(plan.control.maximize).toBe(false)
@@ -93,7 +130,7 @@ describe('planGameWindows', () => {
 
   it('küçük monitörde kontrol paneli ekranın yarısını aşmaz', () => {
     const small = display(7, 0, 800, 600)
-    const plan = planGameWindows([small], 7, { gameDisplayId: null, gameFullscreen: false })
+    const plan = planGameWindows([small], 7, { gameDisplayId: null, controlDisplayId: null, gameFullscreen: false })
     expect(plan.control.bounds.width).toBe(400)
     expect(plan.game.bounds.width).toBe(400)
   })

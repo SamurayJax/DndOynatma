@@ -6,7 +6,7 @@ import type { Rect as Area } from '@shared/layout'
 import type { ID, LibraryImage, StageItem } from '@shared/types'
 import { imageUrl } from '@renderer/lib/media'
 import { dispatch } from '@renderer/lib/useAppState'
-import { clampPosition, referenceSize, sameBox, settleBox } from './itemGeometry'
+import { clampPosition, normalizeRotation, referenceSize, rotatedHalfHeight, sameBox, settleBox } from './itemGeometry'
 import type { Box } from './itemGeometry'
 import { stagePalette, withAlpha } from './stageTheme'
 import { useStageImage } from './useStageImage'
@@ -128,40 +128,59 @@ export const StageItemNode = memo(function StageItemNode({
       const maxX = Math.max(minX, area.x + area.width - width - LABEL_MARGIN)
       const minY = area.y + LABEL_MARGIN
       const maxY = Math.max(minY, area.y + area.height - height - LABEL_MARGIN)
+      // Görsel döndürülmüş olabilir; etiket, ekranda kapladığı alanın altına gelir.
+      const centerY = current.y + current.height / 2
       group.position({
         x: clamp(current.x + current.width / 2 - width / 2, minX, maxX),
-        y: clamp(current.y + current.height + LABEL_GAP, minY, maxY)
+        y: clamp(centerY + rotatedHalfHeight(current) + LABEL_GAP, minY, maxY)
       })
     },
     [area]
   )
 
-  const { x, y, width, height } = box
+  // Düğüm merkezinden tutulur (offset = yarı boyut): döndürme ve boyutlandırma merkez etrafında kalır.
+  // Bu yüzden düğümün x,y'si kutunun merkezidir; durumdaki x,y ise sol üst köşedir.
+  /** Düğümün o anki (sürüklenirken / boyutlanırken / döndürülürken) kutusu. */
+  const liveBox = (node: Konva.Group): Box => {
+    const liveWidth = box.width * Math.abs(node.scaleX())
+    const liveHeight = box.height * Math.abs(node.scaleY())
+    return {
+      x: node.x() - liveWidth / 2,
+      y: node.y() - liveHeight / 2,
+      width: liveWidth,
+      height: liveHeight,
+      rotation: normalizeRotation(node.rotation())
+    }
+  }
+
+  const { x, y, width, height, rotation } = box
   useLayoutEffect(() => {
     const node = bodyRef.current
     // Görsel sürüklenirken ya da boyutlanırken etiketi başka pencereden değişirse tuvaldeki kutu durumdakinden
     // farklıdır; etiket durumdaki (eski) yere değil, düğümün o anki yerine dizilir.
     const live = node !== null && (node.isDragging() || node.scaleX() !== 1 || node.scaleY() !== 1)
     layoutLabel(
-      live ? { x: node.x(), y: node.y(), width: width * Math.abs(node.scaleX()), height: height * Math.abs(node.scaleY()) } : { x, y, width, height }
+      live
+        ? {
+            x: node.x() - (width * Math.abs(node.scaleX())) / 2,
+            y: node.y() - (height * Math.abs(node.scaleY())) / 2,
+            width: width * Math.abs(node.scaleX()),
+            height: height * Math.abs(node.scaleY()),
+            rotation: normalizeRotation(node.rotation())
+          }
+        : { x, y, width, height, rotation }
     )
     onBoxApplied(itemId)
-  }, [layoutLabel, onBoxApplied, itemId, x, y, width, height, label, status])
+  }, [layoutLabel, onBoxApplied, itemId, x, y, width, height, rotation, label, status])
 
-  /** Düğümün o anki (sürüklenirken / boyutlanırken) kutusu. */
-  const liveBox = (node: Konva.Group): Box => ({
-    x: node.x(),
-    y: node.y(),
-    width: box.width * Math.abs(node.scaleX()),
-    height: box.height * Math.abs(node.scaleY())
-  })
-
-  const commit = (next: Box, resized: boolean): void => {
+  const commit = (next: Box): void => {
     const node = bodyRef.current
     if (node) {
       // Yeni boyut çocuklara genişlik/yükseklik olarak verilir; ölçek birikmesin.
       node.scale({ x: 1, y: 1 })
-      node.position({ x: next.x, y: next.y })
+      node.offset({ x: next.width / 2, y: next.height / 2 })
+      node.position({ x: next.x + next.width / 2, y: next.y + next.height / 2 })
+      node.rotation(next.rotation)
     }
     layoutLabel(next)
     if (sameBox(next, item)) {
@@ -170,26 +189,37 @@ export const StageItemNode = memo(function StageItemNode({
       return
     }
     setPending(next)
+    const resized = Math.abs(next.width - item.width) >= 0.01
+    const rotated = Math.abs(next.rotation - item.rotation) >= 0.01
     dispatch({
       type: 'stage/updateItem',
       sceneId,
       itemId,
-      patch: resized ? { x: next.x, y: next.y, width: next.width } : { x: next.x, y: next.y }
+      patch: {
+        x: next.x,
+        y: next.y,
+        ...(resized ? { width: next.width } : {}),
+        ...(rotated ? { rotation: next.rotation } : {})
+      }
     })
   }
+
+  /** Sürüklenen düğümün sol üst köşesi, merkezi oyun alanında kalacak şekilde. */
+  const draggedCorner = (node: Konva.Group): { x: number; y: number } =>
+    clampPosition(node.x() - box.width / 2, node.y() - box.height / 2, box.width, box.height, area)
 
   const handleDragMove = (): void => {
     const node = bodyRef.current
     if (!node) return
-    const position = clampPosition(node.x(), node.y(), box.width, box.height, area)
-    node.position(position)
-    layoutLabel({ ...box, ...position })
+    const corner = draggedCorner(node)
+    node.position({ x: corner.x + box.width / 2, y: corner.y + box.height / 2 })
+    layoutLabel({ ...box, ...corner })
   }
 
   const handleDragEnd = (): void => {
     const node = bodyRef.current
     if (!node) return
-    commit({ ...box, ...clampPosition(node.x(), node.y(), box.width, box.height, area) }, false)
+    commit({ ...box, ...draggedCorner(node) })
   }
 
   const handleTransform = (): void => {
@@ -201,7 +231,7 @@ export const StageItemNode = memo(function StageItemNode({
     const node = bodyRef.current
     if (!node) return
     const live = liveBox(node)
-    commit(settleBox(live.x, live.y, live.width, referenceSize(item, image), area), true)
+    commit(settleBox(live.x, live.y, live.width, live.rotation, referenceSize(item, image), area))
   }
 
   return (
@@ -210,8 +240,11 @@ export const StageItemNode = memo(function StageItemNode({
         ref={bodyRef}
         id={itemId}
         name={ITEM_NODE_NAME}
-        x={box.x}
-        y={box.y}
+        x={box.x + box.width / 2}
+        y={box.y + box.height / 2}
+        offsetX={box.width / 2}
+        offsetY={box.height / 2}
+        rotation={box.rotation}
         listening={interactive}
         draggable={interactive}
         onDragMove={handleDragMove}

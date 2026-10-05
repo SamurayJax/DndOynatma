@@ -20,7 +20,6 @@ const TOOLS: readonly ToolChoice[] = [
 /** Araç seçimi: Fare / Kalem kırmızı / Kalem siyah ve "Çizimi temizle". */
 export function ToolsPanel(): JSX.Element {
   const { tool } = useSession()
-  const penActive = tool !== 'mouse'
 
   return (
     <Panel className="ctl-panel" title="Araçlar">
@@ -44,10 +43,11 @@ export function ToolsPanel(): JSX.Element {
         ))}
       </div>
       <div className="ctl-tools__footer">
-        <Button size="sm" icon={<EraserIcon size={16} />} disabled={!penActive} onClick={() => dispatch({ type: 'session/clearDrawing' })}>
+        {/* Çizimler oyun ekranında tutulur; burada var olup olmadıkları bilinmez, düğme hep açıktır. */}
+        <Button size="sm" icon={<EraserIcon size={16} />} onClick={() => dispatch({ type: 'session/clearDrawing' })}>
           Çizimi temizle
         </Button>
-        <p className="ctl-hint">Fareye dönünce çizimler silinir.</p>
+        <p className="ctl-hint">Çizim yalnızca bu düğmeyle silinir; fareye geçince kalır.</p>
       </div>
     </Panel>
   )

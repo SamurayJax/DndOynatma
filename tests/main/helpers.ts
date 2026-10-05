@@ -25,14 +25,14 @@ export function sampleAppState(): AppState {
       id: 'scene-1',
       name: 'Kraliyet İçi',
       hotkey: 1,
-      background: { id: 'item-bg', imageId: 'img-bg', x: 300, y: 0, width: 1920, height: 1080, label: '' },
-      items: [{ id: 'item-1', imageId: 'img-npc', x: 800, y: 200, width: 200, height: 300, label: '7 LVL' }]
+      background: { id: 'item-bg', imageId: 'img-bg', x: 300, y: 0, width: 1920, height: 1080, rotation: 0, label: '' },
+      items: [{ id: 'item-1', imageId: 'img-npc', x: 800, y: 200, width: 200, height: 300, rotation: 0, label: '7 LVL' }]
     },
     { id: 'scene-2', name: 'Orman Yolu', hotkey: 2, background: null, items: [] }
   ]
   state.activeSceneId = 'scene-1'
   state.generalNote = 'Genel not'
-  state.settings = { gameDisplayId: 2, gameFullscreen: false }
+  state.settings = { gameDisplayId: 2, controlDisplayId: null, gameFullscreen: false }
   return state
 }
 

@@ -20,7 +20,11 @@ oyuncular ekran paylaşımından (Discord / Teams) izler. Yeni bir Roll20 değil
 - **Kütüphane** — yüklenen tüm görseller, bölmelere ayrılmış.
 
 Monitörler 2560x1440 ve 1920x1080 (ikisi de 16:9). Oyun ekranı sabit 16:9 oranında
-çizilir ve pencereye göre ölçeklenir; hangi monitörde açılacağı seçilebilir.
+çizilir ve pencereye göre ölçeklenir.
+
+Hangi pencerenin hangi monitörde açılacağı Ayarlar › Genel'den ayrı ayrı seçilir.
+"Otomatik" bırakılırsa oyun ekranı en büyük monitörde (2560x1440), kontrol paneli
+diğerinde açılır.
 
 ### Ana menü
 
@@ -91,6 +95,10 @@ Oyun alanındaki görseller (arka plan dahil):
 
 - fareyle taşınır, öne/arkaya alınır, silinir
 - köşeden büyütülür/küçültülür; en-boy oranı her zaman korunur, görsel bozulmaz
+- döndürülür (ters ya da yan gelen görsel için): seçiliyken R tuşu saat yönünde, Shift+R ters
+  yönde çeyrek tur çevirir; seçim çerçevesinin üstündeki tutamaçla serbest açı verilir ve
+  0 / 90 / 180 / 270 dereceye yaklaşınca yapışır; kontrol panelindeki "Ekrandakiler"
+  listesinde her görselin ve arka planın 90° döndürme düğmesi vardır
 - kısa etiket alabilir (ör. "7 LVL")
 
 Arka plan ilk konduğunda oyun alanını bozulmadan dolduracak şekilde yerleşir.
@@ -103,9 +111,12 @@ Araç kontrol panelinden seçilir; çizim oyun alanında yapılır.
 - **Kalem — kırmızı** ve **Kalem — siyah**: oyun alanına serbest çizim. Kalem
   seçiliyken görseller taşınmaz.
 
-Çizim geçicidir: kalemden fareye dönünce tüm çizimler otomatik silinir. Pencere
-değişince de silinir, diske kaydedilmez. Kalemden çıkmadan silmek için kontrol
-panelinde "Çizimi temizle" düğmesi vardır.
+Çizimi yalnızca kontrol panelindeki "Çizimi temizle" düğmesi siler. Kalemden fareye
+dönünce çizim ekranda kalır; böylece çizdikten sonra fareyle görsel taşınabilir.
+
+Çizim, yapıldığı pencereye aittir: başka pencereye geçince görünmez, geri dönünce yerindedir.
+"Çizimi temizle" o an açık olan pencerenin çizimini siler. Çizimler diske kaydedilmez;
+oyun bitince hepsi kaybolur.
 
 ### d20
 
@@ -155,7 +166,7 @@ Kayıt klasörü: `Belgeler\DndOynatma\` (Ayarlar'da "Kayıt klasörünü aç" d
 | `zar.json` | aktif oyunun zar atışları |
 | `log\` | günlük log dosyaları |
 
-- **Kaydedilmeyen:** çizimler (geçici).
+- **Kaydedilmeyen:** çizimler (oyun bitene kadar oyun ekranının belleğinde durur).
 - **Güvenli yazma:** kayıt önce geçici dosyaya yazılır, sonra asıl dosyanın yerine
   konur; yazma sırasında elektrik kesilse bile kayıt bozulmaz. `kayit.json` yine de
   okunamazsa yedekten açılır ve loga yazılır.
@@ -215,7 +226,7 @@ sürüm etiketi verilir. Her adımın sonunda uygulama çalışır durumdadır.
 | 3 | Kütüphane: 8 bölme, yükle / sil, İtem ↔ Takım Eşyası geçişi | v0.3 |
 | 4 | Oyun alanı: arka plan, görsel koyma, taşı / oranlı boyutlandır / sil, etiket, ekrandakiler listesi | v0.4 |
 | 5 | Pencereler: tanımlama, atama tuşlarıyla geçiş | v0.5 |
-| 6 | Kalem: kırmızı / siyah çizim, fareye dönünce otomatik silme | v0.6 |
+| 6 | Kalem: kırmızı / siyah çizim, "Çizimi temizle" ile silme | v0.6 |
 | 7 | d20: zar atma animasyonu ve atış geçmişi | v0.7 |
 | 8 | Paketleme: Windows için kurulabilir .exe | v0.8 |
 | 9 | Gerçek oturum denemesi ve düzeltmeler | v1.0 |

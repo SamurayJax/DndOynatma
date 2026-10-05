@@ -97,6 +97,16 @@ export function ArrowUpIcon(props: IconProps): JSX.Element {
   )
 }
 
+/** Saat yönünde döndürme. */
+export function RotateIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M20 12a8 8 0 1 1-2.6-5.9" />
+      <path d="M20 4v5h-5" />
+    </Svg>
+  )
+}
+
 export function ArrowDownIcon(props: IconProps): JSX.Element {
   return (
     <Svg {...props}>

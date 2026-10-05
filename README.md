@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.8.0 (Windows)
+**Sürüm:** 0.8.1 (Windows)
 
 ## Ne yapar
 
@@ -13,10 +13,10 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
   kilitlidir, can 0 olunca soluklaşır.
 - **Kütüphane:** NPC'ler, Tüccarlar, Mekanlar, Sahneler, Düşmanlar, Boss'lar, Takım Eşyaları,
   İtemler. Görsele tıklayınca oyun ekranına gelir; oyuncular kütüphaneyi görmez.
-- **Oyun alanı:** görseller taşınır, oranı bozulmadan boyutlandırılır, öne/arkaya alınır,
-  etiket alır ("7 LVL").
+- **Oyun alanı:** görseller taşınır, oranı bozulmadan boyutlandırılır, döndürülür,
+  öne/arkaya alınır, etiket alır ("7 LVL").
 - **Pencereler:** "Kraliyet İçi", "Orman Yolu" gibi hazır düzenler; 1–9 tuşlarıyla geçilir.
-- **Kalem:** kırmızı ve siyah; fareye dönünce çizimler silinir.
+- **Kalem:** kırmızı ve siyah; çizim yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
 - **d20:** kontrol panelinden atılır, oyun ekranında zar düşer ve sonucu gösterir.
 - **Otomatik kayıt:** her değişiklik kaydedilir; bilgisayar kapanıp açılsa da kaldığı yerden devam eder.
 - **Log ve hata kodları:** yapılan işlemler ve hatalar kodlarıyla log dosyasına yazılır.
@@ -37,7 +37,9 @@ Kurulum dosyasının nasıl üretildiği: [docs/PAKETLEME.md](docs/PAKETLEME.md)
    görünür, boş kartlar görünmez.
 2. **Ayarlar › Kütüphane:** görselleri bölmelere yükle (PNG, JPG, WEBP).
 3. **Ayarlar › Pencereler:** sahnelerini oluştur, arka plan ve atama tuşu ver.
-4. **Oyna:** oyun ekranı ve kontrol paneli açılır. Discord / Teams'te yalnızca
+4. **Ayarlar › Genel:** oyun ekranının ve kontrol panelinin açılacağı monitörü seç
+   ("Otomatik": oyun ekranı en büyük monitörde).
+5. **Oyna:** oyun ekranı ve kontrol paneli açılır. Discord / Teams'te yalnızca
    "DndOynatma — Oyun Ekranı" penceresini paylaş.
 
 Oyun ekranında:
@@ -46,6 +48,8 @@ Oyun ekranında:
 |---------------|----|
 | Tıkla, sürükle | görseli seç, taşı |
 | Köşeden sürükle | boyutlandır (oran korunur) |
+| R / Shift+R | seçili görseli 90° döndür (saat yönü / ters yön) |
+| Üstteki tutamaç | serbest döndür (düz açılara yapışır) |
 | Çift tıkla (boş alana) | arka planı seç |
 | Delete | seçili görseli kaldır |
 | PageUp / PageDown | bir öne / bir arkaya |
