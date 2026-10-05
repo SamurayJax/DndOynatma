@@ -9,6 +9,10 @@ export type Quat = readonly [number, number, number, number]
 
 export const QUAT_IDENTITY: Quat = [0, 0, 0, 1]
 
+export function add(a: Vec3, b: Vec3): Vec3 {
+  return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
 export function sub(a: Vec3, b: Vec3): Vec3 {
   return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }

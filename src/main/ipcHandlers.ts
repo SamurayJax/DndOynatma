@@ -5,7 +5,7 @@ import { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, app, ipcMain, screen, 
 import { ERROR_CODES, ErrorCode, LogLevel } from '@shared/errors'
 import { AppInfo, IPC, ImportResult, StorageCheck, StorageResult, WindowRole } from '@shared/ipc'
 import { CATEGORIES } from '@shared/layout'
-import { LibraryCategory, MAX_PLAYERS } from '@shared/types'
+import { LibraryCategory, MAX_PLAYERS, isDiceSides } from '@shared/types'
 import { rollDice } from './dice'
 import { describeDisplays } from './displays'
 import { LibraryDeps, importFiles, importPortrait, importPortraitFile, importWithDialog } from './library'
@@ -132,7 +132,13 @@ export function registerIpc(deps: IpcDeps): void {
     windows.endGame('oyunu bitir')
   })
 
-  handle(IPC.diceRollRequest, () => rollDice(store, paths.diceFile))
+  handle(IPC.diceRollRequest, (_role, _event, sides) => {
+    if (!isDiceSides(sides)) {
+      report('DND-306', `zar: tanınmayan zar (${String(sides)})`)
+      return null
+    }
+    return rollDice(store, paths.diceFile, sides)
+  })
 
   on(IPC.appQuit, () => {
     app.quit()

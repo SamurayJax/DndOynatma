@@ -50,7 +50,7 @@ const api: DndApi = {
   },
 
   dice: {
-    roll: () => ipcRenderer.invoke(IPC.diceRollRequest)
+    roll: (sides) => ipcRenderer.invoke(IPC.diceRollRequest, sides)
   },
 
   app: {

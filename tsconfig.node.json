@@ -23,6 +23,11 @@
     "src/main/**/*",
     "src/preload/**/*",
     "src/shared/**/*",
+    "src/renderer/src/game/dice/math.ts",
+    "src/renderer/src/game/dice/geometry.ts",
+    "src/renderer/src/game/dice/physics.ts",
+    "src/renderer/src/game/dice/optics.ts",
+    "src/renderer/src/game/dice/throwPlan.ts",
     "tests/**/*"
   ]
 }

@@ -76,8 +76,11 @@ src/renderer/   arayüz
   src/settings/   ayarlar: oyuncu profilleri, pencereler
   src/library/    kütüphane paneli (ayarlarda ve kontrol panelinde kullanılır)
   src/game/       oyun ekranı: portre sütunu, oyun alanı, çizim, zar animasyonu
+    dice/           zarlar: biçim (geometry), fizik, atış planı, çizim; üç zar aynı kodu kullanır
   src/control/    kontrol paneli
 tests/          birim testleri (vitest)
+  shared/ main/   ortak kod ve ana süreç
+  renderer/       zarın tuvale dokunmayan kısmı: biçim, fizik, atış planı
 e2e/            uçtan uca testler (playwright + electron)
   main/           ana süreç: kayıt, çökme, bozuk dosya, pencereler, görsel protokolü
   oyun/           oyun ekranı: tam ekran, büyük görseller, iki pencere arası, zar
@@ -95,7 +98,7 @@ scripts/        yardımcı betikler (simge üretimi)
 | `npm run typecheck` | tip kontrolü (ana süreç + arayüz) |
 | `npm test` | birim testleri |
 | `npm run build` | tip kontrolü + derleme (`out/`) |
-| `npm run e2e` | derler ve bütün uçtan uca testleri çalıştırır (yaklaşık 10 dakika) |
+| `npm run e2e` | derler ve bütün uçtan uca testleri çalıştırır (yaklaşık 15 dakika) |
 | `npm run dist` | kurulum dosyasını üretir (`release/`), ayrıntı: `docs/PAKETLEME.md` |
 
 Uçtan uca testler gerçek pencereler açar (kısa süreli tam ekran dahil) ve odağı alır;

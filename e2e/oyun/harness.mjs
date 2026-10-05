@@ -90,7 +90,7 @@ function installProbe() {
     return { x: rect.x + box.left, y: rect.y + box.top, width: rect.width, height: rect.height }
   }
   const frames = { on: false, stamps: [] }
-  const dice = { frame: [], hooked: false }
+  const dice = { frame: [], faces: [], path: null, hooked: false }
 
   window.__oyun = {
     ready: () => findStage() !== null,
@@ -160,16 +160,42 @@ function installProbe() {
       const pick = (q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))] : 0)
       return { count: gaps.length, median: pick(0.5), p95: pick(0.95), max: sorted.at(-1) ?? 0 }
     },
-    /** Zar tuvaline yazılan rakamları kare kare kaydeder: her `clearRect` yeni bir karedir. */
+    /**
+     * Zar tuvaline yazılan rakamları ve boyanan yüzleri kare kare kaydeder: her `clearRect` yeni bir
+     * karedir. Yüzler düz çizgilerle çizilen ve boyanan çokgenlerdir (gölge ve hale yay ile çizilir).
+     */
     hookDice() {
       if (dice.hooked) return
       dice.hooked = true
       const proto = CanvasRenderingContext2D.prototype
-      const { fillText, clearRect } = proto
+      const { fillText, clearRect, beginPath, moveTo, lineTo, arc, fill } = proto
       const isDice = (ctx) => ctx.canvas instanceof HTMLCanvasElement && ctx.canvas.classList.contains('dice-canvas')
       proto.clearRect = function (...args) {
-        if (isDice(this)) dice.frame = []
+        if (isDice(this)) {
+          dice.frame = []
+          dice.faces = []
+        }
         return clearRect.apply(this, args)
+      }
+      proto.beginPath = function (...args) {
+        if (isDice(this)) dice.path = 0
+        return beginPath.apply(this, args)
+      }
+      proto.moveTo = function (...args) {
+        if (isDice(this) && dice.path !== null) dice.path += 1
+        return moveTo.apply(this, args)
+      }
+      proto.lineTo = function (...args) {
+        if (isDice(this) && dice.path !== null) dice.path += 1
+        return lineTo.apply(this, args)
+      }
+      proto.arc = function (...args) {
+        if (isDice(this)) dice.path = null
+        return arc.apply(this, args)
+      }
+      proto.fill = function (...args) {
+        if (isDice(this) && dice.path) dice.faces.push(dice.path)
+        return fill.apply(this, args)
       }
       proto.fillText = function (text, ...rest) {
         if (isDice(this)) {
@@ -187,6 +213,10 @@ function installProbe() {
       return top && canvas && box
         ? { text: top.text, angle: top.angle, faces: dice.frame.length / 2, x: box.left + (top.x / canvas.width) * box.width, y: box.top + (top.y / canvas.height) * box.height }
         : null
+    },
+    /** Son karede boyanan yüzlerin köşe sayıları (ör. duran küpte [4], d20'de [3, 3, ...]). */
+    diceFaces() {
+      return [...dice.faces]
     },
     dice() {
       const overlay = document.querySelector('.dice-overlay')

@@ -3,7 +3,7 @@
  * yollar parametre olarak gelir, böylece geçici klasörlerde test edilebilir.
  */
 import fs from 'node:fs'
-import { AppState, DiceRoll, SCHEMA_VERSION, createInitialAppState } from '@shared/types'
+import { AppState, DiceRoll, SCHEMA_VERSION, createInitialAppState, isDiceSides } from '@shared/types'
 import { normalizeAppState } from './normalize'
 
 export const SAVE_DEBOUNCE_MS = 300
@@ -324,10 +324,10 @@ function isDiceRoll(value: unknown): value is DiceRoll {
   return (
     typeof roll.id === 'string' &&
     roll.id.length > 0 &&
-    roll.sides === 20 &&
+    isDiceSides(roll.sides) &&
     Number.isInteger(roll.value) &&
     (roll.value as number) >= 1 &&
-    (roll.value as number) <= 20 &&
+    (roll.value as number) <= roll.sides &&
     typeof roll.at === 'string'
   )
 }
@@ -355,7 +355,7 @@ export function loadDiceHistory(diceFile: string): DiceLoadResult {
   }
   if (!Array.isArray(raw)) return { rolls: [], error: 'içerik bir liste değil' }
   return {
-    rolls: raw.filter(isDiceRoll).slice(0, DICE_HISTORY_LIMIT).map(({ id, value, at }) => ({ id, sides: 20, value, at })),
+    rolls: raw.filter(isDiceRoll).slice(0, DICE_HISTORY_LIMIT).map(({ id, sides, value, at }) => ({ id, sides, value, at })),
     error: null
   }
 }

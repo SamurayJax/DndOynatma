@@ -118,16 +118,23 @@ dönünce çizim ekranda kalır; böylece çizdikten sonra fareyle görsel taş�
 "Çizimi temizle" o an açık olan pencerenin çizimini siler. Çizimler diske kaydedilmez;
 oyun bitince hepsi kaybolur.
 
-### d20
+### Zarlar: d20, d10, d3
 
-Kontrol panelindeki d20 düğmesine basılınca oyun ekranında zar atılır: zar ekrana
-düşer, yuvarlanır, durur ve üste gelen sayı büyük olarak gösterilir. Birkaç saniye
-sonra kaybolur. Kontrol panelinde son atışların kısa geçmişi durur.
+Kontrol panelindeki zar düğmelerinden birine basılınca oyun ekranında o zar atılır: zar
+ekrana düşer, yuvarlanır, durur ve üste gelen sayı büyük olarak gösterilir. Birkaç saniye
+sonra kaybolur. Kontrol panelinde son atışların kısa geçmişi durur; her satırda hangi zarın
+atıldığı yazar.
 
-Zar, uygulamanın kendi çizdiği üç boyutlu 20 yüzlü zardır; hareketi bir fizik
+- d20: yirmi yüzlü. 20 ve 1 vurgulanır (altın / kırmızı); bu vurgu yalnızca d20 içindir.
+- d10: on uçurtma yüzlü gerçek d10 biçimi. Yüzlerde 1-10 yazar (0 yerine 10).
+- d3: yüzlerinde 1-2-3 ikişer kez yazan küp.
+
+Zarlar, uygulamanın kendi çizdiği üç boyutlu cisimlerdir; hareketleri bir fizik
 benzetimiyle hesaplanır (yerçekimi, sekme, sürtünme). Hazır 3B zar kütüphanesi
 kullanılmadı: o kütüphane sonucu kendi fiziğiyle belirliyor, burada ise sonuç atıştan
-önce ana süreçte belirlenip kaydediliyor ve animasyon o sayıda bitmek zorunda.
+önce ana süreçte belirlenip kaydediliyor ve animasyon o sayıda bitmek zorunda. Üç zar
+aynı fizik, plan ve çizim kodunu kullanır; zarın biçimi (köşeler, yüzler, sayılar) ayrı
+bir tanımdır.
 
 ### Kontrol paneli (görsel)
 
@@ -141,7 +148,7 @@ Ayrıca:
 
 - kütüphane (8 bölme)
 - araç seçimi: Fare / Kalem kırmızı / Kalem siyah, "Çizimi temizle"
-- d20 düğmesi ve son atışlar
+- zar düğmeleri (d20, d10, d3) ve son atışlar
 - genel not alanı
 - pencere listesi (tıklayarak geçiş)
 - oyun ekranında şu an duran görsellerin listesi (tek tıkla kaldırma)
@@ -287,15 +294,17 @@ kaybettirmez.
 **Bitti sayılır:** Üç kalınlık oyun ekranında ayırt edilir. Silgi çizginin bir kısmını siler,
 altındaki görsel bozulmaz. Silinen kısım pencere değişip geri gelince de silik kalır.
 
-### 3. Zarlar: d3 ve d10 (0.9.2)
+### 3. Zarlar: d3 ve d10 (0.9.2) — yapıldı
 
-Yalnızca üç zar olacak: d3, d10, d20. Başka zar ve formül yok.
+Yalnızca üç zar var: d3, d10, d20. Başka zar ve formül yok.
 
-- d10: gerçek on yüzlü zar biçimi (uçurtma yüzlü).
+- d10: gerçek on yüzlü zar biçimi (uçurtma yüzlü). Yüzlerde 1-10 yazar; gerçek zardaki 0'ın
+  yerinde 10 durur ki ekrandaki zar ile gösterilen sonuç aynı sayıyı söylesin.
 - d3: fiziksel d3'lerde olduğu gibi, yüzlerinde 1-2-3 ikişer kez yazan küp.
 - Kontrol panelinde üç zar düğmesi; atış geçmişinde hangi zarın atıldığı görünür.
-- Zar kodu şu an yalnızca 20 yüzlü biçime göre yazılı; biçim (köşeler, yüzler, rakamlar,
-  simetriler) ayrı bir tanıma çıkarılıp üç zar aynı fizik ve çizim koduyla çalışacak.
+- Zarın biçimi (köşeler, yüzler, rakamlar) ayrı bir tanıma çıkarıldı; üç zar aynı fizik, plan
+  ve çizim koduyla çalışır. d10 ve küp d20 kadar kolay yuvarlanmadığı için biraz daha hızlı
+  döndürülerek atılır.
 
 **Bitti sayılır:** Üç zar da atılır, yuvarlanır ve üstte gelen sayı gösterilen sonuçla aynıdır
 (her zar için en az 30 atışlık otomatik denetim). d20'nin bugünkü davranışı değişmez.

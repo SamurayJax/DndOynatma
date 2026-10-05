@@ -39,7 +39,7 @@ await run(async () => {
     return [item.x + item.width / 2, item.y + item.height / 2]
   }
   const activeId = async () => (await session.state()).app.activeSceneId
-  const roll = () => control.evaluate(() => window.dnd.dice.roll())
+  const roll = () => control.evaluate(() => window.dnd.dice.roll(20))
   const waitResult = () => game.waitForFunction(() => window.__oyun.dice().text !== null, null, { timeout: 8000 })
   const waitGone = () => game.waitForFunction(() => window.__oyun.dice().children === 0, null, { timeout: 9000 })
 

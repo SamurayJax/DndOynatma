@@ -292,7 +292,7 @@ describe('görsel yükleme', () => {
 
 describe('zar', () => {
   it('oyun açık değilken atmaz (DND-401)', async () => {
-    expect(await invoke(IPC.diceRollRequest)).toBeNull()
+    expect(await invoke(IPC.diceRollRequest, 20)).toBeNull()
     expect(store.getState().session.diceHistory).toEqual([])
     expect(fs.existsSync(paths.diceFile)).toBe(false)
   })
@@ -301,8 +301,8 @@ describe('zar', () => {
     startPlaying()
     fake.testing.sent.length = 0
 
-    const first = await invoke<DiceRoll>(IPC.diceRollRequest)
-    const second = await invoke<DiceRoll>(IPC.diceRollRequest)
+    const first = await invoke<DiceRoll>(IPC.diceRollRequest, 20)
+    const second = await invoke<DiceRoll>(IPC.diceRollRequest, 20)
 
     for (const roll of [first, second]) {
       expect(roll.sides).toBe(20)
@@ -323,12 +323,48 @@ describe('zar', () => {
   it('geçmişi 50 atışla sınırlar ve 1-20 dışına çıkmaz', async () => {
     startPlaying()
     const values = new Set<number>()
-    for (let i = 0; i < 120; i++) values.add((await invoke<DiceRoll>(IPC.diceRollRequest)).value)
+    for (let i = 0; i < 120; i++) values.add((await invoke<DiceRoll>(IPC.diceRollRequest, 20)).value)
 
     expect(store.getState().session.diceHistory).toHaveLength(50)
     expect(loadDiceHistory(paths.diceFile).rolls).toHaveLength(50)
     expect(Math.min(...values)).toBeGreaterThanOrEqual(1)
     expect(Math.max(...values)).toBeLessThanOrEqual(20)
+  })
+
+  it.each([
+    [3, [1, 2, 3]],
+    [10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+  ])('d%i yalnızca kendi değerlerini verir ve hepsi gelir', async (sides, expected) => {
+    startPlaying()
+    const values = new Set<number>()
+    for (let i = 0; i < 400; i++) {
+      const roll = await invoke<DiceRoll>(IPC.diceRollRequest, sides)
+      expect(roll.sides).toBe(sides)
+      values.add(roll.value)
+    }
+    expect([...values].sort((a, b) => a - b)).toEqual(expected)
+    expect(logLines().some((line) => line.includes(`Zar atıldı: d${sides} = `))).toBe(true)
+  })
+
+  it('farklı zarlar aynı geçmişte, atılış sırasıyla durur ve dosyadan geri okunur', async () => {
+    startPlaying()
+    const rolled: DiceRoll[] = []
+    for (const sides of [20, 3, 10]) rolled.unshift(await invoke<DiceRoll>(IPC.diceRollRequest, sides))
+
+    expect(rolled.map((roll) => roll.sides)).toEqual([10, 3, 20])
+    expect(store.getState().session.diceHistory).toEqual(rolled)
+    expect(loadDiceHistory(paths.diceFile)).toEqual({ rolls: rolled, error: null })
+  })
+
+  it('tanınmayan zarı atmaz (DND-306)', async () => {
+    startPlaying()
+    fake.testing.sent.length = 0
+    for (const sides of [undefined, 6, 0, -20, 20.5, '20', null, { sides: 20 }]) {
+      expect(await invoke(IPC.diceRollRequest, sides)).toBeNull()
+    }
+    expect(store.getState().session.diceHistory).toEqual([])
+    expect(fake.testing.sent.some((entry) => entry.channel === IPC.diceRoll)).toBe(false)
+    expect(logLines().filter((line) => line.includes('DND-306')).length).toBe(8)
   })
 
   it('zar kaydı yazılamasa da atış yapılır; bildirim bir kez gösterilir (DND-105)', async () => {
@@ -337,8 +373,8 @@ describe('zar', () => {
     fs.mkdirSync(paths.diceFile)
     fake.testing.sent.length = 0
 
-    expect(await invoke<DiceRoll>(IPC.diceRollRequest)).not.toBeNull()
-    expect(await invoke<DiceRoll>(IPC.diceRollRequest)).not.toBeNull()
+    expect(await invoke<DiceRoll>(IPC.diceRollRequest, 20)).not.toBeNull()
+    expect(await invoke<DiceRoll>(IPC.diceRollRequest, 10)).not.toBeNull()
 
     expect(store.getState().session.diceHistory).toHaveLength(2)
     const notices = fake.testing.sent.filter((entry) => entry.channel === IPC.notice)

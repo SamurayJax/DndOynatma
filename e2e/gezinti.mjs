@@ -113,7 +113,7 @@ try {
   await control.evaluate(() => window.dnd.dispatch({ type: 'session/setTool', tool: 'mouse' }))
 
   // Zar: animasyonun ortası ve sonucu.
-  const roll = await control.evaluate(() => window.dnd.dice.roll())
+  const roll = await control.evaluate(() => window.dnd.dice.roll(20))
   await game.waitForTimeout(900)
   await shot(game, '09-zar-ucus')
   await game.waitForTimeout(2600)

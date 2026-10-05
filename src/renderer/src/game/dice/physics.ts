@@ -1,13 +1,17 @@
 /**
  * Zarın masaya düşüşünü katı cisim olarak hesaplar: yerçekimi, köşelerin masaya çarpması,
- * sekme ve sürtünme. Birimler: uzunluk = zarın kenarı, zaman = saniye, kütle = 1.
+ * sekme ve sürtünme. Birimler: uzunluk = d20'nin kenarı, zaman = saniye, kütle = 1.
  * Masa z = 0 düzlemidir; z yukarı (izleyiciye) bakar.
  *
  * Hesap, animasyon başlamadan önce bir kerede yapılır ve kareler kaydedilir. Hangi sayının
- * geleceği burada belirlenmez; yirmi yüzlü simetrik olduğu için sayılar sonradan, üstte kalan
+ * geleceği burada belirlenmez; zarlar simetrik olduğu için sayılar sonradan, üstte kalan
  * yüze göre yerleştirilir (bkz. throwPlan.ts).
+ *
+ * Eylemsizlik her eksende aynı sayılır. d20 ve küp için bu tamdır; d10'da eksenler arasındaki
+ * küçük fark göz ardı edilir (yuvarlanışta seçilmez).
  */
-import { CIRCUMRADIUS, FACE_NORMALS, INERTIA, VERTICES } from './geometry'
+import type { DiceSides } from '@shared/types'
+import type { DieModel } from './geometry'
 import { type Quat, type Vec3, quatNormalize, quatRotate } from './math'
 
 /** Atışın karakterini belirleyen ayarlar; deneme betikleri farklı değerlerle çağırabilir. */
@@ -27,6 +31,22 @@ export const DEFAULT_TUNING: PhysicsTuning = {
   friction: 0.6,
   angularDrag: 1.4,
   linearDrag: 0.7
+}
+
+/**
+ * Yüzü az olan zar daha zor yuvarlanır: bir kenarının üstünden devrilmesi için merkezinin daha çok
+ * yükselmesi gerekir, bu yüzden masaya çarptığı gibi durmaya yatkındır. d10 ve küp, d20 kadar canlı
+ * yuvarlansın diye daha hızlı döndürülerek atılır ve biraz daha çok seker. Değerler, d20 ile aynı
+ * oranda "iyi atış" (yeterince uzun, en az iki sekmeli) verecek şekilde denemeyle seçildi.
+ */
+const THROW_STYLES: Record<DiceSides, { spin: number; restitution: number }> = {
+  20: { spin: 1, restitution: DEFAULT_TUNING.restitution },
+  10: { spin: 1.5, restitution: 0.86 },
+  3: { spin: 2, restitution: 0.88 }
+}
+
+export function tuningFor(model: DieModel): PhysicsTuning {
+  return { ...DEFAULT_TUNING, restitution: THROW_STYLES[model.sides].restitution }
 }
 
 /** Bundan yavaş çarpmalar sekmez; yoksa zar durmak yerine sonsuza dek titrer. */
@@ -69,7 +89,7 @@ export interface ThrowSim {
   firstImpactTime: number
   /** İlk çarpmadan sonraki sıçramaların tepe yükseklikleri (en alçak köşenin masadan uzaklığı). */
   hops: number[]
-  /** Durduğunda üstte kalan yüz (FACES sırası). */
+  /** Durduğunda üstte kalan yüz (modelin yüz sırası). */
   topFace: number
 }
 
@@ -81,8 +101,9 @@ export interface SimPose {
 }
 
 /** Rastgele ama inandırıcı bir atış: +x yönünde ilerler, ilerleme yönünde yuvarlanır. */
-export function randomThrowStart(rng: () => number): ThrowStart {
+export function randomThrowStart(model: DieModel, rng: () => number): ThrowStart {
   const between = (min: number, max: number): number => min + (max - min) * rng()
+  const { spin } = THROW_STYLES[model.sides]
   // Düzgün dağılımlı rastgele yönelim (Shoemake).
   const u1 = rng()
   const u2 = rng() * Math.PI * 2
@@ -94,12 +115,14 @@ export function randomThrowStart(rng: () => number): ThrowStart {
     velocity: [between(3.5, 10), between(-0.7, 0.7), between(-13, -8)],
     orientation: [a * Math.sin(u2), a * Math.cos(u2), b * Math.sin(u3), b * Math.cos(u3)],
     // +x yönünde yuvarlanan cisim +y ekseni etrafında döner; diğer eksenler takla katar.
-    spin: [between(-7, 7), between(6, 14), between(-7, 7)]
+    spin: [between(-7, 7) * spin, between(6, 14) * spin, between(-7, 7) * spin]
   }
 }
 
-export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT_TUNING): ThrowSim {
+export function simulateThrow(model: DieModel, start: ThrowStart, tuning: PhysicsTuning = tuningFor(model)): ThrowSim {
   const { gravity, restitution, friction, angularDrag, linearDrag } = tuning
+  const { vertices, faceNormals, circumradius, inertia } = model
+  const vertexCount = vertices.length
   let [x, y, z] = start.position
   let [vx, vy, vz] = start.velocity
   let [wx, wy, wz] = start.spin
@@ -120,7 +143,7 @@ export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT
   }
   record()
 
-  const offsets = new Float64Array(36)
+  const offsets = new Float64Array(vertexCount * 3)
   const totalSteps = Math.round(MAX_TIME / STEP)
   const windowSteps = Math.round(REST_WINDOW / STEP)
   let rested = false
@@ -156,7 +179,7 @@ export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT
     qw = nw / norm
 
     let touching = 0
-    let lowest = z - CIRCUMRADIUS
+    let lowest = z - circumradius
     if (lowest < CONTACT_SLOP) {
       const m00 = 1 - 2 * (qy * qy + qz * qz)
       const m01 = 2 * (qx * qy - qz * qw)
@@ -168,8 +191,8 @@ export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT
       const m21 = 2 * (qy * qz + qx * qw)
       const m22 = 1 - 2 * (qx * qx + qy * qy)
       let minZ = Infinity
-      for (let i = 0; i < 12; i++) {
-        const v = VERTICES[i]
+      for (let i = 0; i < vertexCount; i++) {
+        const v = vertices[i]
         const rz = m20 * v[0] + m21 * v[1] + m22 * v[2]
         offsets[i * 3] = m00 * v[0] + m01 * v[1] + m02 * v[2]
         offsets[i * 3 + 1] = m10 * v[0] + m11 * v[1] + m12 * v[2]
@@ -181,7 +204,7 @@ export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT
 
       if (lowest < 0) {
         for (let iteration = 0; iteration < CONTACT_ITERATIONS; iteration++) {
-          for (let i = 0; i < 12; i++) {
+          for (let i = 0; i < vertexCount; i++) {
             const rx = offsets[i * 3]
             const ry = offsets[i * 3 + 1]
             const rz = offsets[i * 3 + 2]
@@ -190,10 +213,10 @@ export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT
             const uz = vz + wx * ry - wy * rx
             if (uz >= 0) continue
             const bounce = -uz > BOUNCE_MIN_SPEED ? restitution : 0
-            const normalImpulse = (-(1 + bounce) * uz) / (1 + (rx * rx + ry * ry) / INERTIA)
+            const normalImpulse = (-(1 + bounce) * uz) / (1 + (rx * rx + ry * ry) / inertia)
             vz += normalImpulse
-            wx += (ry * normalImpulse) / INERTIA
-            wy -= (rx * normalImpulse) / INERTIA
+            wx += (ry * normalImpulse) / inertia
+            wy -= (rx * normalImpulse) / inertia
 
             // Sürtünme: değme noktasının masadaki kaymasını durdurmaya çalışır, μ·N ile sınırlı.
             const ux = vx + wy * rz - wz * ry
@@ -205,13 +228,13 @@ export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT
             const cx = -rz * ty
             const cy = rz * tx
             const cz = rx * ty - ry * tx
-            const needed = slip / (1 + (cx * cx + cy * cy + cz * cz) / INERTIA)
+            const needed = slip / (1 + (cx * cx + cy * cy + cz * cz) / inertia)
             const frictionImpulse = Math.min(needed, friction * normalImpulse)
             vx -= tx * frictionImpulse
             vy -= ty * frictionImpulse
-            wx -= (cx * frictionImpulse) / INERTIA
-            wy -= (cy * frictionImpulse) / INERTIA
-            wz -= (cz * frictionImpulse) / INERTIA
+            wx -= (cx * frictionImpulse) / inertia
+            wy -= (cy * frictionImpulse) / inertia
+            wz -= (cz * frictionImpulse) / inertia
           }
         }
         // Masanın altına inen zar yüzeye geri çıkarılır.
@@ -264,8 +287,8 @@ export function simulateThrow(start: ThrowStart, tuning: PhysicsTuning = DEFAULT
   const end = frameAt(frames, frameCount - 1)
   let topFace = 0
   let topHeight = -Infinity
-  for (let face = 0; face < FACE_NORMALS.length; face++) {
-    const height = quatRotate(end.q, FACE_NORMALS[face])[2]
+  for (let face = 0; face < faceNormals.length; face++) {
+    const height = quatRotate(end.q, faceNormals[face])[2]
     if (height > topHeight) {
       topHeight = height
       topFace = face

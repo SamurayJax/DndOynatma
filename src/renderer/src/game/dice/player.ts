@@ -3,14 +3,14 @@
  * döngüsü yürütür; iptal edildiğinde geride kare ya da zamanlayıcı bırakmaz.
  */
 import { playArea } from '@shared/layout'
-import { STAGE_HEIGHT, STAGE_WIDTH } from '@shared/types'
+import { type DiceSides, STAGE_HEIGHT, STAGE_WIDTH } from '@shared/types'
 import { getFullState } from '@renderer/lib/useAppState'
-import { SILHOUETTE_RADIUS } from './geometry'
+import { modelFor } from './geometry'
 import { clamp, smoothstep } from './math'
 import { type DieTone, drawDie } from './renderer'
 import { type StageBounds, planThrow } from './throwPlan'
 
-/** Zarın kenar uzunluğu (sanal piksel). Yerde dururken ekranda yaklaşık 273 piksel genişlik kaplar. */
+/** Zar birimi: d20'nin kenar uzunluğu (sanal piksel). d20 yerde dururken ekranda yaklaşık 273 piksel genişlik kaplar. */
 const EDGE_PX = 146
 const REVEAL_SECONDS = 3
 const FADE_SECONDS = 0.5
@@ -38,20 +38,24 @@ export interface ThrowHandlers {
   onError(error: unknown): void
 }
 
-function toneOf(value: number): DieTone {
+/** 20 ve 1 yalnızca d20'de özeldir. */
+export function toneOf(sides: DiceSides, value: number): DieTone {
+  if (sides !== 20) return 'normal'
   return value === 20 ? 'crit' : value === 1 ? 'fumble' : 'normal'
 }
 
 /**
- * `value` ile biten atışı oynatır. Dönen fonksiyon atışı iptal eder (yeni atış geldiğinde ya da
- * bileşen kaldırıldığında) ve güvenle birden çok kez çağrılabilir.
+ * `sides` yüzlü zarın `value` ile biten atışını oynatır. Dönen fonksiyon atışı iptal eder (yeni atış
+ * geldiğinde ya da bileşen kaldırıldığında) ve güvenle birden çok kez çağrılabilir.
  */
 export function playThrow(
   root: HTMLElement,
   canvas: HTMLCanvasElement,
+  sides: DiceSides,
   value: number,
   handlers: ThrowHandlers
 ): () => void {
+  const model = modelFor(sides)
   // Kök öğe 1920x1080 sanal kutuyu kaplar; kutu pencereye CSS dönüşümüyle ölçeklenir.
   const width = root.clientWidth || STAGE_WIDTH
   const height = root.clientHeight || STAGE_HEIGHT
@@ -84,8 +88,8 @@ export function playThrow(
       height: (area.height * 0.24) / EDGE_PX
     }
   }
-  const plan = planThrow(value, stage)
-  const tone = toneOf(value)
+  const plan = planThrow(model, value, stage)
+  const tone = toneOf(sides, value)
   const drawScale = unit * ratio
 
   const settleAt = plan.duration
@@ -113,7 +117,7 @@ export function playThrow(
 
     if (time < settleAt) {
       if (ctx) {
-        drawDie(ctx, plan.sample(time), {
+        drawDie(ctx, model, plan.sample(time), {
           scale: drawScale,
           alpha: plan.penalty === 0 ? 1 : time / ENTRY_FADE_SECONDS,
           tone,
@@ -123,14 +127,14 @@ export function playThrow(
     } else {
       const glow = tone === 'normal' ? 0 : smoothstep((time - settleAt) / GLOW_RISE_SECONDS)
       if (ctx && !restDrawn) {
-        drawDie(ctx, plan.rest, { scale: drawScale, alpha: 1, tone, glow })
+        drawDie(ctx, model, plan.rest, { scale: drawScale, alpha: 1, tone, glow })
         restDrawn = tone === 'normal' || glow >= 1
       }
       if (!settled) {
         settled = true
         handlers.onSettle({
           x: plan.rest.x * unit,
-          y: plan.rest.y * unit - SILHOUETTE_RADIUS * unit - BADGE_OFFSET_PX * virtualScale
+          y: plan.rest.y * unit - model.silhouetteRadius * unit - BADGE_OFFSET_PX * virtualScale
         })
       }
     }

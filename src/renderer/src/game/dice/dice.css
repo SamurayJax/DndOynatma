@@ -1,5 +1,5 @@
 /*
- * d20 animasyonu. Kök öğe 1920x1080 sanal kutuyu kaplar; içindeki ölçüler sanal pikseldir.
+ * Zar animasyonu. Kök öğe 1920x1080 sanal kutuyu kaplar; içindeki ölçüler sanal pikseldir.
  * `--dice-u`: kutu 1920'den farklı bir genişlikte kurulursa ölçüleri ona uyduran çarpan (player.ts yazar).
  */
 
@@ -59,7 +59,7 @@
   text-shadow: 0 calc(var(--dice-u) * 4px) calc(var(--dice-u) * 8px) rgba(0, 0, 0, 0.7);
 }
 
-/* 20: altın parıltı. */
+/* d20'de 20: altın parıltı. */
 .dice-result.is-crit {
   --dice-ring: var(--accent-hover);
 
@@ -77,7 +77,7 @@
     0 calc(var(--dice-u) * 4px) calc(var(--dice-u) * 8px) rgba(0, 0, 0, 0.7);
 }
 
-/* 1: kırmızı ton. */
+/* d20'de 1: kırmızı ton. */
 .dice-result.is-fumble {
   --dice-ring: var(--danger);
 }

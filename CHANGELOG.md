@@ -1,5 +1,20 @@
 # Sürüm Geçmişi
 
+## 0.9.2 — 2026-10-05
+
+### Eklenenler
+
+- İki yeni zar: d10 (on uçurtma yüzlü gerçek d10 biçimi, yüzlerde 1-10) ve d3 (yüzlerinde 1-2-3
+  ikişer kez yazan küp). İkisi de d20 gibi oyun ekranına düşer, yuvarlanır ve atılan sayıyla durur.
+- Kontrol panelinde üç zar düğmesi: d20, d10, d3. "Son atış" kutusu ve atış geçmişi hangi zarın
+  atıldığını gösterir.
+
+### Değişenler
+
+- 20 ve 1 vurgusu (altın / kırmızı) yalnızca d20 için geçerlidir.
+- Zar kodu tek bir zara göre yazılı olmaktan çıkarıldı: biçim ayrı bir tanım, fizik ve çizim ortak.
+  d20'nin görünüşü ve davranışı aynıdır.
+
 ## 0.9.1 — 2026-10-05
 
 ### Eklenenler

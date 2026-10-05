@@ -1,12 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties, JSX } from 'react'
-import type { DiceRoll } from '@shared/types'
+import type { CSSProperties, JSX, ReactNode } from 'react'
+import type { DiceRoll, DiceSides } from '@shared/types'
 import { reportError } from '@renderer/lib/reportError'
 import { useSession } from '@renderer/lib/useAppState'
-import { Button, DiceIcon, Panel, cx, toast } from '@renderer/ui'
+import { Button, D10Icon, D3Icon, DiceIcon, Panel, cx, toast } from '@renderer/ui'
 
 /** Art arda tıklamayla zar yığılmasın; oyun ekranındaki animasyon da bu sürede oturur. */
 const ROLL_COOLDOWN_MS = 1200
+
+interface DieChoice {
+  sides: DiceSides
+  /** İpucunda görünen açıklama. */
+  hint: string
+  icon: ReactNode
+}
+
+/** En çok atılan zar en solda ve vurgulu. */
+const DICE: readonly DieChoice[] = [
+  { sides: 20, hint: '20 yüzlü zar', icon: <DiceIcon size={24} strokeWidth={1.5} /> },
+  { sides: 10, hint: '10 yüzlü zar', icon: <D10Icon size={24} strokeWidth={1.5} /> },
+  { sides: 3, hint: '3 lük zar (1-2-3 ikişer kez yazan küp)', icon: <D3Icon size={24} strokeWidth={1.5} /> }
+]
 
 function formatTime(iso: string): string {
   const date = new Date(iso)
@@ -15,13 +29,14 @@ function formatTime(iso: string): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
-/** 20 ve 1 hafifçe vurgulanır. */
+/** Yalnızca d20'de 20 ve 1 hafifçe vurgulanır. */
 function rollTone(roll: DiceRoll): string | false {
-  if (roll.value === roll.sides) return 'is-crit'
+  if (roll.sides !== 20) return false
+  if (roll.value === 20) return 'is-crit'
   return roll.value === 1 && 'is-fumble'
 }
 
-/** d20 düğmesi, son atış ve atış geçmişi. Zar oyun ekranında atılır; sonuç ana süreçte üretilir. */
+/** Zar düğmeleri, son atış ve atış geçmişi. Zar oyun ekranında atılır; sonuç ana süreçte üretilir. */
 export function DicePanel(): JSX.Element {
   const { diceHistory } = useSession()
   const [cooling, setCooling] = useState(false)
@@ -30,13 +45,13 @@ export function DicePanel(): JSX.Element {
 
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
-  const roll = (): void => {
+  const roll = (sides: DiceSides): void => {
     if (cooling) return
     setCooling(true)
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => setCooling(false), ROLL_COOLDOWN_MS)
     window.dnd.dice
-      .roll()
+      .roll(sides)
       .then((result) => {
         if (result === null) toast('Zar atılamadı: oyun açık değil.', 'UYARI', 'DND-401')
       })
@@ -49,23 +64,32 @@ export function DicePanel(): JSX.Element {
   return (
     <Panel className="ctl-panel" title="Zar">
       <div className="ctl-dice__top">
-        {/*
-          `disabled` yerine `aria-disabled`: odaktaki düğme gerçekten devre dışı kalırsa odak kaybolur
-          ve klavyeyle yeniden atmak için düğmeye dönmek gerekir.
-        */}
-        <Button
-          variant="primary"
-          size="lg"
-          className={cx('ctl-dice__btn', cooling && 'is-cooling')}
-          style={{ '--ctl-cooldown': `${ROLL_COOLDOWN_MS}ms` } as CSSProperties}
-          icon={<DiceIcon size={30} strokeWidth={1.5} />}
-          aria-disabled={cooling}
-          onClick={roll}
-        >
-          d20 at
-        </Button>
+        <div className="ctl-dice__buttons" role="group" aria-label="Zar at">
+          {DICE.map((die) => (
+            /*
+              `disabled` yerine `aria-disabled`: odaktaki düğme gerçekten devre dışı kalırsa odak kaybolur
+              ve klavyeyle yeniden atmak için düğmeye dönmek gerekir. Bekleme süresi üç zar için ortaktır.
+            */
+            <Button
+              key={die.sides}
+              variant={die.sides === 20 ? 'primary' : 'secondary'}
+              className={cx('ctl-dice__btn', cooling && 'is-cooling')}
+              style={{ '--ctl-cooldown': `${ROLL_COOLDOWN_MS}ms` } as CSSProperties}
+              icon={die.icon}
+              aria-label={`d${die.sides} at`}
+              title={`${die.hint} at`}
+              aria-disabled={cooling}
+              onClick={() => roll(die.sides)}
+            >
+              d{die.sides}
+            </Button>
+          ))}
+        </div>
         <div className="ctl-dice__result" aria-live="polite">
-          <span className="ctl-dice__caption">Son atış</span>
+          <span className="ctl-dice__caption">
+            Son atış
+            {latest !== undefined && <span className="ctl-dice__caption-die"> · d{latest.sides}</span>}
+          </span>
           {latest === undefined ? (
             <span className="ctl-dice__value is-empty">—</span>
           ) : (
@@ -85,6 +109,7 @@ export function DicePanel(): JSX.Element {
           <ol className="ctl-dice__list" aria-label="Son atışlar">
             {diceHistory.map((entry) => (
               <li key={entry.id} className={cx('ctl-dice__roll', rollTone(entry))}>
+                <span className="ctl-dice__roll-die">d{entry.sides}</span>
                 <span className="ctl-dice__roll-value">{entry.value}</span>
                 <time className="ctl-dice__roll-time" dateTime={entry.at}>
                   {formatTime(entry.at)}

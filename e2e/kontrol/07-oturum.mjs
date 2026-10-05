@@ -79,7 +79,7 @@ await run(async () => {
   const sideBefore = await control.evaluate(() => document.querySelector('.ctl-col--side').scrollHeight)
   frames = await measureFrames(control, async () => {
     for (let i = 0; i < DICE_CAP + 5; i++) {
-      await control.evaluate(() => window.dnd.dice.roll())
+      await control.evaluate(() => window.dnd.dice.roll(20))
       await sleep(30)
     }
   })

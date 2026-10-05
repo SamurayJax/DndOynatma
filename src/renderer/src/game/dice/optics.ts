@@ -1,16 +1,16 @@
 /**
  * Kamera ve ışık. Kamera masaya tam tepeden bakar (oyun ekranı = masa); zarın yüksekliği
- * ekranda büyüme ve gölgenin uzaklaşması olarak görünür. Uzunluk birimi zarın kenarıdır.
+ * ekranda büyüme ve gölgenin uzaklaşması olarak görünür. Uzunluk birimi d20'nin kenarıdır.
  */
-import { CIRCUMRADIUS, INRADIUS } from './geometry'
+import type { DieModel } from './geometry'
 import type { Vec3 } from './math'
 
 /** Kameranın masadan yüksekliği. Küçüldükçe perspektif sertleşir. */
 export const CAMERA_HEIGHT = 8
 
 /** Masadan `height` yukarıdaki bir noktanın ekrandaki ölçeği; yerde duran zarın merkezinde 1'dir. */
-export function perspective(height: number): number {
-  return (CAMERA_HEIGHT - INRADIUS) / (CAMERA_HEIGHT - height)
+export function perspective(model: DieModel, height: number): number {
+  return (CAMERA_HEIGHT - model.inradius) / (CAMERA_HEIGHT - height)
 }
 
 /** Yüzleri aydınlatan ışığın yönü (zardan ışığa doğru): sol üstten, izleyici tarafından. */
@@ -34,10 +34,10 @@ export interface ShadowShape {
  * Zarın masadaki gölgesi. Zar yükseldikçe gölge ışığın tersine kayar, genişler ve solar;
  * yere indikçe zarın altında toplanıp koyulaşır.
  */
-export function shadowOf(x: number, y: number, z: number): ShadowShape {
-  const lift = Math.max(0, z - INRADIUS)
-  const ground = perspective(0)
-  const radius = CIRCUMRADIUS * ground
+export function shadowOf(model: DieModel, x: number, y: number, z: number): ShadowShape {
+  const lift = Math.max(0, z - model.inradius)
+  const ground = perspective(model, 0)
+  const radius = model.circumradius * ground
   return {
     x: x + SHADOW_SHIFT_X * z * ground,
     y: y + SHADOW_SHIFT_Y * z * ground,
@@ -48,6 +48,6 @@ export function shadowOf(x: number, y: number, z: number): ShadowShape {
 }
 
 /** Zarın ekranda kaplayabileceği en büyük dairenin yarıçapı (kameraya en yakın köşe için). */
-export function screenRadius(z: number): number {
-  return CIRCUMRADIUS * perspective(Math.min(z + CIRCUMRADIUS, CAMERA_HEIGHT - 0.5))
+export function screenRadius(model: DieModel, z: number): number {
+  return model.circumradius * perspective(model, Math.min(z + model.circumradius, CAMERA_HEIGHT - 0.5))
 }

@@ -140,7 +140,7 @@ async function precision(session, tag, { sceneId, itemId }) {
   // --- Zar: tuval çözünürlüğü ve sonuç ---
   {
     await session.probe('hookDice')
-    const roll = await session.control.evaluate(() => window.dnd.dice.roll())
+    const roll = await session.control.evaluate(() => window.dnd.dice.roll(20))
     await session.game.waitForFunction(() => window.__oyun.dice().text !== null, null, { timeout: 8000 })
     const dice = await session.probe('dice')
     const canvas = await session.game.evaluate(() => {

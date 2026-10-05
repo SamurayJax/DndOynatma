@@ -216,7 +216,7 @@ await run(async () => {
   check('tam ekran ayarı kayit.json dosyasına yazılır', savedSettings.gameFullscreen === false, JSON.stringify(savedSettings))
 
   // --- zar + CSP (oyun açıkken) ---
-  const roll = await control.evaluate(() => window.dnd.dice.roll())
+  const roll = await control.evaluate(() => window.dnd.dice.roll(20))
   check('oyun açıkken zar atılır', Number.isInteger(roll?.value) && roll.value >= 1 && roll.value <= 20, `d20=${roll?.value}`)
   await sleep(1500)
   const csp = { menu: await readCsp(menu), game: await readCsp(game), control: await readCsp(control) }
@@ -296,7 +296,7 @@ await run(async () => {
 
   // --- oyun açıkken çıkış ---
   ;({ game, control } = await startGame(session, menu))
-  await control.evaluate(() => window.dnd.dice.roll())
+  await control.evaluate(() => window.dnd.dice.roll(20))
   check('zar.json oyun sırasında dolu', JSON.parse(readFileSync(join(work.dataDir, 'zar.json'), 'utf8')).length === 1)
   let exit = await quitFromUi(session, control)
   check('oyun açıkken çıkış: süreç kendiliğinden ve 0 koduyla kapanır', exit?.code === 0, JSON.stringify(exit))

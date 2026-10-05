@@ -3,7 +3,7 @@
  */
 import { Action } from './actions'
 import { ErrorCode, LogLevel } from './errors'
-import { DiceRoll, FullState, LibraryCategory, LibraryImage } from './types'
+import { DiceRoll, DiceSides, FullState, LibraryCategory, LibraryImage } from './types'
 
 /**
  * menu: ana menü ve ayarlar · game: oyuncuların gördüğü oyun ekranı · control: DM'in kontrol paneli ·
@@ -168,8 +168,8 @@ export interface DndApi {
   }
 
   dice: {
-    /** d20 atar. Sonuç ana süreçte üretilir, kaydedilir ve onDiceRoll ile yayılır. */
-    roll(): Promise<DiceRoll | null>
+    /** Seçilen zarı atar. Sonuç ana süreçte üretilir, kaydedilir ve onDiceRoll ile yayılır. */
+    roll(sides: DiceSides): Promise<DiceRoll | null>
   }
 
   app: {

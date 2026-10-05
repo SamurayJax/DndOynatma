@@ -160,7 +160,7 @@ async function checkApp() {
 
     if (control) {
       await control.waitForLoadState('domcontentloaded')
-      const roll = await control.evaluate(() => window.dnd.dice.roll())
+      const roll = await control.evaluate(() => window.dnd.dice.roll(20))
       check('zar atıldı', Number.isInteger(roll?.value) && roll.value >= 1, `değer: ${roll?.value}`)
     }
 

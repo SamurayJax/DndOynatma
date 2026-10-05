@@ -1,13 +1,15 @@
 /**
  * Sonucu önceden belli olan bir atışı planlar.
  *
- * Fizik hangi yüzün üstte kalacağını kendisi belirler; biz sonucu değiştiremeyiz. Ama yirmi yüzlü
+ * Fizik hangi yüzün üstte kalacağını kendisi belirler; biz sonucu değiştiremeyiz. Ama zarlar
  * simetriktir: sayıları zarın üzerinde "çevirerek" yerleştirmek hareketi hiç değiştirmez. Bu yüzden
  * önce hareket hesaplanır, sonra sayılar üstte kalan yüze istenen değer gelecek şekilde yerleştirilir
  * ve bütün sahne dikey eksende döndürülerek rakam ekranda dik getirilir. Böylece zar baştan sona
  * gerçek bir zar gibi davranır ve sonunda hiçbir sıçrama ya da düzeltme görünmez.
+ *
+ * Her yüzün, zarın bir dönme simetrisiyle her yüze taşınabildiği zarlarda geçerlidir (d20, d10, küp).
  */
-import { CIRCUMRADIUS, FACE_NORMALS, INRADIUS, faceCorner, restOrientation } from './geometry'
+import { type DieModel, faceUpAt, restOrientation } from './geometry'
 import {
   type Quat,
   quatBetween,
@@ -21,7 +23,7 @@ import {
 import { screenRadius, shadowOf } from './optics'
 import { type ThrowSim, finalPose, randomThrowStart, samplePose, simulateThrow } from './physics'
 
-/** Ekran ölçüleri, zar birimiyle (kenar = 1); başlangıç sol üst, y aşağı. */
+/** Ekran ölçüleri, zar birimiyle (d20'nin kenarı = 1); başlangıç sol üst, y aşağı. */
 export interface StageBounds {
   width: number
   height: number
@@ -75,8 +77,9 @@ const VISIBLE_SHIFT = 0.012
 const SETTLE_BLEND = 0.2
 /** Duran zarın rakamı en fazla bu kadar yatık olabilir (radyan). */
 const REST_TILT = (6 * Math.PI) / 180
+/** Rakamı üç yöne yazılabilen zar (d20) için deneme sınırı ve atış başına denenen iniş yeri. */
 const MAX_ATTEMPTS = 220
-const CORNERS = [0, 1, 2] as const
+const LANDING_SPOTS = 2
 
 interface Candidate {
   plan: ThrowPlan
@@ -84,7 +87,7 @@ interface Candidate {
 }
 
 /** Zarın gözle durduğu an (fizik zamanı): bundan sonra son duruştan farkı seçilemez. */
-function visibleRestTime(sim: ThrowSim): number {
+function visibleRestTime(model: DieModel, sim: ThrowSim): number {
   const end = finalPose(sim)
   let quietFrom = sim.restTime
   for (let t = sim.restTime - 1 / 60; t > sim.firstImpactTime; t -= 1 / 60) {
@@ -94,17 +97,18 @@ function visibleRestTime(sim: ThrowSim): number {
     )
     const turn = 2 * Math.acos(Math.min(1, alignment))
     const shift = Math.hypot(pose.x - end.x, pose.y - end.y, pose.z - end.z)
-    if (shift + turn * CIRCUMRADIUS > VISIBLE_SHIFT) break
+    if (shift + turn * model.circumradius > VISIBLE_SHIFT) break
     quietFrom = t
   }
   return Math.min(sim.restTime, quietFrom + SETTLE_BLEND)
 }
 
 function evaluate(
+  model: DieModel,
   sim: ThrowSim,
   restTime: number,
   value: number,
-  corner: number,
+  turn: number,
   tilt: number,
   landing: { x: number; y: number },
   stage: StageBounds
@@ -112,21 +116,21 @@ function evaluate(
   const end = finalPose(sim)
 
   // Fiziğin son duruşu neredeyse düzdür; kalan küçük eğim için düzeltme dönüşü.
-  const topNormal = quatRotate(end.q, FACE_NORMALS[sim.topFace])
+  const topNormal = quatRotate(end.q, model.faceNormals[sim.topFace])
   const flatten = quatBetween(topNormal, [0, 0, 1])
   const flat = quatMul(flatten, end.q)
 
-  const restQ = restOrientation(value, tilt)
-  // Üstteki yüzün seçilen köşesi ekranda rakamın "yukarı" yönüne gelsin diye sahnenin dönüşü.
-  const cornerDir = quatRotate(flat, faceCorner(sim.topFace, corner))
-  const yawAngle = Math.PI / 2 + tilt - Math.atan2(cornerDir[1], cornerDir[0])
+  const restQ = restOrientation(model, value, tilt)
+  // Üstteki yüzün seçilen "yukarı" yönü ekranda da yukarı baksın diye sahnenin dönüşü.
+  const upDir = quatRotate(flat, faceUpAt(model, sim.topFace, turn))
+  const yawAngle = Math.PI / 2 + tilt - Math.atan2(upDir[1], upDir[0])
   const yaw = quatFromAxisAngle([0, 0, 1], yawAngle)
-  // Sayıların zar üzerindeki yerleşimi: yirmi yüzlünün kendi simetrilerinden biri.
+  // Sayıların zar üzerindeki yerleşimi: zarın kendi dönme simetrilerinden biri.
   const relabel = quatMul(quatConj(flat), quatMul(quatConj(yaw), restQ))
   const cos = Math.cos(yawAngle)
   const sin = Math.sin(yawAngle)
 
-  const rest: DiePose = { x: landing.x, y: landing.y, z: INRADIUS, q: restQ }
+  const rest: DiePose = { x: landing.x, y: landing.y, z: model.inradius, q: restQ }
 
   const poseAt = (simTime: number): DiePose => {
     if (simTime >= restTime) return rest
@@ -141,17 +145,17 @@ function evaluate(
       x: landing.x + dx * cos - dy * sin,
       // Dünya y'si yukarı, ekran y'si aşağı.
       y: landing.y - (dx * sin + dy * cos),
-      z: pose.z * keep + INRADIUS * weight,
+      z: pose.z * keep + model.inradius * weight,
       q: quatMul(yaw, quatMul(q, relabel))
     }
   }
 
   const isOffscreen = (pose: DiePose): boolean => {
-    const radius = screenRadius(pose.z) * 1.05
+    const radius = screenRadius(model, pose.z) * 1.05
     const dieOut =
       pose.x < -radius || pose.x > stage.width + radius || pose.y < -radius || pose.y > stage.height + radius
     if (!dieOut) return false
-    const shadow = shadowOf(pose.x, pose.y, pose.z)
+    const shadow = shadowOf(model, pose.x, pose.y, pose.z)
     return (
       shadow.x < -shadow.outer ||
       shadow.x > stage.width + shadow.outer ||
@@ -222,42 +226,54 @@ function evaluate(
 }
 
 /** Zarın düşmeden, olduğu yerde belirdiği plan: fizik hiç sonuç vermezse son çare. */
-function stillPlan(value: number, stage: StageBounds, attempts: number): ThrowPlan {
+function stillPlan(model: DieModel, value: number, stage: StageBounds, attempts: number): ThrowPlan {
   const rest: DiePose = {
     x: stage.landing.x + stage.landing.width / 2,
     y: stage.landing.y + stage.landing.height / 2,
-    z: INRADIUS,
-    q: restOrientation(value)
+    z: model.inradius,
+    q: restOrientation(model, value)
   }
   return { duration: 0.3, rest, sample: () => rest, penalty: Infinity, attempts, entrySide: 'none' }
 }
 
 /**
  * `value` ile biten bir atış hazırlar. Rastgele atışlar dener; koşulların hepsini sağlayan ilkini,
- * yoksa en yakın olanı seçer. Tipik süre birkaç milisaniyedir.
+ * yoksa en yakın olanı seçer. Tipik süre 10 milisaniye dolayındadır; en kötü durumda 0,1 saniyeyi bulur.
  */
-export function planThrow(value: number, stage: StageBounds, rng: () => number = Math.random): ThrowPlan {
+export function planThrow(
+  model: DieModel,
+  value: number,
+  stage: StageBounds,
+  rng: () => number = Math.random
+): ThrowPlan {
+  const turns = model.faceTurns
+  // Rakamı tek yöne yazılabilen zarda (d10) atış başına aday azdır; açık, daha çok iniş yeri ve
+  // daha çok denemeyle kapatılır.
+  const scarcity = Math.max(1, 3 / turns)
+  const maxAttempts = Math.round(MAX_ATTEMPTS * scarcity)
+  const spots = Math.round(LANDING_SPOTS * scarcity)
   let best: Candidate | null = null
   let attempts = 0
-  while (attempts < MAX_ATTEMPTS) {
+  while (attempts < maxAttempts) {
     attempts++
-    const sim = simulateThrow(randomThrowStart(rng))
+    const sim = simulateThrow(model, randomThrowStart(model, rng))
     if (!sim.rested) continue
-    const restTime = visibleRestTime(sim)
+    const restTime = visibleRestTime(model, sim)
     const tilt = (rng() * 2 - 1) * REST_TILT
-    const first = Math.floor(rng() * 3)
-    for (let i = 0; i < 3; i++) {
-      const corner = CORNERS[(first + i) % 3]
-      for (let spot = 0; spot < 2; spot++) {
+    // Rakamın dik durabileceği her yön, zarın ekrana başka bir yönden girmesi demektir.
+    const first = Math.floor(rng() * turns)
+    for (let i = 0; i < turns; i++) {
+      const turn = (first + i) % turns
+      for (let spot = 0; spot < spots; spot++) {
         const landing = {
           x: stage.landing.x + rng() * stage.landing.width,
           y: stage.landing.y + rng() * stage.landing.height
         }
-        const candidate = evaluate(sim, restTime, value, corner, tilt, landing, stage)
+        const candidate = evaluate(model, sim, restTime, value, turn, tilt, landing, stage)
         if (best === null || candidate.penalty < best.penalty) best = candidate
         if (candidate.penalty === 0) return { ...candidate.plan, attempts }
       }
     }
   }
-  return best === null ? stillPlan(value, stage, attempts) : { ...best.plan, attempts }
+  return best === null ? stillPlan(model, value, stage, attempts) : { ...best.plan, attempts }
 }

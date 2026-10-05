@@ -1,18 +1,8 @@
 /**
  * Zarı 2B tuvale çizer: kendi perspektif izdüşümü, arka yüz ayıklama, yüz başına ışıklandırma.
- * Yirmi yüzlü dışbükey olduğu için görünen yüzler birbirini örtmez; sıralama gerekmez.
+ * Zarlar dışbükey olduğu için görünen yüzler birbirini örtmez; sıralama gerekmez.
  */
-import {
-  CIRCUMRADIUS,
-  FACES,
-  FACE_CENTERS,
-  FACE_NORMALS,
-  FACE_RIGHTS,
-  FACE_UPS,
-  FACE_VALUES,
-  INRADIUS,
-  VERTICES
-} from './geometry'
+import type { DieModel } from './geometry'
 import { type Vec3, clamp, normalize } from './math'
 import { LIGHT, perspective, shadowOf } from './optics'
 import type { DiePose } from './throwPlan'
@@ -52,10 +42,10 @@ const HALF_DIR = normalize([LIGHT_DIR[0], LIGHT_DIR[1], LIGHT_DIR[2] + 1])
 
 // Georgia'nın rakamları satır altına iner (eski stil); zar yüzünde hizalı rakam gerekir.
 const NUMERAL_FONT = "'Palatino Linotype', 'Book Antiqua', Cambria, 'Times New Roman', serif"
-/** Rakamlar yüzün kendi düzleminde, kenar = 100 birim olan bir uzayda yazılır. */
+/** Rakamlar yüzün kendi düzleminde, d20'nin kenarı = 100 birim olan bir uzayda yazılır. */
 const TEXT_UNITS = 100
-const SIZE_ONE_DIGIT = 40
-const SIZE_TWO_DIGITS = 33
+/** Alt çizgi ve gölge ölçüleri bu boydaki rakama göre yazıldı; öbür boylarda oranlanır. */
+const REFERENCE_SIZE = 40
 /** Bundan daha yandan görünen yüzlerde rakam çizilmez (okunmaz, bozuk görünür). */
 const MIN_FACING_FOR_TEXT = 0.16
 
@@ -64,17 +54,22 @@ interface Label {
   font: string
   x: number
   y: number
+  /** Rakamın altındaki gölgenin kayması. */
+  shadeX: number
+  shadeY: number
   /** 6 ve 9 için alt çizgi: [x, y, genişlik, yükseklik]; diğerlerinde null. */
   underline: readonly [number, number, number, number] | null
 }
 
-const labelCache = new Map<number, Label>()
+const labelCache = new Map<string, Label>()
 
-function labelFor(ctx: CanvasRenderingContext2D, value: number): Label {
-  const cached = labelCache.get(value)
+function labelFor(ctx: CanvasRenderingContext2D, model: DieModel, value: number): Label {
+  const key = `${model.sides}:${value}`
+  const cached = labelCache.get(key)
   if (cached) return cached
   const text = String(value)
-  const size = text.length > 1 ? SIZE_TWO_DIGITS : SIZE_ONE_DIGIT
+  const size = model.numeralSizes[text.length > 1 ? 1 : 0]
+  const unit = model.numeralSizes[0] / REFERENCE_SIZE
   const font = `700 ${size}px ${NUMERAL_FONT}`
   ctx.font = font
   ctx.textAlign = 'left'
@@ -85,9 +80,10 @@ function labelFor(ctx: CanvasRenderingContext2D, value: number): Label {
   const right = metrics.actualBoundingBoxRight
   const ascent = metrics.actualBoundingBoxAscent
   const descent = metrics.actualBoundingBoxDescent
+  // Ters dönünce birbirine benzeyen 6 ve 9 alt çizgiyle ayrılır.
   const needsMark = value === 6 || value === 9
   // Alt çizgi rakamla birlikte ortalansın diye rakam biraz yukarı alınır.
-  const lift = needsMark ? 3.5 : 0
+  const lift = needsMark ? 3.5 * unit : 0
   const y = (ascent - descent) / 2 - lift
   const inkWidth = left + right
   const label: Label = {
@@ -95,9 +91,11 @@ function labelFor(ctx: CanvasRenderingContext2D, value: number): Label {
     font,
     x: (left - right) / 2,
     y,
-    underline: needsMark ? [-inkWidth * 0.46, y + descent + 3.6, inkWidth * 0.92, 3.4] : null
+    shadeX: 1.4 * unit,
+    shadeY: 1.6 * unit,
+    underline: needsMark ? [-inkWidth * 0.46, y + descent + 3.6 * unit, inkWidth * 0.92, 3.4 * unit] : null
   }
-  labelCache.set(value, label)
+  labelCache.set(key, label)
   return label
 }
 
@@ -113,9 +111,9 @@ function mixRgb(from: Vec3, to: Vec3, t: number): string {
   return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`
 }
 
-// Her karede yeniden ayırmamak için ortak tamponlar.
-const screenX = new Float64Array(12)
-const screenY = new Float64Array(12)
+// Her karede yeniden ayırmamak için ortak tamponlar; köşesi daha çok olan bir zar gelirse büyür.
+let screenX = new Float64Array(12)
+let screenY = new Float64Array(12)
 
 function softDisc(
   ctx: CanvasRenderingContext2D,
@@ -138,8 +136,9 @@ function softDisc(
 }
 
 /** Tuvalin tamamını temizleyip zarı ve gölgesini çizer. */
-export function drawDie(ctx: CanvasRenderingContext2D, pose: DiePose, options: DrawOptions): void {
+export function drawDie(ctx: CanvasRenderingContext2D, model: DieModel, pose: DiePose, options: DrawOptions): void {
   const { scale, tone, glow } = options
+  const { vertices, faces, faceCenters, faceNormals, faceRights, faceUps, faceValues, circumradius, inradius } = model
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   if (options.alpha <= 0) return
@@ -149,25 +148,25 @@ export function drawDie(ctx: CanvasRenderingContext2D, pose: DiePose, options: D
   const centerY = pose.y * scale
 
   // --- Gölge ---
-  const shadow = shadowOf(pose.x, pose.y, pose.z)
+  const shadow = shadowOf(model, pose.x, pose.y, pose.z)
   softDisc(ctx, shadow.x * scale, shadow.y * scale, shadow.inner * scale, shadow.outer * scale, '0, 0, 0', shadow.alpha)
   // Yere yaklaştıkça zarın hemen altında sıkı, koyu bir temas gölgesi belirir.
-  const lift = Math.max(0, pose.z - INRADIUS)
+  const lift = Math.max(0, pose.z - inradius)
   const contact = clamp(1 - lift / 0.8, 0, 1)
   if (contact > 0) {
     softDisc(
       ctx,
       centerX + 0.09 * scale,
       centerY + 0.12 * scale,
-      CIRCUMRADIUS * 0.8 * scale,
-      CIRCUMRADIUS * 1.17 * scale,
+      circumradius * 0.8 * scale,
+      circumradius * 1.17 * scale,
       '0, 0, 0',
       0.5 * contact
     )
   }
 
   if (tone !== 'normal' && glow > 0) {
-    softDisc(ctx, centerX, centerY, CIRCUMRADIUS * 0.7 * scale, CIRCUMRADIUS * 1.8 * scale, GLOW_COLORS[tone], 0.5 * glow)
+    softDisc(ctx, centerX, centerY, circumradius * 0.7 * scale, circumradius * 1.8 * scale, GLOW_COLORS[tone], 0.5 * glow)
   }
 
   // --- Köşeler ---
@@ -187,32 +186,40 @@ export function drawDie(ctx: CanvasRenderingContext2D, pose: DiePose, options: D
     const x = m00 * v[0] + m01 * v[1] + m02 * v[2]
     const y = m10 * v[0] + m11 * v[1] + m12 * v[2]
     const z = m20 * v[0] + m21 * v[1] + m22 * v[2]
-    const k = perspective(pose.z + z) * scale
+    const k = perspective(model, pose.z + z) * scale
     return [centerX + x * k, centerY - y * k]
   }
 
-  for (let i = 0; i < 12; i++) {
-    const [x, y] = project(VERTICES[i])
+  if (screenX.length < vertices.length) {
+    screenX = new Float64Array(vertices.length)
+    screenY = new Float64Array(vertices.length)
+  }
+  for (let i = 0; i < vertices.length; i++) {
+    const [x, y] = project(vertices[i])
     screenX[i] = x
     screenY[i] = y
   }
 
   // --- Görünen yüzler ---
   const visible: number[] = []
-  for (let face = 0; face < FACES.length; face++) {
-    const [a, b, c] = FACES[face]
-    const area =
-      (screenX[b] - screenX[a]) * (screenY[c] - screenY[a]) - (screenX[c] - screenX[a]) * (screenY[b] - screenY[a])
+  for (let face = 0; face < faces.length; face++) {
+    const corners = faces[face]
+    // Çokgenin tuvaldeki işaretli alanının iki katı.
+    let area = 0
+    for (let i = 0; i < corners.length; i++) {
+      const a = corners[i]
+      const b = corners[(i + 1) % corners.length]
+      area += screenX[a] * screenY[b] - screenX[b] * screenY[a]
+    }
     // Dışarıdan saat yönünün tersine dizili yüz, y'si aşağı bakan tuvalde negatif alan verir.
     if (area < 0) visible.push(face)
   }
 
   const trace = (face: number): void => {
-    const [a, b, c] = FACES[face]
+    const corners = faces[face]
     ctx.beginPath()
-    ctx.moveTo(screenX[a], screenY[a])
-    ctx.lineTo(screenX[b], screenY[b])
-    ctx.lineTo(screenX[c], screenY[c])
+    ctx.moveTo(screenX[corners[0]], screenY[corners[0]])
+    for (let i = 1; i < corners.length; i++) ctx.lineTo(screenX[corners[i]], screenY[corners[i]])
     ctx.closePath()
   }
 
@@ -226,7 +233,7 @@ export function drawDie(ctx: CanvasRenderingContext2D, pose: DiePose, options: D
   }
 
   for (const face of visible) {
-    const n = FACE_NORMALS[face]
+    const n = faceNormals[face]
     const nx = m00 * n[0] + m01 * n[1] + m02 * n[2]
     const ny = m10 * n[0] + m11 * n[1] + m12 * n[2]
     const nz = m20 * n[0] + m21 * n[1] + m22 * n[2]
@@ -236,7 +243,7 @@ export function drawDie(ctx: CanvasRenderingContext2D, pose: DiePose, options: D
     const specular = SPECULAR_STRENGTH * Math.pow(halfway, SHININESS)
 
     // Yüz içinde ışığa doğru hafif bir açılma: düz boyadan daha "cilalı" görünür.
-    const [fx, fy] = project(FACE_CENTERS[face])
+    const [fx, fy] = project(faceCenters[face])
     const reach = 0.5 * scale
     const sheen = ctx.createLinearGradient(
       fx + LIGHT_DIR[0] * reach,
@@ -252,16 +259,16 @@ export function drawDie(ctx: CanvasRenderingContext2D, pose: DiePose, options: D
 
     // --- Rakam ---
     if (nz < MIN_FACING_FOR_TEXT) continue
-    const center = FACE_CENTERS[face]
-    const right = FACE_RIGHTS[face]
-    const up = FACE_UPS[face]
+    const center = faceCenters[face]
+    const right = faceRights[face]
+    const up = faceUps[face]
     const span = 0.25
     const [rx, ry] = project([center[0] + right[0] * span, center[1] + right[1] * span, center[2] + right[2] * span])
     const [ux, uy] = project([center[0] + up[0] * span, center[1] + up[1] * span, center[2] + up[2] * span])
     const k = 1 / (span * TEXT_UNITS)
     // Yazının y ekseni aşağı baktığı için "yukarı" vektörü ters çevrilir.
     ctx.setTransform((rx - fx) * k, (ry - fy) * k, -(ux - fx) * k, -(uy - fy) * k, fx, fy)
-    const label = labelFor(ctx, FACE_VALUES[face])
+    const label = labelFor(ctx, model, faceValues[face])
     ctx.font = label.font
     ctx.textAlign = 'left'
     ctx.textBaseline = 'alphabetic'
@@ -270,7 +277,7 @@ export function drawDie(ctx: CanvasRenderingContext2D, pose: DiePose, options: D
     const previousAlpha = ctx.globalAlpha
     ctx.globalAlpha = previousAlpha * fade
     ctx.fillStyle = NUMERAL_SHADE
-    ctx.fillText(label.text, label.x + 1.4, label.y + 1.6)
+    ctx.fillText(label.text, label.x + label.shadeX, label.y + label.shadeY)
     ctx.fillStyle = mixRgb(NUMERAL_DIM, NUMERAL_LIT, (intensity - AMBIENT) / DIFFUSE + specular)
     ctx.fillText(label.text, label.x, label.y)
     if (label.underline) ctx.fillRect(...label.underline)

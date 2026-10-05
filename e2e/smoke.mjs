@@ -51,7 +51,7 @@ try {
   await game.screenshot({ path: join(outDir, '03-oyun.png') })
   await control.screenshot({ path: join(outDir, '04-kontrol.png') })
 
-  const roll = await control.evaluate(() => window.dnd.dice.roll())
+  const roll = await control.evaluate(() => window.dnd.dice.roll(20))
   const state = await control.evaluate(() => window.dnd.getState())
   console.log('zar:', roll?.value, '| phase:', state.session.phase, '| oyuncu 0:', state.app.players[0].name)
 

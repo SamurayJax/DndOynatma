@@ -184,6 +184,28 @@ export function DiceIcon(props: IconProps): JSX.Element {
   )
 }
 
+/** d10: kutbu yukarıda duran on yüzlü; ortadaki uçurtma öndeki yüzdür. */
+export function D10Icon(props: IconProps): JSX.Element {
+  const inner = (props.strokeWidth ?? DEFAULT_STROKE) * 0.55
+  return (
+    <Svg {...props}>
+      <path d="M16.7 12.6 20.6 13.6M7.3 12.6 3.4 13.6M12 15.9v5.6" strokeWidth={inner} opacity="0.75" />
+      <path d="M12 2.5 20.6 10.9v2.7L12 21.5l-8.6-7.9v-2.7L12 2.5z" />
+      <path d="M12 2.5 16.7 12.6 12 15.9 7.3 12.6 12 2.5z" />
+    </Svg>
+  )
+}
+
+/** d3: köşesinden görünen küp. */
+export function D3Icon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M12 2.5 20.2 7.25v9.5L12 21.5l-8.2-4.75v-9.5L12 2.5z" />
+      <path d="M3.8 7.25 12 12l8.2-4.75M12 12v9.5" />
+    </Svg>
+  )
+}
+
 export function FullscreenIcon(props: IconProps): JSX.Element {
   return (
     <Svg {...props}>
