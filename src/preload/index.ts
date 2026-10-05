@@ -7,7 +7,7 @@ declare const location: { search: string }
 
 function readRole(): WindowRole {
   const role = new URLSearchParams(location.search).get('role')
-  return role === 'game' || role === 'control' ? role : 'menu'
+  return role === 'game' || role === 'control' || role === 'setup' ? role : 'menu'
 }
 
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -38,6 +38,15 @@ const api: DndApi = {
   game: {
     start: () => ipcRenderer.invoke(IPC.gameStart),
     end: () => ipcRenderer.invoke(IPC.gameEnd)
+  },
+
+  storage: {
+    getSetup: () => ipcRenderer.invoke(IPC.storageGetSetup),
+    pickParent: () => ipcRenderer.invoke(IPC.storagePickParent),
+    check: (parent) => ipcRenderer.invoke(IPC.storageCheck, parent),
+    confirmSetup: (parent, migrateLegacy) => ipcRenderer.invoke(IPC.storageConfirmSetup, parent, migrateLegacy),
+    retry: () => ipcRenderer.invoke(IPC.storageRetry),
+    move: (parent) => ipcRenderer.invoke(IPC.storageMove, parent)
   },
 
   dice: {

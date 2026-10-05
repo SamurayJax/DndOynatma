@@ -67,7 +67,20 @@ let paths: DataPaths
 let store: Store
 let windows: { roleOf: Mock; startGame: Mock; endGame: Mock; toggleGameFullscreen: Mock }
 let libraryAddAccepted: boolean
-const info: AppInfo = { version: '0.1.0', dataDir: 'veri', logDir: 'log', logFile: 'bugun.log', crashedLastTime: true }
+const info: AppInfo = {
+  version: '0.1.0',
+  dataDir: 'veri',
+  dataDirCloud: null,
+  dataDirFixed: false,
+  logDir: 'log',
+  logFile: 'bugun.log',
+  crashedLastTime: true
+}
+const storage = {
+  pickParent: vi.fn(async () => 'C:\\secilen'),
+  check: vi.fn((parent: string) => ({ parent, target: `${parent}\\DndOynatma-Kayit`, cloud: null, writable: true, hasSave: false, sameAsCurrent: false })),
+  move: vi.fn(async () => ({ ok: true, code: null, message: '', target: 'yeni' }))
+}
 
 /** Arayüzdeki `ipcRenderer.invoke` karşılığı. */
 function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -138,7 +151,7 @@ beforeEach(() => {
     trashImage: vi.fn()
   })
   windows = { roleOf: vi.fn(() => 'control'), startGame: vi.fn(), endGame: vi.fn(), toggleGameFullscreen: vi.fn() }
-  registerIpc({ store, windows: windows as unknown as WindowManager, paths, getInfo: () => info })
+  registerIpc({ store, windows: windows as unknown as WindowManager, paths, storage, getInfo: () => info })
 })
 
 afterEach(() => {

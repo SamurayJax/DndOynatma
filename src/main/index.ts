@@ -4,16 +4,19 @@
 import { Menu, app, shell } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import { AppInfo } from '@shared/ipc'
+import { AppInfo, StorageResult } from '@shared/ipc'
 import { AppState, FullState, LibraryImage, createInitialAppState, createInitialSession } from '@shared/types'
 import { checkAndCreateCrashMarker, removeCrashMarker } from './crashMarker'
 import { clearDiceFile } from './dice'
 import { isSafeFileName } from './fileNames'
 import { registerIpc } from './ipcHandlers'
+import { CONFIG_FILE_NAME, detectCloud, ensureWritable, hasSaveData, resolveStartLocation, samePath, targetFor, writeConfig } from './location'
 import { log, pruneOldLogs } from './logger'
 import { handleMediaProtocol, registerMediaScheme } from './media'
 import { broadcast, queueStartupNotice, report } from './notify'
-import { DataPaths, buildDataPaths, ensureDataDirs, resolveDataDir } from './paths'
+import { DataPaths, buildDataPaths, ensureDataDirs } from './paths'
+import { checkParent, copySave, failure, isUsablePath, pickParent, success, trashOldFolder } from './relocate'
+import { runSetup } from './setup'
 import { LoadResult, loadAppState, loadDiceHistory, saveAppState } from './storage'
 import { Store } from './store'
 import { WindowManager } from './windows'
@@ -24,21 +27,35 @@ let windows: WindowManager | null = null
 let crashedLastTime = false
 let exiting = false
 
-/** Açılışta kayıt klasörünü belirler. Belgeler klasörü bulunamazsa uygulamanın kendi klasörüne düşer. */
-function prepareDataPaths(): { paths: DataPaths; error: unknown } {
-  let documentsDir: string
-  let error: unknown = null
+/** Seçilen kayıt klasörünün yolunu tutan küçük ayar dosyası; uygulamanın kendi ayar klasöründedir. */
+function configFilePath(): string {
+  const dir = process.env['DND_CONFIG_DIR']?.trim() || app.getPath('userData')
+  return path.join(dir, CONFIG_FILE_NAME)
+}
+
+/** 0.8 sürümlerinin kayıt klasörü: Belgeler\DndOynatma. Varsa ilk açılışta taşınması önerilir. */
+function legacyDataDir(): string {
+  const override = process.env['DND_LEGACY_DIR']?.trim()
+  if (override) return path.resolve(override)
   try {
-    documentsDir = app.getPath('documents')
-  } catch (cause) {
-    error = cause
-    documentsDir = app.getPath('userData')
+    return path.join(app.getPath('documents'), 'DndOynatma')
+  } catch {
+    return path.join(app.getPath('userData'), 'DndOynatma')
   }
-  const dataPaths = buildDataPaths(resolveDataDir(documentsDir))
+}
+
+/** Kayıt klasörü için önerilen üst klasör: kullanıcı klasörünün kökü (bulut eşitlemesi dışında). */
+function suggestedParentDir(): string {
+  return process.env['DND_HOME_DIR']?.trim() || app.getPath('home')
+}
+
+function prepareDataPaths(dataDir: string): { paths: DataPaths; error: unknown } {
+  const dataPaths = buildDataPaths(dataDir)
+  let error: unknown = null
   try {
     ensureDataDirs(dataPaths)
   } catch (cause) {
-    error ??= cause
+    error = cause
   }
   return { paths: dataPaths, error }
 }
@@ -80,8 +97,84 @@ function trashImageFile(imagesDir: string, image: LibraryImage): void {
     .catch((error: unknown) => report('DND-205', `${image.fileName}: ${error instanceof Error ? error.message : String(error)}`))
 }
 
-function start(): void {
-  const prepared = prepareDataPaths()
+/** Açılış: kayıt klasörü belli değilse önce kullanıcıya sorulur, sonra uygulama o klasörle başlar. */
+async function start(): Promise<void> {
+  Menu.setApplicationMenu(null)
+  const configFile = configFilePath()
+  const location = resolveStartLocation(configFile)
+
+  if (location.kind === 'ready') {
+    startWithDataDir(location.dataDir, location.fixed, configFile)
+    return
+  }
+
+  // Kayıt klasörü belli olana kadar log uygulamanın ayar klasörüne yazılır.
+  log.init(path.join(path.dirname(configFile), 'log'), { echo: !app.isPackaged })
+  log.info(`Uygulama açıldı: sürüm ${app.getVersion()}, kayıt klasörü henüz belli değil`)
+  if (location.reason === 'missing') log.code('DND-107', location.missingDir ?? '')
+
+  const chosen = await runSetup({
+    reason: location.reason,
+    missingDir: location.missingDir,
+    configFile,
+    legacyDir: legacyDataDir(),
+    suggestedParent: suggestedParentDir()
+  })
+  if (chosen === null) {
+    log.info('Kayıt klasörü seçilmeden çıkıldı')
+    log.close()
+    app.quit()
+    return
+  }
+  startWithDataDir(chosen, false, configFile)
+}
+
+/**
+ * Ayarlardan kayıt klasörünü değiştirme: kayıt yeni yere kopyalanır, doğrulanır, yeni yer ayara
+ * yazılır, eski klasör Geri Dönüşüm Kutusu'na gönderilir ve uygulama yeni klasörle yeniden başlar.
+ * Herhangi bir adım başarısız olursa eski kayıt yerinde ve kullanımda kalır.
+ */
+async function moveDataDir(parent: unknown, dataPaths: DataPaths, activeStore: Store, configFile: string, fixed: boolean): Promise<StorageResult> {
+  if (fixed) return failure('DND-108', 'kayıt klasörü ortam değişkeniyle sabitlenmiş')
+  if (!isUsablePath(parent)) return failure('DND-108', 'geçersiz klasör yolu')
+  if (activeStore.getState().session.phase === 'playing') return failure('DND-304', 'oyun açıkken kayıt klasörü değiştirilemez')
+
+  const target = targetFor(parent)
+  if (samePath(target, dataPaths.dataDir)) return success(target, 'Kayıt zaten bu klasörde.')
+  // Hedefte kayıt varsa o kullanılır; şu anki kayıt yerinde bırakılır.
+  const adopting = hasSaveData(target)
+  if (!ensureWritable(target)) return failure('DND-108', 'klasör oluşturulamadı ya da yazılamıyor', target)
+
+  activeStore.flushSave()
+  if (!adopting) {
+    const copied = copySave(dataPaths.dataDir, target)
+    if (!copied.ok) return failure('DND-109', copied.detail, target)
+  }
+  try {
+    writeConfig(configFile, { dataDir: target })
+  } catch (error) {
+    return failure('DND-108', `ayar dosyası yazılamadı: ${error instanceof Error ? error.message : String(error)}`, target)
+  }
+
+  // Buradan sonra uygulama eski klasöre bir şey yazmamalı: olağan kapanış adımları atlanır.
+  exiting = true
+  removeCrashMarker(dataPaths.crashMarker)
+  log.info(`Kayıt klasörü değişti${adopting ? ' (var olan kayıt kullanılacak)' : ''}; uygulama yeniden başlatılıyor`)
+  // Açık log dosyası eski klasörün kaldırılmasını engeller; log yeni klasöre geçer.
+  log.init(path.join(target, 'log'), { echo: !app.isPackaged })
+  const trashed = adopting ? true : await trashOldFolder(dataPaths.dataDir)
+
+  // Yanıt arayüze ulaşsın diye kısa bir süre beklenir.
+  setTimeout(() => {
+    log.close()
+    if (!process.env['DND_NO_RELAUNCH']) app.relaunch()
+    app.exit(0)
+  }, 300)
+  return success(target, trashed ? '' : 'Eski kayıt klasörü kaldırılamadı; yerinde duruyor.')
+}
+
+function startWithDataDir(dataDir: string, fixed: boolean, configFile: string): void {
+  const prepared = prepareDataPaths(dataDir)
   const dataPaths = prepared.paths
   paths = dataPaths
 
@@ -145,22 +238,33 @@ function start(): void {
     store: activeStore,
     windows: activeWindows,
     paths: dataPaths,
+    storage: {
+      pickParent: (parentWindow) => pickParent(parentWindow, path.dirname(dataPaths.dataDir)),
+      check: (parent) => checkParent(parent, dataPaths.dataDir),
+      move: (parent) => moveDataDir(parent, dataPaths, activeStore, configFile, fixed)
+    },
     getInfo: (): AppInfo => ({
       version: app.getVersion(),
       dataDir: dataPaths.dataDir,
+      dataDirCloud: detectCloud(dataPaths.dataDir),
+      dataDirFixed: fixed,
       logDir: dataPaths.logDir,
       logFile: log.currentFile(),
       crashedLastTime
     })
   })
 
-  Menu.setApplicationMenu(null)
   activeWindows.openMenu()
 }
 
 /** Düzgün kapanış. Çökme işareti yalnızca burada silinir. */
 function cleanExit(): void {
-  if (exiting || !paths || !store) return
+  if (exiting) return
+  if (!paths || !store) {
+    // Kayıt klasörü sorulurken çıkıldı: kapatılacak tek şey log dosyası.
+    log.close()
+    return
+  }
   exiting = true
   const saved = store.flushSave()
   // Normal çıkış oyunun bitmesi sayılır; zar kaydı yalnızca çökmede kalır.
@@ -189,8 +293,8 @@ registerMediaScheme()
 // Windows görev çubuğunda pencerelerin kurulu uygulamanın kısayoluyla aynı grupta toplanması için.
 app.setAppUserModelId('com.samurayjax.dndoynatma')
 
-// Testler aynı anda birkaç kopya çalıştırır; her biri kendi DND_DATA_DIR klasörünü kullanır.
-const isolatedRun = Boolean(process.env['DND_DATA_DIR']?.trim())
+// Testler aynı anda birkaç kopya çalıştırır; her biri kendi kayıt ya da ayar klasörünü kullanır.
+const isolatedRun = Boolean(process.env['DND_DATA_DIR']?.trim() || process.env['DND_CONFIG_DIR']?.trim())
 
 if (!isolatedRun && !app.requestSingleInstanceLock()) {
   app.quit()

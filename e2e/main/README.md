@@ -19,6 +19,7 @@ Başka bir derlemeyi denemek için: `DND_E2E_MAIN=out/main/index.js node e2e/mai
 |-------|----------|
 | `01-pencereler.mjs` | `window.dnd` ve rolü, sandbox, pencere başlıkları, CSP, monitör yerleşimi, tam ekran (düğme + F11), oyunu başlat/bitir yarışları, X ile kapatma, arayüz çökmesi (DND-305 / DND-902), oyun açıkken çıkış |
 | `02-medya-kutuphane.mjs` | `dnd-media` (`<img>`, `fetch`, tuval, 404, klasör dışına çıkma denemeleri), yükleme uç durumları (DND-201 / 202 / 204), portre değiştirme, kütüphaneden silme, çöpe taşıma hatası (DND-205) |
+| `04-kayit-yeri.mjs` | ilk açılışta kayıt klasörü sorusu, bulunamayan klasör (DND-107), eski kaydı taşıma, ayarlardan klasör değiştirme, var olan kaydı kullanma, bulut uyarısı, yazılamayan yer (DND-108) |
 | `03-kayit.mjs` | otomatik kayıt ve geri yükleme, yedek, `zar.json`, zorla kapatma sonrası açılış (DND-903), bozuk kayıt (DND-101 / 102), yeni şema (DND-106), kilitli dosya (DND-103), kullanılamayan klasör (DND-104), yakalanmamış hata (DND-901), log biçimi ve logda isim/not olmaması |
 
 ## Bilinmesi gerekenler

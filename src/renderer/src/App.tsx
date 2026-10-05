@@ -3,6 +3,7 @@ import type { WindowRole } from '@shared/ipc'
 import { ControlPanel } from './control/ControlPanel'
 import { GameScreen } from './game/GameScreen'
 import { MenuRoot } from './menu/MenuRoot'
+import { SetupScreen } from './setup/SetupScreen'
 import { ConfirmHost, ErrorBoundary } from './ui'
 
 function RoleRoot({ role }: { role: WindowRole }): JSX.Element {
@@ -13,10 +14,12 @@ function RoleRoot({ role }: { role: WindowRole }): JSX.Element {
       return <GameScreen />
     case 'control':
       return <ControlPanel />
+    case 'setup':
+      return <SetupScreen />
   }
 }
 
-/** Üç pencere aynı uygulamayı yükler; hangisinin çizileceğini pencerenin rolü belirler. */
+/** Bütün pencereler aynı uygulamayı yükler; hangisinin çizileceğini pencerenin rolü belirler. */
 export function App(): JSX.Element {
   const role = window.dnd.role
   return (

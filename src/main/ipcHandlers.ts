@@ -3,7 +3,7 @@
  */
 import { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, app, ipcMain, screen, shell } from 'electron'
 import { ERROR_CODES, ErrorCode, LogLevel } from '@shared/errors'
-import { AppInfo, IPC, ImportResult, WindowRole } from '@shared/ipc'
+import { AppInfo, IPC, ImportResult, StorageCheck, StorageResult, WindowRole } from '@shared/ipc'
 import { CATEGORIES } from '@shared/layout'
 import { LibraryCategory, MAX_PLAYERS } from '@shared/types'
 import { rollDice } from './dice'
@@ -19,6 +19,12 @@ export interface IpcDeps {
   store: Store
   windows: WindowManager
   paths: DataPaths
+  /** Ayarlardaki "Kayıt klasörünü değiştir". */
+  storage: {
+    pickParent: (parentWindow: BrowserWindow | null) => Promise<string | null>
+    check: (parent: string) => StorageCheck
+    move: (parent: unknown) => Promise<StorageResult>
+  }
   getInfo: () => AppInfo
 }
 
@@ -136,6 +142,21 @@ export function registerIpc(deps: IpcDeps): void {
   on(IPC.appOpenLogFolder, () => openFolder(paths.logDir))
 
   handle(IPC.appGetInfo, () => deps.getInfo())
+
+  // Kayıt klasörü: açılıştaki soru bitmiştir; buradakiler ayarlardaki değiştirme içindir.
+  handle(IPC.storageGetSetup, () => null)
+  handle(IPC.storageRetry, () => false)
+  handle(IPC.storageConfirmSetup, (): StorageResult => ({ ok: false, code: null, message: 'Kayıt klasörü zaten belirlenmiş.', target: null }))
+  handle(IPC.storagePickParent, (_role, event) => deps.storage.pickParent(BrowserWindow.fromWebContents(event.sender)))
+  handle(IPC.storageCheck, (_role, _event, parent) => {
+    if (typeof parent !== 'string' || parent.trim() === '') throw new Error('Geçersiz klasör yolu')
+    return deps.storage.check(parent)
+  })
+  handle(IPC.storageMove, (role, _event, parent): Promise<StorageResult> | StorageResult => {
+    // Yalnızca ana menüden (ayarlar) değiştirilir.
+    if (role !== 'menu') return { ok: false, code: null, message: 'Kayıt klasörü yalnızca ayarlardan değiştirilir.', target: null }
+    return deps.storage.move(parent)
+  })
 
   handle(IPC.appGetDisplays, () => describeDisplays(screen.getAllDisplays(), screen.getPrimaryDisplay().id))
 

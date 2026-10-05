@@ -1,5 +1,25 @@
 # Sürüm Geçmişi
 
+## 0.9.0 — 2026-10-05
+
+Sürüm 1.0 yolunun ilk adımı: kayıt yeri.
+
+### Eklenenler
+
+- İlk açılışta kayıt klasörünün yeri sorulur; uygulama seçilen yerin içine `DndOynatma-Kayit`
+  klasörünü açar. Önerilen yer bulut eşitlemesi dışındadır; OneDrive, Dropbox ya da Google Drive
+  içindeki bir yer seçilirse uyarı gösterilir.
+- Eski kayıt (`Belgeler\DndOynatma`) bulunursa yeni klasöre taşınması önerilir: önce kopyalanır,
+  kopya doğrulanınca eski klasör Geri Dönüşüm Kutusu'na gönderilir.
+- Ayarlar › Genel'de "Klasörü değiştir": kayıt yeni klasöre taşınır ve uygulama yeniden başlar.
+- Seçilen kayıt klasörü bulunamazsa (disk takılı değil, klasör taşınmış) boş kayıt açılmaz;
+  yeniden deneme ya da başka klasör seçme sorulur.
+- Hata kodları DND-107 – DND-110.
+
+### Değişenler
+
+- Kayıt artık `Belgeler\DndOynatma` klasörüne yazılmıyor.
+
 ## 0.8.1 — 2026-10-05
 
 Faz 1 düzeltmeleri.

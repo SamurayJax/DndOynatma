@@ -156,7 +156,9 @@ değiştirmez.
 Her değişiklik otomatik kaydedilir; "kaydet" düğmesi yoktur. Bilgisayar kapatılıp
 açılsa da her şey kaldığı yerden devam eder.
 
-Kayıt klasörü: `Belgeler\DndOynatma\` (Ayarlar'da "Kayıt klasörünü aç" düğmesi).
+Kayıt klasörü kullanıcının seçtiği yerdedir: ilk açılışta sorulur, uygulama seçilen yerin içine
+`DndOynatma-Kayit` klasörünü açar. Ayarlar › Genel'den açılır ve değiştirilir (ayrıntı aşağıda,
+"Sürüm 1.0 yolu › Kayıt yeri").
 
 | Dosya / klasör | İçerik |
 |----------------|--------|
@@ -249,21 +251,24 @@ Her iş ayrı dalda yapılır; kullanıcı deneyip onaylayınca `main`'e birleş
 | 5 | Müzik | 0.9.4 |
 | 6 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
 
-### 1. Kayıt yeri (0.9.0)
+### 1. Kayıt yeri (0.9.0) — yapıldı
 
-Kayıt şu an `Belgeler\DndOynatma` klasöründe; bu bilgisayarda Belgeler OneDrive'a bağlı
-olduğu için kayıt, görseller ve log buluta eşitleniyor. Kayıt yerelde durmalı.
+0.8 sürümlerinde kayıt `Belgeler\DndOynatma` klasöründeydi; bu bilgisayarda Belgeler OneDrive'a
+bağlı olduğu için kayıt, görseller ve log buluta eşitleniyordu. Kayıt yerelde durmalı.
 
 - İlk açılışta uygulama kaydın nereye yapılacağını sorar. Kullanıcı bir klasör seçer; uygulama
-  onun içine kendi klasörünü (`DndOynatma Kayıt`) açar ve her şeyi oraya yazar.
+  onun içine kendi klasörünü (`DndOynatma-Kayit`) açar ve her şeyi oraya yazar.
 - Önerilen varsayılan eşitlenmeyen bir yerdir (kullanıcı klasörünün kökü). Seçilen yer OneDrive,
   Dropbox ya da Google Drive içindeyse uyarı gösterilir (engellenmez).
 - Eski yerde (`Belgeler\DndOynatma`) kayıt varsa yeni yere taşımayı önerir; taşıma önce kopyalar,
   kopya doğrulanınca eskisini Geri Dönüşüm Kutusu'na gönderir.
-- Ayarlar › Genel'de "Kayıt klasörünü değiştir": aynı taşıma adımlarıyla.
+- Ayarlar › Genel'de "Klasörü değiştir": aynı taşıma adımlarıyla; taşıma bitince uygulama yeni
+  klasörle yeniden başlar. Oyun açıkken değiştirilemez.
+- Seçilen yerde zaten bir DndOynatma kaydı varsa taşıma yapılmaz, o kayıt kullanılır.
 - Seçilen klasörün yolu küçük bir yerel ayar dosyasında (uygulamanın kendi ayar klasöründe) durur.
   Klasör bulunamazsa (silinmiş, disk takılı değil) uygulama boş kayıt açmaz; yeniden sorar.
-- Yeni hata kodları: klasör seçilemedi / yazılamıyor, taşıma yarıda kaldı.
+- Hata kodları: DND-107 (klasör bulunamadı), DND-108 (kullanılamıyor), DND-109 (taşınamadı),
+  DND-110 (eski klasör kaldırılamadı).
 
 **Bitti sayılır:** İlk açılışta klasör sorulur ve kayıt orada oluşur. Eski kayıt eksiksiz taşınır
 (görseller dahil). Klasör değiştirilince hiçbir şey kaybolmaz. Seçilen klasör yokken açılış veri
@@ -306,31 +311,23 @@ dört kart portreleriyle birlikte aynı gelir. Bozuk ya da yabancı dosya kaydı
 
 ### 5. Müzik (0.9.4)
 
-İstek: kontrol panelinden, önceden seçilmiş şarkılar uygulamanın içinde çalsın; müzik oyunculara
-uygulama üzerinden verilsin.
+Kontrol panelinde bir müzik oynatıcısı: kullanıcı kendi ses dosyalarını (mp3, ogg, wav) yükler,
+oradan seçip çalar. Müzik oyunculara uygulama üzerinden gider.
 
-Araştırma sonucu (2026-10-05):
+- Kontrol panelinde ayrı bir "Müzik" sekmesi: parça listesi, yükleme ve silme.
+- Oynatma: parça seç, çal / duraklat, ileri / geri sar (ilerleme çubuğu), önceki / sonraki parça,
+  ses düzeyi, tekrar.
+- Ses dosyaları kayıt klasöründe (`muzik/`) durur; liste ve ses düzeyi kayda girer.
+- Önce kısa bir deneme: Discord'da oyun ekranı penceresi sesle paylaşılınca kontrol panelinden
+  çalan müzik karşıya gidiyor mu. Gitmiyorsa ses oyun ekranı penceresinden çalınır.
 
-- YouTube Music'in resmi bir oynatma arayüzü yok; hesaba bağlanıp kütüphaneyi okumak ancak
-  resmi olmayan, kullanım koşullarına aykırı yöntemlerle mümkün. **Yapılmayacak.**
-- Google, uygulama içine gömülü tarayıcıda hesap girişini engelliyor; yani uygulama içinde
-  YouTube Music'e giriş yapılamaz (Premium hesabın reklamsızlığı uygulamaya taşınamaz).
-- Resmi yol: YouTube'un gömülü oynatıcısı. Şarkı ya da çalma listesi **bağlantısı** yapıştırılır,
-  uygulama onu çalar. Kısıtlar: bazı resmi müzik videoları gömülü oynatmaya kapalıdır; reklam
-  çıkabilir. Paketlenmiş uygulamada oynatıcının çalışması için arayüzün dosyadan değil yerel bir
-  adresten sunulması gerekir (aksi halde "Hata 153").
-- Her zaman çalışan yol: bilgisayardaki ses dosyaları (mp3, ogg, wav).
+YouTube / YouTube Music bağlantısı yapılmayacak (kullanıcı kararı, 2026-10-05): YouTube Music'in
+resmi bir oynatma arayüzü yok, Google uygulama içi tarayıcıda hesap girişini engelliyor, gömülü
+oynatıcıda bazı şarkılar kapalı ve reklam çıkabiliyor.
 
-Plan, iki aşama:
-
-1. **Deneme (karar öncesi):** gömülü oynatıcı paketlenmiş uygulamada çalışıyor mu; Discord'da
-   oyun ekranı penceresi sesle paylaşılınca müzik karşıya gidiyor mu. Sonuç kullanıcıya gösterilir.
-2. **Müzik paneli:** kontrol panelinde kayıtlı parça listesi. Her parça ya bir YouTube bağlantısı
-   (deneme olumluysa) ya da yerel ses dosyasıdır. Çal / duraklat, ses düzeyi, tekrar. Liste
-   kayda girer.
-
-**Bitti sayılır:** Listeye eklenen parça kontrol panelinden çalınır ve Discord'da karşı taraf duyar.
-Uygulama kapatılıp açılınca liste yerindedir. Çalınamayan bağlantı açık bir hata koduyla bildirilir.
+**Bitti sayılır:** Yüklenen parça kontrol panelinden çalınır, ileri-geri sarılır ve Discord'da
+karşı taraf duyar. Uygulama kapatılıp açılınca liste yerindedir. Çalınamayan dosya açık bir hata
+koduyla bildirilir.
 
 ### Kararlar (2026-10-05)
 

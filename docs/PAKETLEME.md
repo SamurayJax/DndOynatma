@@ -38,8 +38,9 @@ bilgisayarınızı korudu" uyarısı gösterebilir: "Ek bilgi" → "Yine de çal
 
 ## Kullanıcı verisi
 
-Kayıt, görseller ve loglar `Belgeler\DndOynatma\` klasöründedir (bkz. `PLAN.md`, "Kayıt").
-Bu klasör kurulum klasörünün dışındadır: güncelleme de kaldırma da ona dokunmaz.
+Kayıt, görseller ve loglar kullanıcının ilk açılışta seçtiği yerdeki `DndOynatma-Kayit`
+klasöründedir (bkz. `PLAN.md`, "Kayıt"). Klasörün yeri `%APPDATA%\DndOynatma\ayar.json` dosyasında
+tutulur. İkisi de kurulum klasörünün dışındadır: güncelleme de kaldırma da onlara dokunmaz.
 Electron'un kendi önbelleği `%APPDATA%\dndoynatma\` altındadır; kaldırmada o da silinmez
 (`deleteAppDataOnUninstall: false`).
 

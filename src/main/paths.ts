@@ -12,12 +12,6 @@ export interface DataPaths {
   crashMarker: string
 }
 
-/** `DND_DATA_DIR` verildiyse o klasör (testler ve denemeler), yoksa Belgeler\DndOynatma. */
-export function resolveDataDir(documentsDir: string, env: NodeJS.ProcessEnv = process.env): string {
-  const override = env['DND_DATA_DIR']?.trim()
-  return override ? path.resolve(override) : path.join(documentsDir, 'DndOynatma')
-}
-
 export function buildDataPaths(dataDir: string): DataPaths {
   return {
     dataDir,

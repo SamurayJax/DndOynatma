@@ -1,0 +1,144 @@
+/* Açılıştaki kayıt klasörü ekranı. */
+
+.setup-root {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  overflow: auto;
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+    var(--bg-0);
+}
+
+.setup-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(680px, 100%);
+  padding: var(--space-6);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-2);
+}
+
+.setup-title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  color: var(--accent);
+}
+
+.setup-text {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.setup-target {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.setup-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.setup-path {
+  display: block;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.setup-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.setup-notes:empty {
+  display: none;
+}
+
+.setup-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  line-height: 1.45;
+}
+
+.setup-note > svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.setup-note--info {
+  color: var(--text-muted);
+}
+
+.setup-note--warning {
+  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+  color: var(--text);
+}
+
+.setup-note--warning > svg {
+  color: var(--warning);
+}
+
+.setup-note--error {
+  border-color: color-mix(in srgb, var(--danger) 60%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--text);
+}
+
+.setup-note--error > svg {
+  color: var(--danger);
+}
+
+.setup-legacy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.setup-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.setup-hint code {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.setup-actions__spacer {
+  flex: 1;
+}

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const scripts = ['01-pencereler.mjs', '02-medya-kutuphane.mjs', '03-kayit.mjs']
+const scripts = ['01-pencereler.mjs', '02-medya-kutuphane.mjs', '03-kayit.mjs', '04-kayit-yeri.mjs']
 const failed = []
 
 for (const script of scripts) {

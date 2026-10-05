@@ -38,7 +38,8 @@ await run(async () => {
   for (let i = 0; i < ROLLS; i++) {
     const startedAt = Date.now()
     const thrown = await roll()
-    await waitResult()
+    // Bir önceki atışın sonucu hâlâ ekranda olabilir; bu atışın sayısı görünene kadar beklenir.
+    await game.waitForFunction((value) => window.__oyun.dice().text === value, String(thrown.value), { timeout: 8000 })
     const settleMs = Date.now() - startedAt
     const dice = await session.probe('dice')
     const top = await session.probe('diceTop')

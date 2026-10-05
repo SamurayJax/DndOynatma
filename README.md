@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.8.1 (Windows)
+**Sürüm:** 0.9.0 (Windows)
 
 ## Ne yapar
 
@@ -59,7 +59,9 @@ Oyun ekranında:
 
 ## Kayıt ve log
 
-Her şey `Belgeler\DndOynatma\` klasöründedir (Ayarlar › Genel › "Kayıt klasörünü aç"):
+Uygulama ilk açılışta kaydın nereye yapılacağını sorar ve seçilen yerin içine `DndOynatma-Kayit`
+klasörünü açar. Klasör Ayarlar › Genel'den açılır ("Kayıt klasörünü aç") ve taşınır
+("Klasörü değiştir"). İçinde:
 
 | Dosya / klasör | İçerik |
 |----------------|--------|

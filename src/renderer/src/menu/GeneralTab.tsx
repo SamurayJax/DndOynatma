@@ -4,7 +4,7 @@ import type { DisplayInfo } from '@shared/ipc'
 import { reportError } from '@renderer/lib/reportError'
 import { useAppInfo } from '@renderer/lib/useAppInfo'
 import { dispatch, useApp } from '@renderer/lib/useAppState'
-import { Button, Field, FolderIcon, Panel, Select, Toggle } from '@renderer/ui'
+import { Button, Field, FolderIcon, Panel, Select, Toggle, WarningIcon, confirmDialog, toast } from '@renderer/ui'
 import type { SelectOption } from '@renderer/ui'
 
 const AUTO_DISPLAY = 'auto'
@@ -55,6 +55,54 @@ function displayChoice(displays: DisplayInfo[] | null, displayId: number | null,
   return { selected, options, missing: displays !== null && !listed }
 }
 
+/**
+ * Kayıt klasörünü değiştirir: klasör seçtirir, ne olacağını onaylatır ve taşımayı başlatır.
+ * Taşıma başarılıysa uygulama yeni klasörle yeniden başlar; bu fonksiyondan sonra pencere kapanır.
+ */
+async function changeDataFolder(setMoving: (moving: boolean) => void): Promise<void> {
+  const parent = await window.dnd.storage.pickParent()
+  if (parent === null) return
+  const check = await window.dnd.storage.check(parent)
+  if (check.sameAsCurrent) {
+    toast('Kayıt zaten bu klasörde.')
+    return
+  }
+  if (!check.writable) {
+    toast('Bu yere yazılamıyor; başka bir yer seçin.', 'UYARI')
+    return
+  }
+
+  const confirmed = await confirmDialog({
+    title: check.hasSave ? 'Bu klasördeki kayıt kullanılsın mı?' : 'Kayıt bu klasöre taşınsın mı?',
+    message: (
+      <>
+        <p>
+          <code className="menu-path selectable">{check.target}</code>
+        </p>
+        {check.hasSave ? (
+          <p>Bu klasörde zaten bir DndOynatma kaydı var. Onaylarsanız o kayıt kullanılır; şu anki kayıt yerinde kalır, taşınmaz.</p>
+        ) : (
+          <p>
+            Bütün kayıt (oyuncular, pencereler, görseller, loglar) bu klasöre kopyalanır. Kopya doğrulanınca eski klasör Geri
+            Dönüşüm Kutusu'na gönderilir.
+          </p>
+        )}
+        {check.cloud !== null && <p>Dikkat: bu klasör {check.cloud} içinde; kayıt buluta eşitlenir.</p>}
+        <p>Uygulama yeniden başlatılacak.</p>
+      </>
+    ),
+    confirmLabel: check.hasSave ? 'Bu kaydı kullan' : 'Taşı ve yeniden başlat'
+  })
+  if (!confirmed) return
+
+  setMoving(true)
+  const result = await window.dnd.storage.move(parent)
+  if (!result.ok) {
+    toast(result.code === null ? result.message : `${result.message} (${result.code})`, 'HATA', result.code)
+    setMoving(false)
+  }
+}
+
 const MISSING_DISPLAY_HINT = 'Kayıtlı monitör şu an bağlı değil. Başka bir monitör ya da "Otomatik" seçebilirsiniz.'
 
 /** Ayarlar › Genel: oyun ekranının ve kontrol panelinin monitörü, tam ekran tercihi, klasörler ve sürüm. */
@@ -62,6 +110,7 @@ export function GeneralTab(): JSX.Element {
   const { settings } = useApp()
   const info = useAppInfo()
   const displays = useDisplays()
+  const [moving, setMoving] = useState(false)
 
   const game = displayChoice(displays, settings.gameDisplayId, 'Otomatik (en büyük monitör)')
   const control = displayChoice(displays, settings.controlDisplayId, 'Otomatik (oyun ekranının olmadığı monitör)')
@@ -125,10 +174,30 @@ export function GeneralTab(): JSX.Element {
           <div className="menu-general__folder-text">
             <span className="menu-general__label">Kayıt klasörü</span>
             <code className="menu-path selectable">{info?.dataDir ?? '…'}</code>
+            {info !== null && info.dataDirCloud !== null && (
+              <span className="menu-general__warning">
+                <WarningIcon size={16} />
+                Bu klasör {info.dataDirCloud} içinde: kayıt buluta eşitleniyor. Yerelde kalması için klasörü değiştirin.
+              </span>
+            )}
           </div>
-          <Button icon={<FolderIcon size={18} />} onClick={() => window.dnd.app.openDataFolder()}>
-            Kayıt klasörünü aç
-          </Button>
+          <div className="menu-general__folder-actions">
+            <Button icon={<FolderIcon size={18} />} onClick={() => window.dnd.app.openDataFolder()}>
+              Kayıt klasörünü aç
+            </Button>
+            <Button
+              disabled={info === null || info.dataDirFixed || moving}
+              title={info?.dataDirFixed === true ? 'Kayıt klasörü bu çalıştırmada sabitlenmiş (DND_DATA_DIR).' : undefined}
+              onClick={() => {
+                changeDataFolder(setMoving).catch((error: unknown) => {
+                  reportError('Kayıt klasörü değiştirilemedi', error)
+                  setMoving(false)
+                })
+              }}
+            >
+              {moving ? 'Taşınıyor…' : 'Klasörü değiştir'}
+            </Button>
+          </div>
           <div className="menu-general__folder-text">
             <span className="menu-general__label">Log klasörü</span>
             <code className="menu-path selectable">{info?.logDir ?? '…'}</code>

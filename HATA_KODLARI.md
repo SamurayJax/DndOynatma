@@ -1,7 +1,8 @@
 # Hata Kodları
 
 Uygulamanın bildiği her durumun sabit bir kodu vardır. Kod hem ekrandaki bildirimde hem de
-log dosyasında (`Belgeler\DndOynatma\log\dndoynatma-YYYY-AA-GG.log`) görünür.
+log dosyasında (kayıt klasöründeki `log\dndoynatma-YYYY-AA-GG.log`) görünür. Kayıt klasörü henüz
+seçilmemişken (ilk açılış) log `%APPDATA%\DndOynatma\log` altına yazılır.
 
 Log satırı biçimi: `SS:DD:SN.mmm [SEVIYE] [KOD] mesaj`
 
@@ -22,6 +23,10 @@ Kodların kaynağı `src/shared/errors.ts` dosyasıdır; bu liste onunla aynı t
 | DND-103 | HATA | Kayıt yazılamadı | Kayıt klasörüne yazılamadı (disk dolu, klasör kilitli ya da izin yok). Değişiklikler bellekte durur; yazma kendiliğinden, aralıkları uzayarak yeniden denenir. |
 | DND-104 | HATA | Kayıt klasörü oluşturulamadı | `Belgeler\DndOynatma` klasörü oluşturulamadı ya da açılamadı. |
 | DND-105 | UYARI | Zar kaydı okunamadı ya da yazılamadı | `zar.json` okunamadı ya da yazılamadı. Zar atmaya devam edilebilir; yalnızca geçmiş kaydı etkilenir. |
+| DND-107 | UYARI | Kayıt klasörü bulunamadı | Seçilmiş kayıt klasörü yerinde yok (taşınmış, silinmiş ya da bulunduğu disk takılı değil). Boş kayıt açılmaz; klasör yeniden sorulur. |
+| DND-108 | HATA | Kayıt klasörü kullanılamıyor | Seçilen yerde klasör oluşturulamadı ya da klasöre yazılamıyor. Başka bir klasör seçin. |
+| DND-109 | HATA | Kayıt taşınamadı | Kayıt yeni klasöre kopyalanamadı ya da kopya doğrulanamadı. Eski kayıt yerinde duruyor ve kullanılmaya devam ediyor. |
+| DND-110 | UYARI | Eski kayıt klasörü kaldırılamadı | Kayıt yeni klasöre taşındı ama eski klasör Geri Dönüşüm Kutusu'na gönderilemedi. Eski klasör yerinde duruyor; elle silinebilir. |
 | DND-106 | HATA | Kayıt daha yeni bir sürüme ait | `kayit.json` bu sürümün tanımadığı bir şemayla yazılmış. Dosyaya dokunulmadı; uygulamayı güncelleyin. |
 
 ## 2xx — Kütüphane ve görseller

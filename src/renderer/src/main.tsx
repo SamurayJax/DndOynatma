@@ -10,7 +10,8 @@ import { reportError } from './lib/reportError'
 const WINDOW_TITLES: Record<WindowRole, string> = {
   menu: 'DndOynatma',
   game: 'DndOynatma — Oyun Ekranı',
-  control: 'DndOynatma — Kontrol Paneli'
+  control: 'DndOynatma — Kontrol Paneli',
+  setup: 'DndOynatma — Kayıt Klasörü'
 }
 
 function start(): void {

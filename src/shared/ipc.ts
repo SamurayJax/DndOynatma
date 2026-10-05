@@ -5,8 +5,11 @@ import { Action } from './actions'
 import { ErrorCode, LogLevel } from './errors'
 import { DiceRoll, FullState, LibraryCategory, LibraryImage } from './types'
 
-/** menu: ana menü ve ayarlar · game: oyuncuların gördüğü oyun ekranı · control: DM'in kontrol paneli */
-export type WindowRole = 'menu' | 'game' | 'control'
+/**
+ * menu: ana menü ve ayarlar · game: oyuncuların gördüğü oyun ekranı · control: DM'in kontrol paneli ·
+ * setup: kayıt klasörünün sorulduğu açılış penceresi (kayıt henüz yüklenmemiştir)
+ */
+export type WindowRole = 'menu' | 'game' | 'control' | 'setup'
 
 export const IPC = {
   getState: 'dnd:getState',
@@ -27,6 +30,12 @@ export const IPC = {
   appGetInfo: 'dnd:app:getInfo',
   appGetDisplays: 'dnd:app:getDisplays',
   appToggleGameFullscreen: 'dnd:app:toggleGameFullscreen',
+  storageGetSetup: 'dnd:storage:getSetup',
+  storagePickParent: 'dnd:storage:pickParent',
+  storageCheck: 'dnd:storage:check',
+  storageConfirmSetup: 'dnd:storage:confirmSetup',
+  storageRetry: 'dnd:storage:retry',
+  storageMove: 'dnd:storage:move',
   log: 'dnd:log'
 } as const
 
@@ -50,9 +59,49 @@ export interface ImportResult {
   canceled: boolean
 }
 
+/** Kayıt klasörü sorulurken açılış penceresine verilen bilgi. */
+export interface SetupInfo {
+  /** first-run: klasör hiç seçilmemiş · missing: seçilmiş klasör yerinde yok */
+  reason: 'first-run' | 'missing'
+  /** Uygulamanın seçilen yerin içine açacağı klasörün adı. */
+  folderName: string
+  /** Önerilen üst klasör (eşitlenmeyen bir yer). */
+  suggestedParent: string
+  /** `missing` durumunda bulunamayan klasör. */
+  missingDir: string | null
+  /** Eski sürümlerin kayıt klasöründe (Belgeler\DndOynatma) veri varsa. */
+  legacy: { dir: string; images: number } | null
+}
+
+/** Bir üst klasör seçildiğinde kaydın oraya nasıl yerleşeceği. */
+export interface StorageCheck {
+  parent: string
+  /** Kaydın yazılacağı klasör. */
+  target: string
+  /** Klasör bulut eşitlemeli bir yerdeyse hizmetin adı (OneDrive, Dropbox…). */
+  cloud: string | null
+  writable: boolean
+  /** Hedefte zaten bir DndOynatma kaydı var; taşıma yapılmaz, o kayıt kullanılır. */
+  hasSave: boolean
+  /** Hedef şu an kullanılan kayıt klasörünün kendisi. */
+  sameAsCurrent: boolean
+}
+
+export interface StorageResult {
+  ok: boolean
+  code: ErrorCode | null
+  /** Kullanıcıya gösterilecek kısa açıklama. */
+  message: string
+  target: string | null
+}
+
 export interface AppInfo {
   version: string
   dataDir: string
+  /** Kayıt klasörü bulut eşitlemeli bir yerdeyse hizmetin adı. */
+  dataDirCloud: string | null
+  /** Klasör ortam değişkeniyle sabitlenmiş (test / deneme); arayüzden değiştirilemez. */
+  dataDirFixed: boolean
   logDir: string
   /** Bu çalıştırmanın log dosyası. */
   logFile: string
@@ -102,6 +151,20 @@ export interface DndApi {
     start(): Promise<void>
     /** İki pencereyi kapatır, zar kaydını temizler, ana menüyü gösterir. */
     end(): Promise<void>
+  }
+
+  storage: {
+    /** Açılış penceresi için: kayıt klasörü neden soruluyor. Olağan pencerelerde null. */
+    getSetup(): Promise<SetupInfo | null>
+    /** Klasör seçme penceresi açar; seçilen üst klasörü döndürür (iptalde null). */
+    pickParent(): Promise<string | null>
+    check(parent: string): Promise<StorageCheck>
+    /** Açılışta: klasörü oluşturur, istenirse eski kaydı taşır ve uygulamayı o klasörle başlatır. */
+    confirmSetup(parent: string, migrateLegacy: boolean): Promise<StorageResult>
+    /** Açılışta "bulunamadı" durumunda: eski klasör geri geldiyse uygulamayı onunla başlatır. */
+    retry(): Promise<boolean>
+    /** Ayarlardan: kaydı yeni klasöre taşır ve uygulamayı yeniden başlatır. */
+    move(parent: string): Promise<StorageResult>
   }
 
   dice: {

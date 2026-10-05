@@ -40,8 +40,20 @@ Yüklenen dosyalar kayıt klasöründeki `gorseller/` altına kopyalanır. Aray�
 
 ### Kayıt klasörü
 
-Varsayılan `Belgeler\DndOynatma\`. `DND_DATA_DIR` ortam değişkeni verilirse o klasör
-kullanılır (testler ve denemeler için).
+Kullanıcının seçtiği yerdeki `DndOynatma-Kayit` klasörü. Yeri, uygulamanın ayar klasöründeki
+(`%APPDATA%\DndOynatma\ayar.json`) küçük bir dosyada tutulur; dosya yoksa ya da gösterdiği klasör
+bulunamıyorsa açılışta kayıt klasörü penceresi (`setup` rolü) çıkar. İlgili kod: `src/main/location.ts`
+(saf mantık), `src/main/setup.ts` (açılış penceresi), `src/main/relocate.ts` (seçme ve taşıma).
+
+Testler ve denemeler için ortam değişkenleri:
+
+| Değişken | İş |
+|----------|----|
+| `DND_DATA_DIR` | kayıt klasörünü doğrudan verir; soru sorulmaz, arayüzden değiştirilemez |
+| `DND_CONFIG_DIR` | `ayar.json` dosyasının duracağı klasör |
+| `DND_LEGACY_DIR` | eski kayıt klasörü (varsayılan `Belgeler\DndOynatma`) |
+| `DND_HOME_DIR` | kayıt klasörü için önerilen üst klasör |
+| `DND_NO_RELAUNCH` | klasör değiştirildikten sonra uygulama yeniden başlatılmaz, yalnızca kapanır |
 
 | Dosya | İçerik |
 |-------|--------|
@@ -87,8 +99,8 @@ scripts/        yardımcı betikler (simge üretimi)
 | `npm run dist` | kurulum dosyasını üretir (`release/`), ayrıntı: `docs/PAKETLEME.md` |
 
 Uçtan uca testler gerçek pencereler açar (kısa süreli tam ekran dahil) ve odağı alır;
-çalışırken klavyeye dokunulmamalıdır. Her test kendi geçici kayıt klasörünü kullanır,
-`Belgeler\DndOynatma` klasörüne dokunmaz.
+çalışırken klavyeye dokunulmamalıdır. Her test kendi geçici kayıt klasörünü kullanır;
+kullanıcının gerçek kayıt klasörüne ve ayar dosyasına dokunmaz.
 
 ## Kurallar
 

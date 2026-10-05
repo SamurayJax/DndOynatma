@@ -98,10 +98,14 @@ export function roleOf(page) {
 
 /**
  * Derlenmiş uygulamayı verilen kayıt klasörüyle açar. Kullanıcının gerçek kayıt klasörüne
- * dokunulmasın diye DND_DATA_DIR her zaman verilir.
+ * dokunulmasın diye DND_DATA_DIR verilir; `fixedDataDir: false` ile açan betik kendi
+ * DND_CONFIG_DIR / DND_LEGACY_DIR / DND_HOME_DIR klasörlerini vermek zorundadır.
  */
-export async function launch(work) {
-  const env = { ...process.env, DND_DATA_DIR: work.dataDir }
+export async function launch(work, { env: extraEnv = {}, fixedDataDir = true } = {}) {
+  const env = { ...process.env, ...extraEnv }
+  // Kayıt klasörü sorusunu deneyen betikler dışında klasör her zaman sabitlenir.
+  if (fixedDataDir) env.DND_DATA_DIR = work.dataDir
+  else if (!('DND_DATA_DIR' in extraEnv)) delete env.DND_DATA_DIR
   // Başka bir Electron uygulamasının içinden çalıştırıldığında bu değişken Electron'u düz Node'a çevirir.
   delete env.ELECTRON_RUN_AS_NODE
   delete env.ELECTRON_RENDERER_URL

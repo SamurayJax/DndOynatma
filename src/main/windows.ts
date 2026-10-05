@@ -13,7 +13,9 @@ import { Store } from './store'
 const TITLES: Record<WindowRole, string> = {
   menu: 'DndOynatma',
   game: 'DndOynatma — Oyun Ekranı',
-  control: 'DndOynatma — Kontrol Paneli'
+  control: 'DndOynatma — Kontrol Paneli',
+  // Bu pencereyi `setup.ts` açar; burada yalnızca rol listesi eksiksiz olsun diye durur.
+  setup: 'DndOynatma — Kayıt Klasörü'
 }
 
 /** Arayüz hiç çizilemese bile pencere bu süre sonunda gösterilir; aksi halde uygulama görünmez kalır. */

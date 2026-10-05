@@ -45,6 +45,26 @@ export const ERROR_CODES = {
     title: 'Kayıt daha yeni bir sürüme ait',
     description: 'kayit.json bu sürümün tanımadığı bir şemayla yazılmış. Dosyaya dokunulmadı; uygulamayı güncelleyin.'
   },
+  'DND-107': {
+    level: 'UYARI',
+    title: 'Kayıt klasörü bulunamadı',
+    description: 'Seçilmiş kayıt klasörü yerinde yok (taşınmış, silinmiş ya da bulunduğu disk takılı değil). Boş kayıt açılmaz; klasör yeniden sorulur.'
+  },
+  'DND-108': {
+    level: 'HATA',
+    title: 'Kayıt klasörü kullanılamıyor',
+    description: 'Seçilen yerde klasör oluşturulamadı ya da klasöre yazılamıyor. Başka bir klasör seçin.'
+  },
+  'DND-109': {
+    level: 'HATA',
+    title: 'Kayıt taşınamadı',
+    description: 'Kayıt yeni klasöre kopyalanamadı ya da kopya doğrulanamadı. Eski kayıt yerinde duruyor ve kullanılmaya devam ediyor.'
+  },
+  'DND-110': {
+    level: 'UYARI',
+    title: 'Eski kayıt klasörü kaldırılamadı',
+    description: 'Kayıt yeni klasöre taşındı ama eski klasör Geri Dönüşüm Kutusu\'na gönderilemedi. Eski klasör yerinde duruyor; elle silinebilir.'
+  },
   'DND-201': {
     level: 'UYARI',
     title: 'Desteklenmeyen dosya türü',
