@@ -3,7 +3,7 @@ import type { CSSProperties, JSX, ReactNode } from 'react'
 import type { DiceRoll, DiceSides } from '@shared/types'
 import { reportError } from '@renderer/lib/reportError'
 import { useSession } from '@renderer/lib/useAppState'
-import { Button, D10Icon, D3Icon, DiceIcon, Panel, cx, toast } from '@renderer/ui'
+import { Button, D10Icon, D4Icon, DiceIcon, Panel, cx, toast } from '@renderer/ui'
 
 /** Art arda tıklamayla zar yığılmasın; oyun ekranındaki animasyon da bu sürede oturur. */
 const ROLL_COOLDOWN_MS = 1200
@@ -19,7 +19,7 @@ interface DieChoice {
 const DICE: readonly DieChoice[] = [
   { sides: 20, hint: '20 yüzlü zar', icon: <DiceIcon size={24} strokeWidth={1.5} /> },
   { sides: 10, hint: '10 yüzlü zar', icon: <D10Icon size={24} strokeWidth={1.5} /> },
-  { sides: 3, hint: '3 lük zar (1-2-3 ikişer kez yazan küp)', icon: <D3Icon size={24} strokeWidth={1.5} /> }
+  { sides: 4, hint: '4 yüzlü zar (piramit; üstte kalan köşedeki sayı okunur)', icon: <D4Icon size={24} strokeWidth={1.5} /> }
 ]
 
 function formatTime(iso: string): string {

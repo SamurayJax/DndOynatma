@@ -333,7 +333,7 @@ describe('zar', () => {
   })
 
   it.each([
-    [3, [1, 2, 3]],
+    [4, [1, 2, 3, 4]],
     [10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
   ])('d%i yalnızca kendi değerlerini verir ve hepsi gelir', async (sides, expected) => {
     startPlaying()
@@ -350,9 +350,9 @@ describe('zar', () => {
   it('farklı zarlar aynı geçmişte, atılış sırasıyla durur ve dosyadan geri okunur', async () => {
     startPlaying()
     const rolled: DiceRoll[] = []
-    for (const sides of [20, 3, 10]) rolled.unshift(await invoke<DiceRoll>(IPC.diceRollRequest, sides))
+    for (const sides of [20, 4, 10]) rolled.unshift(await invoke<DiceRoll>(IPC.diceRollRequest, sides))
 
-    expect(rolled.map((roll) => roll.sides)).toEqual([10, 3, 20])
+    expect(rolled.map((roll) => roll.sides)).toEqual([10, 4, 20])
     expect(store.getState().session.diceHistory).toEqual(rolled)
     expect(loadDiceHistory(paths.diceFile)).toEqual({ rolls: rolled, error: null })
   })
@@ -360,12 +360,13 @@ describe('zar', () => {
   it('tanınmayan zarı atmaz (DND-306)', async () => {
     startPlaying()
     fake.testing.sent.length = 0
-    for (const sides of [undefined, 6, 0, -20, 20.5, '20', null, { sides: 20 }]) {
+    // 3: eski sürümde vardı, kaldırıldı.
+    for (const sides of [undefined, 6, 3, 0, -20, 20.5, '20', null, { sides: 20 }]) {
       expect(await invoke(IPC.diceRollRequest, sides)).toBeNull()
     }
     expect(store.getState().session.diceHistory).toEqual([])
     expect(fake.testing.sent.some((entry) => entry.channel === IPC.diceRoll)).toBe(false)
-    expect(logLines().filter((line) => line.includes('DND-306')).length).toBe(8)
+    expect(logLines().filter((line) => line.includes('DND-306')).length).toBe(9)
   })
 
   it('zar kaydı yazılamasa da atış yapılır; bildirim bir kez gösterilir (DND-105)', async () => {

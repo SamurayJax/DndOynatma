@@ -138,7 +138,7 @@ function softDisc(
 /** Tuvalin tamamını temizleyip zarı ve gölgesini çizer. */
 export function drawDie(ctx: CanvasRenderingContext2D, model: DieModel, pose: DiePose, options: DrawOptions): void {
   const { scale, tone, glow } = options
-  const { vertices, faces, faceCenters, faceNormals, faceRights, faceUps, faceValues, circumradius, inradius } = model
+  const { vertices, faces, faceCenters, faceNormals, faceLabels, circumradius, inradius } = model
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   if (options.alpha <= 0) return
@@ -257,30 +257,31 @@ export function drawDie(ctx: CanvasRenderingContext2D, model: DieModel, pose: Di
     ctx.fillStyle = sheen
     ctx.fill()
 
-    // --- Rakam ---
+    // --- Rakamlar ---
     if (nz < MIN_FACING_FOR_TEXT) continue
-    const center = faceCenters[face]
-    const right = faceRights[face]
-    const up = faceUps[face]
-    const span = 0.25
-    const [rx, ry] = project([center[0] + right[0] * span, center[1] + right[1] * span, center[2] + right[2] * span])
-    const [ux, uy] = project([center[0] + up[0] * span, center[1] + up[1] * span, center[2] + up[2] * span])
-    const k = 1 / (span * TEXT_UNITS)
-    // Yazının y ekseni aşağı baktığı için "yukarı" vektörü ters çevrilir.
-    ctx.setTransform((rx - fx) * k, (ry - fy) * k, -(ux - fx) * k, -(uy - fy) * k, fx, fy)
-    const label = labelFor(ctx, model, faceValues[face])
-    ctx.font = label.font
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'alphabetic'
     // Çok yandan görünen yüzde rakam yavaşça kaybolsun; birden belirip kaybolmasın.
     const fade = clamp((nz - MIN_FACING_FOR_TEXT) / 0.14, 0, 1)
     const previousAlpha = ctx.globalAlpha
-    ctx.globalAlpha = previousAlpha * fade
-    ctx.fillStyle = NUMERAL_SHADE
-    ctx.fillText(label.text, label.x + label.shadeX, label.y + label.shadeY)
-    ctx.fillStyle = mixRgb(NUMERAL_DIM, NUMERAL_LIT, (intensity - AMBIENT) / DIFFUSE + specular)
-    ctx.fillText(label.text, label.x, label.y)
-    if (label.underline) ctx.fillRect(...label.underline)
+    const numeralColor = mixRgb(NUMERAL_DIM, NUMERAL_LIT, (intensity - AMBIENT) / DIFFUSE + specular)
+    const span = 0.25
+    const k = 1 / (span * TEXT_UNITS)
+    for (const { value, center, right, up } of faceLabels[face]) {
+      const [cx, cy] = project(center)
+      const [rx, ry] = project([center[0] + right[0] * span, center[1] + right[1] * span, center[2] + right[2] * span])
+      const [ux, uy] = project([center[0] + up[0] * span, center[1] + up[1] * span, center[2] + up[2] * span])
+      // Yazının y ekseni aşağı baktığı için "yukarı" vektörü ters çevrilir.
+      ctx.setTransform((rx - cx) * k, (ry - cy) * k, -(ux - cx) * k, -(uy - cy) * k, cx, cy)
+      const label = labelFor(ctx, model, value)
+      ctx.font = label.font
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'alphabetic'
+      ctx.globalAlpha = previousAlpha * fade
+      ctx.fillStyle = NUMERAL_SHADE
+      ctx.fillText(label.text, label.x + label.shadeX, label.y + label.shadeY)
+      ctx.fillStyle = numeralColor
+      ctx.fillText(label.text, label.x, label.y)
+      if (label.underline) ctx.fillRect(...label.underline)
+    }
     ctx.globalAlpha = previousAlpha
     ctx.setTransform(1, 0, 0, 1, 0, 0)
   }

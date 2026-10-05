@@ -205,16 +205,32 @@ function installProbe() {
         return fillText.call(this, text, ...rest)
       }
     },
-    /** Son karede izleyiciye en düz bakan (en büyük çizilen) yüzün rakamı. */
+    /**
+     * Son karede sonucun okunduğu rakam: izleyiciye en düz bakan (en büyük çizilen) rakam. d4'te sonuç
+     * üstteki köşenin çevresindeki üç yüzde de yazar ve üçü aynı büyüklüktedir; aralarından dik duranı alınır.
+     * `count`: o sayının son karede kaç kez yazıldığı; `labels`: karedeki bütün rakamların sayısı.
+     */
     diceTop() {
-      const top = dice.frame.reduce((best, entry) => (best === null || entry.area > best.area ? entry : best), null)
+      // Her rakam iki kez çizilir (önce gölgesi, sonra kendisi).
+      const labels = dice.frame.filter((_, index) => index % 2 === 1)
+      const largest = labels.reduce((max, entry) => Math.max(max, entry.area), 0)
+      const top = labels
+        .filter((entry) => entry.area > largest * 0.98)
+        .reduce((best, entry) => (best === null || Math.abs(entry.angle) < Math.abs(best.angle) ? entry : best), null)
       const canvas = document.querySelector('.dice-canvas')
       const box = canvas?.getBoundingClientRect()
       return top && canvas && box
-        ? { text: top.text, angle: top.angle, faces: dice.frame.length / 2, x: box.left + (top.x / canvas.width) * box.width, y: box.top + (top.y / canvas.height) * box.height }
+        ? {
+            text: top.text,
+            angle: top.angle,
+            count: labels.filter((entry) => entry.text === top.text).length,
+            labels: labels.length,
+            x: box.left + (top.x / canvas.width) * box.width,
+            y: box.top + (top.y / canvas.height) * box.height
+          }
         : null
     },
-    /** Son karede boyanan yüzlerin köşe sayıları (ör. duran küpte [4], d20'de [3, 3, ...]). */
+    /** Son karede boyanan yüzlerin köşe sayıları (ör. duran d4'te [3, 3, 3], d10'da [4, 4, ...]). */
     diceFaces() {
       return [...dice.faces]
     },

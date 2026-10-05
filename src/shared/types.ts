@@ -112,8 +112,8 @@ export type PenWidth = 'thin' | 'medium' | 'thick'
 export const PEN_WIDTH_PX: Record<PenWidth, number> = { thin: 3, medium: 6, thick: 12 }
 export const ERASER_WIDTH_FACTOR = 4
 
-/** Atılabilen zarlar. d3, yüzlerinde 1-2-3 ikişer kez yazan küptür. */
-export const DICE_SIDES = [3, 10, 20] as const
+/** Atılabilen zarlar. */
+export const DICE_SIDES = [4, 10, 20] as const
 export type DiceSides = (typeof DICE_SIDES)[number]
 
 export function isDiceSides(value: unknown): value is DiceSides {

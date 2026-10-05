@@ -525,7 +525,7 @@ describe('zar kaydı', () => {
     { id: 'r1', sides: 20, value: 13, at: '2026-10-03T19:00:00.000Z' }
   ]
   const mixedDice: DiceRoll[] = [
-    { id: 'm3', sides: 3, value: 3, at: '2026-10-05T19:02:00.000Z' },
+    { id: 'm3', sides: 4, value: 4, at: '2026-10-05T19:02:00.000Z' },
     { id: 'm2', sides: 10, value: 10, at: '2026-10-05T19:01:00.000Z' },
     { id: 'm1', sides: 20, value: 7, at: '2026-10-05T19:00:00.000Z' }
   ]
@@ -539,7 +539,7 @@ describe('zar kaydı', () => {
     expect(loadDiceHistory(diceFile)).toEqual({ rolls, error: null })
   })
 
-  it('d3 ve d10 atışları zar türüyle birlikte geri okunur', () => {
+  it('d4 ve d10 atışları zar türüyle birlikte geri okunur', () => {
     writeDiceHistory(diceFile, mixedDice)
     expect(loadDiceHistory(diceFile)).toEqual({ rolls: mixedDice, error: null })
   })
@@ -575,7 +575,9 @@ describe('zar kaydı', () => {
     const mixed = [
       rolls[0],
       { id: 'x', sides: 6, value: 3, at: 'a' },
-      { id: 'x3', sides: 3, value: 4, at: 'a' },
+      { id: 'x4', sides: 4, value: 5, at: 'a' },
+      // Eski sürümün d3 atışı: o zar artık yok.
+      { id: 'x3', sides: 3, value: 2, at: 'a' },
       { id: 'x10', sides: 10, value: 11, at: 'a' },
       { id: 'x0', sides: 10, value: 0, at: 'a' },
       { id: 'xs', sides: '20', value: 5, at: 'a' },

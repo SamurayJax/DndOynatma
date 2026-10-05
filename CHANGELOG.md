@@ -1,5 +1,20 @@
 # Sürüm Geçmişi
 
+## 0.9.4 — 2026-10-05
+
+### Değişenler
+
+- d3 zarı kaldırıldı, yerine d4 geldi. Zarlar artık d20, d10 ve d4.
+- d4 gerçek biçimindedir (dört yüzlü piramit): bir köşesi üstte durur, sonuç o köşedeki sayıdır ve
+  görünen üç yüzde de yazar. Kontrol panelindeki üçüncü zar düğmesi "d4" oldu.
+- Piramit masada yuvarlanmadığı için d4'ün atışı öbür zarlardan biraz kısadır.
+- Eski bir oturumdan kalan d3 atışları geçmişe alınmaz.
+
+### Bilinen sınır
+
+- Oyun ekranı masaya tam tepeden baktığı için duran d4'ün üzerindeki sayılar basık görünür; sonuç
+  zarın üstünde beliren büyük sayıdan okunur.
+
 ## 0.9.3 — 2026-10-05
 
 ### Eklenenler

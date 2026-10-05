@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.9.3 (Windows)
+**Sürüm:** 0.9.4 (Windows)
 
 ## Ne yapar
 
@@ -18,7 +18,7 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
 - **Pencereler:** "Kraliyet İçi", "Orman Yolu" gibi hazır düzenler; 1–9 tuşlarıyla geçilir.
 - **Kalem:** kırmızı ve siyah, üç kalınlık; silgi çizginin değdiği kısmını siler. Çizimin tamamı
   yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
-- **Zarlar:** d20, d10 ve d3 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
+- **Zarlar:** d20, d10 ve d4 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
   sonucu gösterir. Geçmişte hangi zarın atıldığı yazar.
 - **Karakter aktarma:** dört oyuncu kartı (isim, seviye, can, not, portre) tek dosyaya aktarılır ve
   başka bir bilgisayarda geri alınır. Kütüphane ve pencereler taşınmaz.

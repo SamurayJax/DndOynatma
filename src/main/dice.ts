@@ -1,5 +1,5 @@
 /**
- * Zarlar (d3, d10, d20). Sonuç ana süreçte üretilir; geçmiş hem oturum durumunda hem `zar.json`'da tutulur.
+ * Zarlar (d4, d10, d20). Sonuç ana süreçte üretilir; geçmiş hem oturum durumunda hem `zar.json`'da tutulur.
  */
 import { randomInt } from 'node:crypto'
 import { newId } from '@shared/id'

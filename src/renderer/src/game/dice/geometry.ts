@@ -1,36 +1,59 @@
 /**
  * Zar biçimleri: d20 (düzgün yirmi yüzlü), d10 (on uçurtma yüzlü beşgen trapezohedron) ve
- * d3 (yüzlerinde 1-2-3 ikişer kez yazan küp). Fizik, atış planı ve çizim bir `DieModel` alır;
- * hiçbiri belirli bir zara göre yazılmamıştır.
+ * d4 (düzgün dört yüzlü, piramit). Fizik, atış planı ve çizim bir `DieModel` alır; hiçbiri
+ * belirli bir zara göre yazılmamıştır.
+ *
+ * d20 ve d10 bir yüzü üstte durur, sonuç o yüzden okunur. d4 bir köşesi üstte durur; sonuç o
+ * köşeden okunur ve her yüzde, köşelerin yanında üç rakam yazar. İkisi de aynı iki kavramla
+ * anlatılır: `outcomes` (zar durduğunda yukarı bakan yön ve değeri) ve `faceLabels` (yüzlerin
+ * üzerindeki rakamlar).
  *
  * Uzunluk birimi d20'nin kenarıdır; öbür zarlar ekranda ona yakın büyüklükte görünecek ölçüdedir.
  */
 import type { DiceSides } from '@shared/types'
 import { type Quat, type Vec3, add, cross, dot, length, normalize, quatFromFrames, scale, sub } from './math'
 
+/** Yüzün üzerine yazılı bir rakam. */
+export interface DieLabel {
+  value: number
+  /** Rakamın yazıldığı nokta (yüz düzleminde). */
+  center: Vec3
+  /** Rakamın "yukarı" ve "sağ" yönleri (yüz düzleminde, dışarıdan bakınca). */
+  up: Vec3
+  right: Vec3
+}
+
+/** Zarın durabileceği duruşlardan biri ve o duruşta okunan değer. */
+export interface DieOutcome {
+  value: number
+  /** Bu değer geldiğinde yukarı (izleyiciye) bakan yön: d20 ve d10'da üstteki yüzün normali, d4'te üstteki köşe. */
+  normal: Vec3
+  /** Okunan rakamın tepesinin baktığı yön, yukarıdan bakınca (`normal`e dik). Ekranda yukarı getirilir. */
+  up: Vec3
+}
+
 export interface DieModel {
   sides: DiceSides
   vertices: readonly Vec3[]
   /** Çokgen yüzler, köşe sıra numaralarıyla; dışarıdan bakınca saat yönünün tersine dizili. */
   faces: readonly (readonly number[])[]
-  /** Yüzlerin üzerindeki sayılar, `faces` sırasıyla. */
-  faceValues: readonly number[]
-  /** Rakamın yazıldığı nokta (yüz düzleminde). */
+  /** Yüzün orta noktası (yüz düzleminde); d10'da rakamın durduğu iç teğet çember merkezi. */
   faceCenters: readonly Vec3[]
   faceNormals: readonly Vec3[]
-  /** Rakamın "yukarı" ve "sağ" yönleri (yüz düzleminde, dışarıdan bakınca). */
-  faceUps: readonly Vec3[]
-  faceRights: readonly Vec3[]
+  /** Her yüzün rakamları, `faces` sırasıyla: d20 ve d10'da bir tane, d4'te her köşenin yanında bir tane. */
+  faceLabels: readonly (readonly DieLabel[])[]
+  /** Zarın durabileceği duruşlar: d20 ve d10'da yüz başına, d4'te köşe başına bir tane. */
+  outcomes: readonly DieOutcome[]
   /**
-   * Zarı kendi üstüne getiren dönüşlerden kaçı bir yüzü yerinde bırakır: üçgen yüzde 3, karede 4,
-   * uçurtmada 1. Üstte kalan yüze rakam bu kadar farklı yönde "dik" yazılabilir (bkz. `faceUpAt`).
+   * Zarı kendi üstüne getiren dönüşlerden kaçı bir duruşun eksenini yerinde bırakır: üçgen yüzde ve
+   * d4'ün köşesinde 3, uçurtmada 1. Okunan rakam bu kadar farklı yönde "dik" durabilir (bkz. `outcomeUpAt`).
    */
-  faceTurns: number
+  turns: number
   /** Merkezden en uzak köşeye uzaklık. */
   circumradius: number
   /** Merkezden yüz düzlemine uzaklık; duran zarın merkezinin masadan yüksekliğidir. */
   inradius: number
-  /** Bir yüzü üstte duran zara tam tepeden bakınca merkezden en uzak köşenin uzaklığı. */
+  /** Duran zara tam tepeden bakınca merkezden en uzak köşenin uzaklığı. */
   silhouetteRadius: number
   /** Dolu cismin eylemsizlik momenti (kütle = 1); eksenlerin ortalaması. */
   inertia: number
@@ -43,12 +66,17 @@ interface Shape {
   vertices: readonly Vec3[]
   /** Köşeler çevre sırasıyla; yönü (saat yönü / tersi) burada önemli değildir. */
   faces: readonly (readonly number[])[]
-  faceValues: readonly number[]
-  /** Rakamın yazıldığı nokta; verilmezse köşelerin ortalaması. */
+  /**
+   * Sonucun okunduğu yer. `face`: üstte kalan yüz; `values` yüz sırasıyladır, her yüzde bir rakam
+   * yazar. `vertex`: üstte kalan köşe; `values` köşe sırasıyladır, her yüzde köşelerinin rakamları yazar.
+   */
+  reading: 'face' | 'vertex'
+  values: readonly number[]
+  /** Yüzün orta noktası; verilmezse köşelerin ortalaması. */
   centerOf?: (corners: readonly Vec3[]) => Vec3
-  /** Rakamın tepesi yüzün ilk köşesine mi, ilk kenarının ortasına mı bakar. */
-  upToward: 'corner' | 'edge'
-  faceTurns: number
+  /** `vertex` okumada rakamın, yüzün ortasından köşesine giden yolun ne kadarında durduğu (0..1). */
+  labelReach?: number
+  turns: number
   numeralSizes: readonly [number, number]
 }
 
@@ -93,24 +121,46 @@ function buildModel(shape: Shape): DieModel {
   const corners = faces.map((face) => face.map((index) => vertices[index]))
   const faceNormals = corners.map(polygonNormal)
   const faceCenters = corners.map(shape.centerOf ?? centroid)
-  const faceUps = corners.map((points, face) => {
-    const target = shape.upToward === 'corner' ? points[0] : scale(add(points[0], points[1]), 0.5)
-    return normalize(sub(target, faceCenters[face]))
-  })
-  const top = faceNormals[0]
+
+  /** `face` yüzünde, tepesi `toward` noktasına bakan, `reach` kadar o noktaya yaklaşmış rakam. */
+  const labelOn = (face: number, value: number, toward: Vec3, reach: number): DieLabel => {
+    const offset = sub(toward, faceCenters[face])
+    const up = normalize(offset)
+    return { value, center: add(faceCenters[face], scale(offset, reach)), up, right: cross(up, faceNormals[face]) }
+  }
+
+  let faceLabels: DieLabel[][]
+  let outcomes: DieOutcome[]
+  if (shape.reading === 'face') {
+    // Tek rakam, yüzün ortasında; tepesi yüzün ilk köşesine bakar.
+    faceLabels = faces.map((_, face) => [labelOn(face, shape.values[face], corners[face][0], 0)])
+    outcomes = faceLabels.map(([label], face) => ({ value: label.value, normal: faceNormals[face], up: label.up }))
+  } else {
+    const reach = shape.labelReach ?? 0.4
+    faceLabels = faces.map((face, index) => face.map((vertex) => labelOn(index, shape.values[vertex], vertices[vertex], reach)))
+    outcomes = vertices.map((vertex, index) => {
+      const normal = normalize(vertex)
+      // Köşeye değen ilk yüzdeki rakamın tepesi köşeye bakar; yukarıdan bakınca bu yön okunur.
+      const face = faces.findIndex((candidate) => candidate.includes(index))
+      const toVertex = sub(vertex, faceCenters[face])
+      return { value: shape.values[index], normal, up: normalize(sub(toVertex, scale(normal, dot(toVertex, normal)))) }
+    })
+  }
+
+  // Duran zarın ekseni: bir yüz masadadır, tam karşısındaki yüz ya da köşe yukarı bakar.
+  const axis = faceNormals[0]
   return {
     sides: shape.sides,
     vertices,
     faces,
-    faceValues: shape.faceValues,
     faceCenters,
     faceNormals,
-    faceUps,
-    faceRights: faceUps.map((up, face) => cross(up, faceNormals[face])),
-    faceTurns: shape.faceTurns,
+    faceLabels,
+    outcomes,
+    turns: shape.turns,
     circumradius: Math.max(...vertices.map(length)),
-    inradius: dot(faceCenters[0], top),
-    silhouetteRadius: Math.max(...vertices.map((vertex) => length(sub(vertex, scale(top, dot(vertex, top)))))),
+    inradius: dot(faceCenters[0], axis),
+    silhouetteRadius: Math.max(...vertices.map((vertex) => length(sub(vertex, scale(axis, dot(vertex, axis)))))),
     inertia: meanInertia(vertices, faces),
     numeralSizes: shape.numeralSizes
   }
@@ -166,9 +216,9 @@ export const D20: DieModel = buildModel({
   sides: 20,
   vertices: D20_VERTICES,
   faces: icosahedronFaces(D20_VERTICES),
-  faceValues: D20_VALUES,
-  upToward: 'corner',
-  faceTurns: 3,
+  reading: 'face',
+  values: D20_VALUES,
+  turns: 3,
   numeralSizes: [40, 33]
 })
 
@@ -226,79 +276,82 @@ export const D10: DieModel = buildModel({
   sides: 10,
   vertices: D10_VERTICES,
   faces: D10_FACES,
-  faceValues: D10_VALUES,
+  // Her yüzün ilk köşesi kutuptur; rakamın tepesi kutba bakar.
+  reading: 'face',
+  values: D10_VALUES,
   centerOf: kiteCenter,
-  // Rakamın tepesi kutba bakar.
-  upToward: 'corner',
-  faceTurns: 1,
+  turns: 1,
   numeralSizes: [54, 44]
 })
 
-// --- d3: küp ---
+// --- d4: düzgün dört yüzlü ---
 
-const D3_HALF_EDGE = 0.6
+/** Kenar uzunluğu; duran zar ekranda d20 ile yaklaşık aynı yeri kaplar. */
+export const D4_EDGE = 1.8
 
-/** Sekiz köşe; sıra numarasının bitleri x, y, z'nin işaretini verir. */
-const D3_VERTICES: readonly Vec3[] = Array.from({ length: 8 }, (_, i): Vec3 => [
-  i & 1 ? D3_HALF_EDGE : -D3_HALF_EDGE,
-  i & 2 ? D3_HALF_EDGE : -D3_HALF_EDGE,
-  i & 4 ? D3_HALF_EDGE : -D3_HALF_EDGE
-])
+/** Bir küpün birbirine komşu olmayan dört köşesi düzgün dört yüzlü verir. */
+const D4_VERTICES: readonly Vec3[] = (
+  [
+    [1, 1, 1],
+    [1, -1, -1],
+    [-1, 1, -1],
+    [-1, -1, 1]
+  ] as const
+).map((v) => scale(v, D4_EDGE / (2 * Math.SQRT2)))
 
-/** +x, -x, +y, -y, +z, -z */
-const D3_FACES: readonly (readonly number[])[] = [
-  [1, 3, 7, 5],
-  [0, 4, 6, 2],
-  [2, 6, 7, 3],
-  [0, 1, 5, 4],
-  [4, 5, 7, 6],
-  [0, 2, 3, 1]
+/** Her yüz bir köşenin karşısındadır: o köşe dışındaki üç köşe. */
+const D4_FACES: readonly (readonly number[])[] = [
+  [1, 2, 3],
+  [0, 2, 3],
+  [0, 1, 3],
+  [0, 1, 2]
 ]
 
-/** Karşılıklı yüzlerde aynı sayı yazar. */
-const D3_VALUES: readonly number[] = [1, 1, 2, 2, 3, 3]
+/** Köşelerin sayıları. Zar durunca üstte kalan köşenin sayısı okunur; o sayı görünen üç yüzde de yazar. */
+const D4_VALUES: readonly number[] = [1, 2, 3, 4]
 
-export const D3: DieModel = buildModel({
-  sides: 3,
-  vertices: D3_VERTICES,
-  faces: D3_FACES,
-  faceValues: D3_VALUES,
-  upToward: 'edge',
-  faceTurns: 4,
-  numeralSizes: [84, 70]
+export const D4: DieModel = buildModel({
+  sides: 4,
+  vertices: D4_VERTICES,
+  faces: D4_FACES,
+  reading: 'vertex',
+  values: D4_VALUES,
+  labelReach: 0.42,
+  turns: 3,
+  numeralSizes: [58, 48]
 })
 
-const MODELS: Record<DiceSides, DieModel> = { 3: D3, 10: D10, 20: D20 }
+const MODELS: Record<DiceSides, DieModel> = { 4: D4, 10: D10, 20: D20 }
 
 export function modelFor(sides: DiceSides): DieModel {
   return MODELS[sides]
 }
 
 /**
- * Yüzün rakamı için geçerli "yukarı" yönlerinden biri: `turn` = 0 yüzün kendi yönüdür, sonrakiler
- * yüz ekseni etrafında eşit adımlarla dönmüş halleri (dışarıdan bakınca saat yönünün tersine).
- * Zar bu yönlerin hepsinde aynı göründüğü için sayılar herhangi birine göre yerleştirilebilir.
+ * Bir duruşta okunan rakam için geçerli "yukarı" yönlerinden biri: `turn` = 0 duruşun kendi yönüdür,
+ * sonrakiler duruş ekseni etrafında eşit adımlarla dönmüş halleri (yukarıdan bakınca saat yönünün
+ * tersine). Zar bu yönlerin hepsinde aynı göründüğü için sayılar herhangi birine göre yerleştirilebilir.
  */
-export function faceUpAt(model: DieModel, face: number, turn: number): Vec3 {
-  const up = model.faceUps[face]
-  if (turn % model.faceTurns === 0) return up
-  const angle = (2 * Math.PI * turn) / model.faceTurns
-  const left = cross(model.faceNormals[face], up)
+export function outcomeUpAt(model: DieModel, outcome: number, turn: number): Vec3 {
+  const { normal, up } = model.outcomes[outcome]
+  if (turn % model.turns === 0) return up
+  const angle = (2 * Math.PI * turn) / model.turns
+  const left = cross(normal, up)
   return add(scale(up, Math.cos(angle)), scale(left, Math.sin(angle)))
 }
 
-export function faceOfValue(model: DieModel, value: number): number {
-  const face = model.faceValues.indexOf(value)
-  // Geçersiz değer gelirse animasyon yine de oynasın diye en büyük sayının yüzü kullanılır.
-  return face === -1 ? model.faceValues.indexOf(model.sides) : face
+export function outcomeOfValue(model: DieModel, value: number): number {
+  const outcome = model.outcomes.findIndex((entry) => entry.value === value)
+  // Geçersiz değer gelirse animasyon yine de oynasın diye en büyük sayının duruşu kullanılır.
+  return outcome === -1 ? model.outcomes.findIndex((entry) => entry.value === model.sides) : outcome
 }
 
 /**
- * Zarın durduğu andaki yönelimi: `value` yüzü izleyiciye (+z) bakar, rakam ekranda dik durur.
+ * Zarın durduğu andaki yönelimi: `value` izleyiciye (+z) bakar, okunan rakam ekranda dik durur.
  * `tilt` (radyan) rakamı hafifçe yana yatırır; gerçek zar hiçbir zaman cetvelle hizalı durmaz.
  */
 export function restOrientation(model: DieModel, value: number, tilt = 0): Quat {
-  const face = faceOfValue(model, value)
+  const { normal, up } = model.outcomes[outcomeOfValue(model, value)]
   const screenUp: Vec3 = [-Math.sin(tilt), Math.cos(tilt), 0]
-  return quatFromFrames(model.faceNormals[face], model.faceUps[face], [0, 0, 1], screenUp)
+  return quatFromFrames(normal, up, [0, 0, 1], screenUp)
 }

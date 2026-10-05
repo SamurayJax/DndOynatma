@@ -1,15 +1,16 @@
 /**
  * Sonucu önceden belli olan bir atışı planlar.
  *
- * Fizik hangi yüzün üstte kalacağını kendisi belirler; biz sonucu değiştiremeyiz. Ama zarlar
+ * Fizik zarın hangi duruşta kalacağını kendisi belirler; biz sonucu değiştiremeyiz. Ama zarlar
  * simetriktir: sayıları zarın üzerinde "çevirerek" yerleştirmek hareketi hiç değiştirmez. Bu yüzden
- * önce hareket hesaplanır, sonra sayılar üstte kalan yüze istenen değer gelecek şekilde yerleştirilir
+ * önce hareket hesaplanır, sonra sayılar zarın durduğu duruşta istenen değer okunacak şekilde yerleştirilir
  * ve bütün sahne dikey eksende döndürülerek rakam ekranda dik getirilir. Böylece zar baştan sona
  * gerçek bir zar gibi davranır ve sonunda hiçbir sıçrama ya da düzeltme görünmez.
  *
- * Her yüzün, zarın bir dönme simetrisiyle her yüze taşınabildiği zarlarda geçerlidir (d20, d10, küp).
+ * Her duruşun, zarın bir dönme simetrisiyle her duruşa taşınabildiği zarlarda geçerlidir (d20, d10, d4).
  */
-import { type DieModel, faceUpAt, restOrientation } from './geometry'
+import type { DiceSides } from '@shared/types'
+import { type DieModel, outcomeUpAt, restOrientation } from './geometry'
 import {
   type Quat,
   quatBetween,
@@ -53,8 +54,33 @@ export interface ThrowPlan {
   entrySide: 'left' | 'right' | 'top' | 'bottom' | 'none'
 }
 
-const MIN_DURATION = 1.9
-const MAX_DURATION = 2.6
+/** Bir atışın temposu: ne kadar sürmeli, kaç kez ve ne kadar yükseğe sekmeli. */
+export interface Pacing {
+  /** Zarın ekrana girişinden durmasına kadar geçen süre (s). */
+  minDuration: number
+  maxDuration: number
+  /** En az bir sıçrama bu kadar yükselmeli. */
+  bigHop: number
+  /** Seçilebilen (MIN_SMALL_HOP'tan yüksek) sıçramaların en az sayısı. */
+  hops: number
+}
+
+const ROLLING: Pacing = { minDuration: 1.9, maxDuration: 2.6, bigHop: 0.45, hops: 2 }
+
+/**
+ * d20 ve d10 masada yuvarlanır. d4 yuvarlanmaz: sivri olduğu için masaya çarpar, bir kez sekip
+ * devrilir ve kalır; ondan uzun bir yuvarlanış beklemek, onu gerçek dışı hızla döndürmek demektir.
+ */
+const PACING: Record<DiceSides, Pacing> = {
+  20: ROLLING,
+  10: ROLLING,
+  4: { minDuration: 1.6, maxDuration: 2.4, bigHop: 0.35, hops: 1 }
+}
+
+export function pacingFor(model: DieModel): Pacing {
+  return PACING[model.sides]
+}
+
 /** İlk çarpmadan en az bu kadar önce zar ekranda görünmüş olmalı; düşüşü izlenebilsin. */
 const MIN_VISIBLE_FALL = 0.12
 /** Zar serbest uçuşta en fazla bu kadar geriye götürülür (ekran dışından getirmek için). */
@@ -65,8 +91,7 @@ const MIN_ENTRY_HEIGHT = 1.6
 const MAX_ENTRY_HEIGHT = 4.4
 /** İlk çarpmadan sonra zarın merkezi ekran kenarına bundan fazla yaklaşmamalı. */
 const EDGE_MARGIN = 0.85
-/** En az bir sıçrama bu kadar yükselmeli, en az iki sıçrama seçilebilmeli. */
-const MIN_BIG_HOP = 0.45
+/** Bundan alçak sıçrama gözle seçilmez. */
 const MIN_SMALL_HOP = 0.15
 /**
  * Fizik, zar gözle durmuş göründükten sonra da bir süre mikroskobik titreşimleri hesaplar. Son duruştan
@@ -77,7 +102,7 @@ const VISIBLE_SHIFT = 0.012
 const SETTLE_BLEND = 0.2
 /** Duran zarın rakamı en fazla bu kadar yatık olabilir (radyan). */
 const REST_TILT = (6 * Math.PI) / 180
-/** Rakamı üç yöne yazılabilen zar (d20) için deneme sınırı ve atış başına denenen iniş yeri. */
+/** Rakamı üç yönde dik durabilen zar (d20, d4) için deneme sınırı ve atış başına denenen iniş yeri. */
 const MAX_ATTEMPTS = 220
 const LANDING_SPOTS = 2
 
@@ -114,15 +139,16 @@ function evaluate(
   stage: StageBounds
 ): Candidate {
   const end = finalPose(sim)
+  const pacing = pacingFor(model)
 
   // Fiziğin son duruşu neredeyse düzdür; kalan küçük eğim için düzeltme dönüşü.
-  const topNormal = quatRotate(end.q, model.faceNormals[sim.topFace])
+  const topNormal = quatRotate(end.q, model.outcomes[sim.topOutcome].normal)
   const flatten = quatBetween(topNormal, [0, 0, 1])
   const flat = quatMul(flatten, end.q)
 
   const restQ = restOrientation(model, value, tilt)
-  // Üstteki yüzün seçilen "yukarı" yönü ekranda da yukarı baksın diye sahnenin dönüşü.
-  const upDir = quatRotate(flat, faceUpAt(model, sim.topFace, turn))
+  // Duruşun seçilen "yukarı" yönü ekranda da yukarı baksın diye sahnenin dönüşü.
+  const upDir = quatRotate(flat, outcomeUpAt(model, sim.topOutcome, turn))
   const yawAngle = Math.PI / 2 + tilt - Math.atan2(upDir[1], upDir[0])
   const yaw = quatFromAxisAngle([0, 0, 1], yawAngle)
   // Sayıların zar üzerindeki yerleşimi: zarın kendi dönme simetrilerinden biri.
@@ -201,12 +227,12 @@ function evaluate(
   }
 
   const duration = restTime - entryTime
-  if (duration < MIN_DURATION) penalty += 4 * (MIN_DURATION - duration)
-  if (duration > MAX_DURATION) penalty += 4 * (duration - MAX_DURATION)
+  if (duration < pacing.minDuration) penalty += 4 * (pacing.minDuration - duration)
+  if (duration > pacing.maxDuration) penalty += 4 * (duration - pacing.maxDuration)
 
   const highest = sim.hops.reduce((max, hop) => Math.max(max, hop), 0)
-  if (highest < MIN_BIG_HOP) penalty += 3 * (MIN_BIG_HOP - highest)
-  if (sim.hops.filter((hop) => hop >= MIN_SMALL_HOP).length < 2) penalty += 1
+  if (highest < pacing.bigHop) penalty += 3 * (pacing.bigHop - highest)
+  if (sim.hops.filter((hop) => hop >= MIN_SMALL_HOP).length < pacing.hops) penalty += 1
 
   const entry = poseAt(entryTime)
   const overflow = [-entry.x, entry.x - stage.width, -entry.y, entry.y - stage.height]
@@ -246,7 +272,7 @@ export function planThrow(
   stage: StageBounds,
   rng: () => number = Math.random
 ): ThrowPlan {
-  const turns = model.faceTurns
+  const { turns } = model
   // Rakamı tek yöne yazılabilen zarda (d10) atış başına aday azdır; açık, daha çok iniş yeri ve
   // daha çok denemeyle kapatılır.
   const scarcity = Math.max(1, 3 / turns)

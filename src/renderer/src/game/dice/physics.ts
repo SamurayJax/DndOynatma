@@ -4,10 +4,10 @@
  * Masa z = 0 düzlemidir; z yukarı (izleyiciye) bakar.
  *
  * Hesap, animasyon başlamadan önce bir kerede yapılır ve kareler kaydedilir. Hangi sayının
- * geleceği burada belirlenmez; zarlar simetrik olduğu için sayılar sonradan, üstte kalan
- * yüze göre yerleştirilir (bkz. throwPlan.ts).
+ * geleceği burada belirlenmez; zarlar simetrik olduğu için sayılar sonradan, zarın durduğu
+ * duruşa göre yerleştirilir (bkz. throwPlan.ts).
  *
- * Eylemsizlik her eksende aynı sayılır. d20 ve küp için bu tamdır; d10'da eksenler arasındaki
+ * Eylemsizlik her eksende aynı sayılır. d20 ve d4 için bu tamdır; d10'da eksenler arasındaki
  * küçük fark göz ardı edilir (yuvarlanışta seçilmez).
  */
 import type { DiceSides } from '@shared/types'
@@ -35,14 +35,16 @@ export const DEFAULT_TUNING: PhysicsTuning = {
 
 /**
  * Yüzü az olan zar daha zor yuvarlanır: bir kenarının üstünden devrilmesi için merkezinin daha çok
- * yükselmesi gerekir, bu yüzden masaya çarptığı gibi durmaya yatkındır. d10 ve küp, d20 kadar canlı
- * yuvarlansın diye daha hızlı döndürülerek atılır ve biraz daha çok seker. Değerler, d20 ile aynı
- * oranda "iyi atış" (yeterince uzun, en az iki sekmeli) verecek şekilde denemeyle seçildi.
+ * yükselmesi gerekir, bu yüzden masaya çarptığı gibi durmaya yatkındır. d10, d20 kadar canlı
+ * yuvarlansın diye daha hızlı döndürülerek atılır ve biraz daha çok seker. d4 ne yapılsa yuvarlanmaz;
+ * havada takla atıp bir kez seksin diye hızlı döndürülür, ondan beklenen tempo da kısadır
+ * (bkz. throwPlan.ts, `PACING`). Değerler, her zar kendi temposunda d20 ile aynı oranda "iyi atış"
+ * verecek şekilde denemeyle seçildi.
  */
 const THROW_STYLES: Record<DiceSides, { spin: number; restitution: number }> = {
   20: { spin: 1, restitution: DEFAULT_TUNING.restitution },
   10: { spin: 1.5, restitution: 0.86 },
-  3: { spin: 2, restitution: 0.88 }
+  4: { spin: 2.5, restitution: 0.9 }
 }
 
 export function tuningFor(model: DieModel): PhysicsTuning {
@@ -89,8 +91,8 @@ export interface ThrowSim {
   firstImpactTime: number
   /** İlk çarpmadan sonraki sıçramaların tepe yükseklikleri (en alçak köşenin masadan uzaklığı). */
   hops: number[]
-  /** Durduğunda üstte kalan yüz (modelin yüz sırası). */
-  topFace: number
+  /** Durduğu duruş: yukarı bakan yüz ya da köşe (modelin `outcomes` sırası). */
+  topOutcome: number
 }
 
 export interface SimPose {
@@ -121,7 +123,7 @@ export function randomThrowStart(model: DieModel, rng: () => number): ThrowStart
 
 export function simulateThrow(model: DieModel, start: ThrowStart, tuning: PhysicsTuning = tuningFor(model)): ThrowSim {
   const { gravity, restitution, friction, angularDrag, linearDrag } = tuning
-  const { vertices, faceNormals, circumradius, inertia } = model
+  const { vertices, outcomes, circumradius, inertia } = model
   const vertexCount = vertices.length
   let [x, y, z] = start.position
   let [vx, vy, vz] = start.velocity
@@ -285,13 +287,13 @@ export function simulateThrow(model: DieModel, start: ThrowStart, tuning: Physic
   if (rested) frameCount = quietFrames
 
   const end = frameAt(frames, frameCount - 1)
-  let topFace = 0
+  let topOutcome = 0
   let topHeight = -Infinity
-  for (let face = 0; face < faceNormals.length; face++) {
-    const height = quatRotate(end.q, faceNormals[face])[2]
+  for (let outcome = 0; outcome < outcomes.length; outcome++) {
+    const height = quatRotate(end.q, outcomes[outcome].normal)[2]
     if (height > topHeight) {
       topHeight = height
-      topFace = face
+      topOutcome = outcome
     }
   }
 
@@ -305,7 +307,7 @@ export function simulateThrow(model: DieModel, start: ThrowStart, tuning: Physic
     restTime,
     firstImpactTime: firstImpactTime < 0 ? restTime : firstImpactTime,
     hops,
-    topFace
+    topOutcome
   }
 }
 

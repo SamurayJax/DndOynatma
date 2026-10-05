@@ -122,7 +122,7 @@ dönünce çizim ekranda kalır; böylece çizdikten sonra fareyle görsel taş�
 "Çizimi temizle" o an açık olan pencerenin çizimini siler. Çizimler diske kaydedilmez;
 oyun bitince hepsi kaybolur.
 
-### Zarlar: d20, d10, d3
+### Zarlar: d20, d10, d4
 
 Kontrol panelindeki zar düğmelerinden birine basılınca oyun ekranında o zar atılır: zar
 ekrana düşer, yuvarlanır, durur ve üste gelen sayı büyük olarak gösterilir. Birkaç saniye
@@ -131,7 +131,8 @@ atıldığı yazar.
 
 - d20: yirmi yüzlü. 20 ve 1 vurgulanır (altın / kırmızı); bu vurgu yalnızca d20 içindir.
 - d10: on uçurtma yüzlü gerçek d10 biçimi. Yüzlerde 1-10 yazar (0 yerine 10).
-- d3: yüzlerinde 1-2-3 ikişer kez yazan küp.
+- d4: dört yüzlü piramit. Bir köşesi üstte durur; sonuç o köşedeki sayıdır ve görünen üç yüzde
+  de yazar (gerçek d4'lerdeki gibi her yüzde, köşelerin yanında üç sayı vardır).
 
 Zarlar, uygulamanın kendi çizdiği üç boyutlu cisimlerdir; hareketleri bir fizik
 benzetimiyle hesaplanır (yerçekimi, sekme, sürtünme). Hazır 3B zar kütüphanesi
@@ -152,7 +153,7 @@ Ayrıca:
 
 - kütüphane (8 bölme)
 - araç seçimi: Fare / Kalem kırmızı / Kalem siyah, "Çizimi temizle"
-- zar düğmeleri (d20, d10, d3) ve son atışlar
+- zar düğmeleri (d20, d10, d4) ve son atışlar
 - genel not alanı
 - pencere listesi (tıklayarak geçiş)
 - oyun ekranında şu an duran görsellerin listesi (tek tıkla kaldırma)
@@ -259,7 +260,8 @@ Her iş ayrı dalda yapılır; kullanıcı deneyip onaylayınca `main`'e birleş
 | 2 | Kalem: kalınlık ve silgi | 0.9.1 |
 | 3 | Zarlar: d3 ve d10 | 0.9.2 |
 | 4 | Karakterleri dışa / içe aktarma | 0.9.3 |
-| 5 | Müzik | 0.9.4 |
+| 4b | d3 yerine d4 (sonradan eklendi) | 0.9.4 |
+| 5 | Müzik | 0.9.5 |
 | 6 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
 
 ### 1. Kayıt yeri (0.9.0) — yapıldı
@@ -334,7 +336,24 @@ Dosya dışarıdan geldiği için okurken her alan denetlenir; tutarsız dosya b
 **Bitti sayılır:** Bir bilgisayarda dışa aktarılan dosya başka bir kayıt klasöründe içe aktarılınca
 dört kart portreleriyle birlikte aynı gelir. Bozuk ya da yabancı dosya kaydı bozmaz.
 
-### 5. Müzik (0.9.4)
+### 4b. d3 yerine d4 (0.9.4) — yapıldı
+
+Kullanıcı isteğiyle (2026-10-05) küp biçimli d3 kaldırıldı, yerine d4 geldi. Zarlar artık d20, d10
+ve d4.
+
+- d4 gerçek biçimindedir: dört yüzlü piramit. Öbür zarlardan farkı, bir yüzü değil bir köşesi
+  üstte durmasıdır; sonuç o köşeden okunur. Her yüzde, köşelerin yanında üç sayı yazar; zar
+  durunca üstteki köşenin sayısı görünen üç yüzde de okunur, biri izleyiciye göre dik durur.
+- Zar kodu bunun için bir adım daha genellendi: "üstte kalan yüz" yerine "duruş" (yukarı bakan yüz
+  ya da köşe) ve yüz başına birden çok rakam.
+- Piramit masada yuvarlanmaz; çarpar, bir kez sekip devrilir ve kalır. Bu yüzden d4'ün atışı
+  öbürlerinden biraz kısadır (en az 1,6 saniye; d20 ve d10'da 1,9).
+- Eski bir oturumdan kalan d3 atışları geçmişe alınmaz.
+
+**Bilinen sınır:** Oyun ekranı masaya tam tepeden bakar. Duran piramidin yüzleri bu açıdan dik
+göründüğü için üzerindeki sayılar basık durur; sonuç her zaman zarın üstündeki büyük sayıdan okunur.
+
+### 5. Müzik (0.9.5)
 
 Kontrol panelinde bir müzik oynatıcısı: kullanıcı kendi ses dosyalarını (mp3, ogg, wav) yükler,
 oradan seçip çalar. Müzik oyunculara uygulama üzerinden gider.
@@ -343,8 +362,8 @@ oradan seçip çalar. Müzik oyunculara uygulama üzerinden gider.
 - Oynatma: parça seç, çal / duraklat, ileri / geri sar (ilerleme çubuğu), önceki / sonraki parça,
   ses düzeyi, tekrar.
 - Ses dosyaları kayıt klasöründe (`muzik/`) durur; liste ve ses düzeyi kayda girer.
-- Önce kısa bir deneme: Discord'da oyun ekranı penceresi sesle paylaşılınca kontrol panelinden
-  çalan müzik karşıya gidiyor mu. Gitmiyorsa ses oyun ekranı penceresinden çalınır.
+- Ses oyun ekranı penceresinden çalınır (karar, 2026-10-05): Discord'da paylaşılan pencere odur,
+  müzik ayrıca bir deneme gerekmeden karşıya gider. Denetimler kontrol panelindedir.
 
 YouTube / YouTube Music bağlantısı yapılmayacak (kullanıcı kararı, 2026-10-05): YouTube Music'in
 resmi bir oynatma arayüzü yok, Google uygulama içi tarayıcıda hesap girişini engelliyor, gömülü
@@ -359,7 +378,7 @@ koduyla bildirilir.
 - Mevcut arka planın kartına tekrar tıklamak hiçbir şey yapmaz; böyle kalacak.
 - Kontrol panelindeki can denetimi olduğu gibi kalacak; komut satırı (`/can 3 -5`) yapılmayacak.
 - Birden fazla kampanya yapılmayacak.
-- Zarlar d3, d10, d20 ile sınırlı; formül (`2d6+3`) yapılmayacak.
+- Zarlar d4, d10, d20 ile sınırlı; formül (`2d6+3`) yapılmayacak.
 - Dışa aktarma yalnızca karakter bilgileri ve portreler.
 
 ### İstenirse (sıraya alınmadı)

@@ -23,7 +23,7 @@ function isPlayable(roll: DiceRoll): boolean {
 }
 
 /**
- * Zar animasyonu (d3, d10, d20). Sonuç ana süreçte belirlenir ve `window.dnd.onDiceRoll` ile gelir; burada yalnızca
+ * Zar animasyonu (d4, d10, d20). Sonuç ana süreçte belirlenir ve `window.dnd.onDiceRoll` ile gelir; burada yalnızca
  * gösterilir: zar ekrana düşer, yuvarlanır, gelen değerle durur, sayı büyük gösterilir ve kaybolur.
  * GameScreen bu bileşeni 1920x1080 sanal kutunun en üstüne yerleştirir.
  */
