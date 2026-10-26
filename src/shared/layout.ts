@@ -26,7 +26,10 @@ export interface Rect {
 export interface CategoryInfo {
   id: LibraryCategory
   label: string
-  /** 'background': tıklanınca pencerenin arka planı olur. 'overlay': arka planın üstüne konur. */
+  /**
+   * 'background': Ayarlar'daki arka plan seçicide listelenir. Kütüphanede tıklanınca her bölmenin
+   * görseli üste eklenir; arka plan otomatik konmaz.
+   */
   role: 'background' | 'overlay'
 }
 

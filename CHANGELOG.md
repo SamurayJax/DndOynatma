@@ -1,5 +1,14 @@
 # Sürüm Geçmişi
 
+## 0.9.5 — 2026-10-26
+
+### Değişenler
+
+- Kontrol panelindeki kütüphanede Mekanlar ve Sahneler bölmesindeki bir görsele tıklamak artık onu
+  arka plan yapmaz; diğer bölmeler gibi görseli oyun ekranının üstüne ekler. Yeri ve boyutu oyun
+  ekranında elle ayarlanır.
+- Pencerenin arka planı yalnızca Ayarlar › Pencereler'deki arka plan seçiciden konur.
+
 ## 0.9.4 — 2026-10-05
 
 ### Değişenler

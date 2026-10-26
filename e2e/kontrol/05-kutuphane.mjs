@@ -51,16 +51,12 @@ await run(async () => {
 
   await tab(/Mekanlar/).click()
   await card('kraliyet-içi').locator('.lib-card__main').click()
-  state = await waitFor(app, (current) => current.scenes[0].background !== null)
-  check('Mekanlar: tıklama arka plan yapar ve rozet çıkar', state.scenes[0].background?.imageId === place.id && (await card('kraliyet-içi').locator('.lib-badge--background').count()) === 1)
-  // DM arka planı oyun ekranında kaydırmış olsun; aynı karta yeniden tıklamak bunu sıfırlamamalı.
-  const background = state.scenes[0].background
-  await dispatch(control, { type: 'stage/updateItem', sceneId: state.scenes[0].id, itemId: background.id, patch: { x: background.x + 77 } })
-  await waitFor(app, (current) => current.scenes[0].background.x !== background.x)
-  await card('kraliyet-içi').locator('.lib-card__main').click()
-  await sleep(300)
-  state = await app()
-  check('zaten arka plan olan görsele tıklamak elle verilen yeri sıfırlamaz', state.scenes[0].background.id === background.id && state.scenes[0].background.x === background.x + 77, `x ${state.scenes[0].background.x}`)
+  state = await waitFor(app, (current) => current.scenes[0].items.length === 3)
+  await sleep(150)
+  check('Mekanlar: tıklama arka plan yapmaz, görseli üste ekler', state.scenes[0].background === null && state.scenes[0].items.at(-1)?.imageId === place.id && (await card('kraliyet-içi').locator('.lib-badge--onstage').count()) === 1 && (await card('kraliyet-içi').locator('.lib-badge--background').count()) === 0)
+  // Aşağıdaki sayımlar yalnızca NPC kopyalarına göre; mekan görseli ekrandan kaldırılır.
+  await dispatch(control, { type: 'stage/removeItem', sceneId: state.scenes[0].id, itemId: state.scenes[0].items.at(-1).id })
+  await waitFor(app, (current) => current.scenes[0].items.length === 2)
 
   // --- Sürükle-bırak yükleme ---
   await tab(/NPC/).click()

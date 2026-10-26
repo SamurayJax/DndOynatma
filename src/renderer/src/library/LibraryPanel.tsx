@@ -66,8 +66,9 @@ export function LibraryPanel(props: { mode: 'manage' | 'play' }): JSX.Element {
 
   const category = categoryInfo(tab)
   const label = category?.label ?? tab
+  // Mekan ve sahne görselleri genelde yataydır; kartları da yatay çizilir.
   const isBackgroundTab = category?.role === 'background'
-  const click: CardClick = mode === 'manage' ? 'preview' : isBackgroundTab ? 'background' : 'place'
+  const click: CardClick = mode === 'manage' ? 'preview' : 'place'
   const searching = visible !== images
 
   const tabs: TabItem<LibraryCategory>[] = CATEGORIES.map((item) => {
@@ -240,8 +241,8 @@ export function LibraryPanel(props: { mode: 'manage' | 'play' }): JSX.Element {
                 <CursorIcon size={16} />
               </span>
               <span>
-                <strong>{isBackgroundTab ? 'Tıkla: arka plan yap' : 'Tıkla: oyun ekranına koy'}</strong>
-                {isBackgroundTab ? ' — pencerenin şimdiki arka planının yerini alır' : ' — her tıklama bir kopya daha ekler'}
+                <strong>Tıkla: oyun ekranına koy</strong>
+                {' — her tıklama bir kopya daha ekler'}
               </span>
             </p>
           )}

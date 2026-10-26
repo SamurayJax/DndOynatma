@@ -3,8 +3,8 @@ import type { JSX } from 'react'
 import type { ID, LibraryImage } from '@shared/types'
 import { Button, CheckIcon, IconButton, ImageThumb, TrashIcon, cx } from '@renderer/ui'
 
-/** Karta tıklanınca olan: önizleme (Ayarlar), oyun ekranına koyma ya da arka plan yapma (oyun). */
-export type CardClick = 'preview' | 'place' | 'background'
+/** Karta tıklanınca olan: önizleme (Ayarlar) ya da oyun ekranına koyma (oyun). */
+export type CardClick = 'preview' | 'place'
 
 export type SwapKind = 'item' | 'teamItem'
 

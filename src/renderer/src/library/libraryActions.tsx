@@ -6,7 +6,7 @@ import type { JSX } from 'react'
 import { ERROR_CODES } from '@shared/errors'
 import { newId } from '@shared/id'
 import type { ImportResult } from '@shared/ipc'
-import { activeScene, categoryInfo, findImage, scenesUsingImage } from '@shared/layout'
+import { categoryInfo, findImage, scenesUsingImage } from '@shared/layout'
 import type { ID, LibraryCategory, LibraryImage, SceneWindow } from '@shared/types'
 import { reportError } from '@renderer/lib/reportError'
 import { dispatch, getFullState } from '@renderer/lib/useAppState'
@@ -60,18 +60,15 @@ export function droppedPaths(files: FileList): string[] {
   return paths
 }
 
-/** Görseli etkin pencereye koyar: arka plan bölmelerinde arka plan olur, diğerlerinde üste eklenir. */
+/**
+ * Görseli etkin pencerenin üstüne ekler. Mekan ve sahne görselleri de arka plan yapılmaz; DM onları
+ * oyun ekranında kendisi yerleştirir. Arka plan yalnızca Ayarlar'daki seçiciden konur.
+ */
 export function placeOnStage(imageId: ID): void {
   const app = getFullState()?.app
-  const image = app === undefined ? undefined : findImage(app, imageId)
-  const role = image === undefined ? undefined : categoryInfo(image.kind)?.role
-  if (app === undefined || role === undefined) return
-  // Zaten arka plan olan görsel yeniden konmaz: yeniden koymak DM'in oyun ekranında verdiği yeri ve
-  // boyutu sıfırlardı (arka plan seçicideki kuralın aynısı).
-  const target = activeScene(app) ?? app.scenes[0]
-  if (role === 'background' && target?.background?.imageId === imageId) return
+  if (app === undefined || findImage(app, imageId) === undefined) return
   dispatch({
-    type: role === 'background' ? 'stage/setBackground' : 'stage/addItem',
+    type: 'stage/addItem',
     itemId: newId(),
     fallbackSceneId: newId(),
     imageId
