@@ -57,6 +57,7 @@ function ImportRow({ slot, player, incoming }: ImportRowProps): JSX.Element {
             </span>
             <span className="set-import__meta">
               Can {incoming.hp}/{MAX_HP} · {incoming.hasPortrait ? 'portre var' : 'portre yok'} · {incoming.hasNote ? 'not var' : 'not yok'}
+              {incoming.className !== null && ` · sınıf: ${incoming.className}`}
             </span>
           </>
         ) : (
@@ -70,7 +71,7 @@ function ImportRow({ slot, player, incoming }: ImportRowProps): JSX.Element {
 
 /**
  * Ayarlar › Oyuncular'daki "İçe aktar" / "Dışa aktar". Yalnızca dört kart taşınır
- * (isim, seviye, can, not, portre); kütüphane ve pencereler taşınmaz.
+ * (isim, seviye, can, not, portre, istatistikler, sınıf); kütüphane ve pencereler taşınmaz.
  */
 export function CharacterTransfer({ players }: CharacterTransferProps): JSX.Element {
   const [busy, setBusy] = useState(false)

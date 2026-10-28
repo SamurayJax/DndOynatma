@@ -1,5 +1,31 @@
 # Sürüm Geçmişi
 
+## 0.9.7 — 2026-10-28
+
+### Eklenenler
+
+- **Ayarlar › Sınıflar:** sınıf (Savaşçı, Büyücü…) ve becerileri DM tanımlar. Beceri: ad, hangi
+  istatistikle atıldığı ve başarmak için en az kaç gelmesi gerektiği. Sıralanır, adı değişir, silinir.
+- **Oyuncu kartında karakter:** sınıf, altı istatistik (STR, DEX, CON, INT, WIS, CHA; 1–30) ve artı /
+  eksileri (10-11 → 0, her 2 puan bir), yeterlilik (seviyeden: 1-4 → 2 … 17+ → 6; istenirse elle).
+- **Kontrol paneli › Karakterler:** dört eşit sütun, her biri bir oyuncu yuvası; boş yuvanın yeri boş
+  kalır. Sütunda sınıf, istatistikler, Normal / Avantaj / Dezavantaj, beceri düğmeleri, son atış ve
+  geçici artı / eksiler. Oyun sırasında sınıf ve istatistik buradan da değiştirilir.
+- **Beceri atışı:** d20 + istatistik artısı + geçici artı / eksiler; yeterlilik gereksinimden düşülür
+  (gereksinimi 10 olan beceri, yeterliliği 2 olan oyuncu için 8). Toplam gereksinime eşit ya da
+  büyükse başarılı. Avantajda iki d20'nin büyüğü, dezavantajda küçüğü alınır.
+- **Oyun ekranında:** avantaj / dezavantajda iki zar yan yana düşer, alınmayan soluklaşır. Artı / eksiler
+  ekranın kenarından tek tek uçup sayıya çarpar, sayı adım adım değişir; sonunda "Başarılı" /
+  "Başarısız" ve gereksinim yazar. Altta oyuncu ve beceri adı.
+- **Geçici artı / eksi:** açıklamalı ("İyi rol +2", "Kırık kol -1"), hazır değerler (-2, -1, +1, +2) ya
+  da elle; süre kaç atış (1–99) ya da kalıcı. Sayılı olanlar o oyuncunun her beceri atışında bir
+  azalır; düz zar düğmeleri saymaz. Kayda girer.
+- Zar geçmişinde beceri atışları oyuncu, beceri, toplam / gereksinim ve ✓ / ✗ ile yazar.
+- Karakter dosyası (sürüm 2) istatistikleri, yeterliliği ve sınıfı (becerileriyle) taşır. İçe
+  aktarırken aynı adda sınıf varsa o kullanılır, yoksa becerileriyle eklenir. Eski dosyalar okunur.
+- Kontrol panelinin üst sekmeleri: Kontrol Paneli, Karakterler, Müzik.
+- Yeni hata kodu: DND-402 (beceri atışı yapılamadı).
+
 ## 0.9.6 — 2026-10-28
 
 ### Eklenenler

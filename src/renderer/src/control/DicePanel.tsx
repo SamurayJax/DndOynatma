@@ -88,14 +88,19 @@ export function DicePanel(): JSX.Element {
         <div className="ctl-dice__result" aria-live="polite">
           <span className="ctl-dice__caption">
             Son atış
-            {latest !== undefined && <span className="ctl-dice__caption-die"> · d{latest.sides}</span>}
+            {latest !== undefined && (
+              <span className="ctl-dice__caption-die" title={latest.check?.skillName}>
+                {' '}
+                · {latest.check ? latest.check.skillName : `d${latest.sides}`}
+              </span>
+            )}
           </span>
           {latest === undefined ? (
             <span className="ctl-dice__value is-empty">—</span>
           ) : (
             // Aynı sayı art arda gelse de canlanma yeniden oynasın diye atışın kimliği anahtar olur.
-            <span key={latest.id} className={cx('ctl-dice__value', rollTone(latest))}>
-              {latest.value}
+            <span key={latest.id} className={cx('ctl-dice__value', rollTone(latest), latest.check && (latest.check.success ? 'is-success' : 'is-fail'))}>
+              {latest.check ? latest.check.total : latest.value}
             </span>
           )}
         </div>
@@ -108,9 +113,13 @@ export function DicePanel(): JSX.Element {
         ) : (
           <ol className="ctl-dice__list" aria-label="Son atışlar">
             {diceHistory.map((entry) => (
-              <li key={entry.id} className={cx('ctl-dice__roll', rollTone(entry))}>
-                <span className="ctl-dice__roll-die">d{entry.sides}</span>
-                <span className="ctl-dice__roll-value">{entry.value}</span>
+              <li key={entry.id} className={cx('ctl-dice__roll', rollTone(entry), entry.check && (entry.check.success ? 'is-success' : 'is-fail'))}>
+                <span className="ctl-dice__roll-die" title={entry.check ? `${entry.check.playerName} · ${entry.check.skillName}` : undefined}>
+                  {entry.check ? `${entry.check.playerName} · ${entry.check.skillName}` : `d${entry.sides}`}
+                </span>
+                <span className="ctl-dice__roll-value">
+                  {entry.check ? `${entry.check.total} / ${entry.check.requirement} ${entry.check.success ? '✓' : '✗'}` : entry.value}
+                </span>
                 <time className="ctl-dice__roll-time" dateTime={entry.at}>
                   {formatTime(entry.at)}
                 </time>

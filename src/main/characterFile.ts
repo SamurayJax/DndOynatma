@@ -5,9 +5,25 @@
  * Biçim: imza satırı · başlığın bayt uzunluğu (4 bayt, küçük uçlu) · başlık (UTF-8 JSON) ·
  * portrelerin baytları, başlıktaki kart sırasıyla art arda.
  * Portreler base64 yerine ham bayt olarak durur: dosya şişmez, okurken dev bir metin çözülmez.
+ *
+ * Sürüm 2: kartlara istatistikler, yeterlilik ve sınıf (adı ve becerileriyle) eklendi. Bunlar yalnızca
+ * metin ve sayıdır; dosyanın boyutunu yine portreler belirler. Sürüm 1 dosyaları okunmaya devam eder.
  */
-import { TEXT_LIMITS } from '@shared/reducer'
-import { MAX_HP, MAX_LEVEL, MAX_PLAYERS, MIN_LEVEL } from '@shared/types'
+import { DEFAULT_REQUIREMENT, MAX_PROFICIENCY, MAX_REQUIREMENT, MAX_SKILLS, TEXT_LIMITS } from '@shared/reducer'
+import {
+  ABILITIES,
+  Ability,
+  AbilityScores,
+  DEFAULT_ABILITY,
+  MAX_ABILITY,
+  MAX_HP,
+  MAX_LEVEL,
+  MAX_PLAYERS,
+  MIN_ABILITY,
+  MIN_LEVEL,
+  createDefaultAbilities,
+  isAbility
+} from '@shared/types'
 import { ImageSize, readImageSize } from './imageSize'
 import { MAX_IMAGE_BYTES } from './importer'
 
@@ -15,7 +31,7 @@ export const CHARACTER_FILE_EXTENSION = 'dndkarakter'
 
 const MAGIC = Buffer.from('DNDOYNATMA-KARAKTER\n', 'latin1')
 const FORMAT_NAME = 'dndoynatma-karakterler'
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = 2
 const LENGTH_BYTES = 4
 const MAX_HEADER_BYTES = 256 * 1024
 const MAX_ORIGINAL_NAME = 200
@@ -29,6 +45,12 @@ export interface CharacterPortrait {
   originalName: string
 }
 
+/** Karta bağlı sınıf; kimliği taşınmaz, öbür bilgisayarda adıyla eşleşir ya da yeni sınıf olarak eklenir. */
+export interface CardClass {
+  name: string
+  skills: { name: string; ability: Ability; requirement: number }[]
+}
+
 export interface CharacterCard {
   /** 0..3 */
   slot: number
@@ -36,6 +58,10 @@ export interface CharacterCard {
   level: number
   hp: number
   note: string
+  abilities: AbilityScores
+  /** null: seviyeden hesaplanır. */
+  proficiency: number | null
+  characterClass: CardClass | null
   portrait: CharacterPortrait | null
 }
 
@@ -54,6 +80,9 @@ interface HeaderCard {
   level: number
   hp: number
   note: string
+  abilities: AbilityScores
+  proficiency: number | null
+  characterClass: CardClass | null
   portrait: { bytes: number; originalName: string } | null
 }
 
@@ -67,7 +96,16 @@ interface Header {
 
 /** Kartta taşınacak hiçbir şey yoksa true. Böyle bir kart ne yazılır ne de içe alınır. */
 export function isBlankCard(card: CharacterCard): boolean {
-  return card.portrait === null && card.name === '' && card.note === '' && card.level === MIN_LEVEL && card.hp === MAX_HP
+  return (
+    card.portrait === null &&
+    card.name === '' &&
+    card.note === '' &&
+    card.level === MIN_LEVEL &&
+    card.hp === MAX_HP &&
+    card.proficiency === null &&
+    card.characterClass === null &&
+    ABILITIES.every((ability) => card.abilities[ability] === DEFAULT_ABILITY)
+  )
 }
 
 export function encodeCharacterFile(cards: readonly CharacterCard[], meta: { appVersion: string; exportedAt: string }): Buffer {
@@ -82,6 +120,9 @@ export function encodeCharacterFile(cards: readonly CharacterCard[], meta: { app
       level: card.level,
       hp: card.hp,
       note: card.note,
+      abilities: card.abilities,
+      proficiency: card.proficiency,
+      characterClass: card.characterClass,
       portrait: card.portrait ? { bytes: card.portrait.data.length, originalName: card.portrait.originalName } : null
     }))
   }
@@ -110,6 +151,46 @@ function truncate(text: string, max: number): string {
 
 function broken(detail: string): DecodeResult {
   return { ok: false, code: 'DND-112', detail }
+}
+
+/** Sürüm 2 alanları. Eksik alan varsayılanına döner; yanlış tipte alan dosyayı bozuk sayar (null). */
+function decodeCharacterExtras(raw: Record<string, unknown>): Pick<CharacterCard, 'abilities' | 'proficiency' | 'characterClass'> | null {
+  const abilities = createDefaultAbilities()
+  if (raw.abilities !== undefined) {
+    if (!isRecord(raw.abilities)) return null
+    for (const ability of ABILITIES) {
+      const value = raw.abilities[ability]
+      if (value === undefined) continue
+      const score = clampInt(value, MIN_ABILITY, MAX_ABILITY)
+      if (score === null) return null
+      abilities[ability] = score
+    }
+  }
+
+  let proficiency: number | null = null
+  if (raw.proficiency !== undefined && raw.proficiency !== null) {
+    proficiency = clampInt(raw.proficiency, 0, MAX_PROFICIENCY)
+    if (proficiency === null) return null
+  }
+
+  let characterClass: CardClass | null = null
+  if (raw.characterClass !== undefined && raw.characterClass !== null) {
+    const entry = raw.characterClass
+    if (!isRecord(entry) || typeof entry.name !== 'string' || !Array.isArray(entry.skills) || entry.skills.length > MAX_SKILLS) return null
+    const name = truncate(entry.name.trim(), TEXT_LIMITS.className).trimEnd()
+    if (name === '') return null
+    const skills: CardClass['skills'] = []
+    for (const skill of entry.skills as unknown[]) {
+      if (!isRecord(skill) || typeof skill.name !== 'string' || !isAbility(skill.ability)) return null
+      skills.push({
+        name: truncate(skill.name.trim(), TEXT_LIMITS.skillName).trimEnd() || `Beceri ${skills.length + 1}`,
+        ability: skill.ability,
+        requirement: clampInt(skill.requirement, 1, MAX_REQUIREMENT) ?? DEFAULT_REQUIREMENT
+      })
+    }
+    characterClass = { name, skills }
+  }
+  return { abilities, proficiency, characterClass }
 }
 
 /**
@@ -148,6 +229,9 @@ export function decodeCharacterFile(file: Buffer): DecodeResult {
     const level = clampInt(raw.level, MIN_LEVEL, MAX_LEVEL)
     const hp = clampInt(raw.hp, 0, MAX_HP)
     if (typeof name !== 'string' || typeof note !== 'string' || level === null || hp === null) return broken('kart alanları eksik')
+    // Sürüm 1 dosyalarında bu alanlar yoktur; varsayılanları alınır.
+    const extras = decodeCharacterExtras(raw)
+    if (extras === null) return broken('istatistik ya da sınıf alanları geçersiz')
 
     const card: DecodedCard = {
       slot,
@@ -155,6 +239,7 @@ export function decodeCharacterFile(file: Buffer): DecodeResult {
       level,
       hp,
       note: truncate(note, TEXT_LIMITS.playerNote),
+      ...extras,
       portrait: null
     }
     if (portrait !== null) {

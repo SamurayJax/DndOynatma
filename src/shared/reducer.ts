@@ -7,11 +7,18 @@
  * nesnesinin aynısı döner; çağıran taraf yayını ve kaydı buna göre atlar.
  */
 import { Action, ReduceIssue, ReduceResult } from './actions'
+import { consumeEffects } from './character'
 import { ErrorCode } from './errors'
-import { categoryInfo, containRect, coverRect, findImage, playArea, Rect } from './layout'
+import { categoryInfo, containRect, coverRect, findImage, isPlayerPristine, playArea, Rect } from './layout'
 import {
   AmbientSound,
   AppSettings,
+  CharacterClass,
+  isAbility,
+  MAX_ABILITY,
+  MIN_ABILITY,
+  PlayerEffect,
+  Skill,
   AppState,
   createEmptyPlayer,
   FullState,
@@ -44,7 +51,10 @@ export const TEXT_LIMITS = {
   itemLabel: 40,
   generalNote: 20000,
   trackName: 80,
-  ambientName: 24
+  ambientName: 24,
+  className: 30,
+  skillName: 30,
+  effectLabel: 40
 } as const
 
 export const MIN_HOTKEY = 1
@@ -52,6 +62,15 @@ export const MAX_HOTKEY = 9
 /** Hareketli arka planın en kısa döngüsü (saniye); daha kısası titrer. */
 export const MIN_VIDEO_LOOP = 0.5
 export const MAX_AMBIENTS = 24
+export const MAX_CLASSES = 30
+export const MAX_SKILLS = 40
+/** Bir oyuncudaki geçici artı / eksi sayısı. */
+export const MAX_EFFECTS = 12
+export const MAX_EFFECT_VALUE = 20
+export const MAX_EFFECT_ROLLS = 99
+export const MAX_REQUIREMENT = 40
+export const DEFAULT_REQUIREMENT = 10
+export const MAX_PROFICIENCY = 20
 
 const TOOLS: readonly Tool[] = ['mouse', 'pen-red', 'pen-black', 'eraser']
 const REPEAT_MODES: readonly RepeatMode[] = ['off', 'all', 'one']
@@ -81,6 +100,31 @@ export function reduce(state: FullState, action: Action): ReduceResult {
       return changeHp(state, action.slot, action.delta, true)
     case 'player/clear':
       return clearPlayer(state, action)
+    case 'player/setAbility':
+      return setAbility(state, action)
+    case 'player/addEffect':
+      return addEffect(state, action)
+    case 'player/removeEffect':
+      return removeEffect(state, action)
+    case 'player/consumeEffects':
+      return consumePlayerEffects(state, action)
+
+    case 'class/add':
+      return addClass(state, action)
+    case 'class/update':
+      return renameClass(state, action)
+    case 'class/remove':
+      return removeClass(state, action)
+    case 'class/move':
+      return moveClass(state, action)
+    case 'skill/add':
+      return addSkill(state, action)
+    case 'skill/update':
+      return updateSkill(state, action)
+    case 'skill/remove':
+      return removeSkill(state, action)
+    case 'skill/move':
+      return moveSkill(state, action)
 
     case 'library/add':
       return addImages(state, action)
@@ -190,13 +234,16 @@ function updatePlayer(state: FullState, action: ActionOf<'player/update'>): Redu
 
   // Alanlar birbirinden bağımsız; yanlış tipte gelen alan atlanır, diğerleri uygulanır.
   // İsim kırpılmaz (trim): yazarken sondaki boşluğun silinmesi imleci zıplatır.
-  const { name, level, note, portraitId } = patch
+  const { name, level, note, portraitId, classId, proficiency } = patch
   const next: PlayerProfile = {
     ...current,
     name: typeof name === 'string' ? truncate(name, TEXT_LIMITS.playerName) : current.name,
     level: isFiniteNumber(level) ? clamp(Math.round(level), MIN_LEVEL, MAX_LEVEL) : current.level,
     note: typeof note === 'string' ? truncate(note, TEXT_LIMITS.playerNote) : current.note,
-    portraitId: isPortraitChoice(state.app, portraitId) ? portraitId : current.portraitId
+    portraitId: isPortraitChoice(state.app, portraitId) ? portraitId : current.portraitId,
+    classId: classId === null || (typeof classId === 'string' && classById(state.app, classId)) ? (classId as ID | null) : current.classId,
+    proficiency:
+      proficiency === null ? null : isFiniteNumber(proficiency) ? clamp(Math.round(proficiency), 0, MAX_PROFICIENCY) : current.proficiency
   }
   return shallowEqual(current, next) ? { state } : commitPlayer(state, action.slot, next)
 }
@@ -213,8 +260,48 @@ function changeHp(state: FullState, slot: number, amount: unknown, relative: boo
 function clearPlayer(state: FullState, action: ActionOf<'player/clear'>): ReduceResult {
   const current = playerAt(state.app, action.slot)
   if (!current) return invalidSlot(state, action.slot)
-  const empty = createEmptyPlayer()
-  return shallowEqual(current, empty) ? { state } : commitPlayer(state, action.slot, empty)
+  return isPlayerPristine(current) ? { state } : commitPlayer(state, action.slot, createEmptyPlayer())
+}
+
+function setAbility(state: FullState, action: ActionOf<'player/setAbility'>): ReduceResult {
+  const current = playerAt(state.app, action.slot)
+  if (!current) return invalidSlot(state, action.slot)
+  const ability: unknown = action.ability
+  if (!isAbility(ability)) return reject(state, 'DND-306', `player/setAbility: istatistik geçersiz: ${show(ability)}`)
+  if (!isFiniteNumber(action.value)) return reject(state, 'DND-306', `player/setAbility: değer sayı değil: ${show(action.value)}`)
+  const value = clamp(Math.round(action.value), MIN_ABILITY, MAX_ABILITY)
+  if (current.abilities[ability] === value) return { state }
+  return commitPlayer(state, action.slot, { ...current, abilities: { ...current.abilities, [ability]: value } })
+}
+
+function addEffect(state: FullState, action: ActionOf<'player/addEffect'>): ReduceResult {
+  const current = playerAt(state.app, action.slot)
+  if (!current) return invalidSlot(state, action.slot)
+  const raw: unknown = action.effect
+  if (!isRecord(raw) || !isId(raw.id) || !isFiniteNumber(raw.value)) return reject(state, 'DND-306', 'player/addEffect: etki eksik ya da hatalı alanlı.')
+  if (current.effects.some((effect) => effect.id === raw.id)) return { state }
+  if (current.effects.length >= MAX_EFFECTS) return reject(state, 'DND-306', `player/addEffect: bir oyuncuda en fazla ${MAX_EFFECTS} etki olabilir.`)
+  const value = clamp(Math.round(raw.value), -MAX_EFFECT_VALUE, MAX_EFFECT_VALUE)
+  if (value === 0) return reject(state, 'DND-306', 'player/addEffect: etkinin değeri 0 olamaz.')
+  const rolls = raw.rolls === null ? null : isFiniteNumber(raw.rolls) ? clamp(Math.round(raw.rolls), 1, MAX_EFFECT_ROLLS) : 1
+  const label = typeof raw.label === 'string' ? truncate(raw.label.trim(), TEXT_LIMITS.effectLabel).trimEnd() : ''
+  const effect: PlayerEffect = { id: raw.id, label: label || (value > 0 ? 'Artı' : 'Eksi'), value, rolls }
+  return commitPlayer(state, action.slot, { ...current, effects: [...current.effects, effect] })
+}
+
+function removeEffect(state: FullState, action: ActionOf<'player/removeEffect'>): ReduceResult {
+  const current = playerAt(state.app, action.slot)
+  if (!current) return invalidSlot(state, action.slot)
+  const effects = current.effects.filter((effect) => effect.id !== action.effectId)
+  if (effects.length === current.effects.length) return reject(state, 'DND-302', `Etki bulunamadı: ${show(action.effectId)}`)
+  return commitPlayer(state, action.slot, { ...current, effects })
+}
+
+function consumePlayerEffects(state: FullState, action: ActionOf<'player/consumeEffects'>): ReduceResult {
+  const current = playerAt(state.app, action.slot)
+  if (!current) return invalidSlot(state, action.slot)
+  const effects = consumeEffects(current)
+  return effects === current.effects ? { state } : commitPlayer(state, action.slot, { ...current, effects })
 }
 
 function playerAt(app: AppState, slot: unknown): PlayerProfile | undefined {
@@ -742,6 +829,124 @@ function sameRect(a: Rect, b: Rect): boolean {
     Math.abs(a.width - b.width) <= SIZE_EPSILON &&
     Math.abs(a.height - b.height) <= SIZE_EPSILON
   )
+}
+
+// --- Sınıflar ve beceriler -------------------------------------------------
+
+function addClass(state: FullState, action: ActionOf<'class/add'>): ReduceResult {
+  const classId: unknown = action.classId
+  if (!isId(classId)) return reject(state, 'DND-306', `class/add: sınıf kimliği geçersiz: ${show(classId)}`)
+  const classes = state.app.classes
+  if (classes.some((entry) => entry.id === classId)) return reject(state, 'DND-306', `class/add: bu kimlikle bir sınıf zaten var: ${show(classId)}`)
+  if (classes.length >= MAX_CLASSES) return reject(state, 'DND-306', `class/add: en fazla ${MAX_CLASSES} sınıf olabilir.`)
+  const name = cleanName(action.name, TEXT_LIMITS.className) || `Sınıf ${classes.length + 1}`
+  return { state: withClasses(state, [...classes, { id: classId, name, skills: [] }]) }
+}
+
+function renameClass(state: FullState, action: ActionOf<'class/update'>): ReduceResult {
+  const entry = classById(state.app, action.classId)
+  if (!entry) return classNotFound(state, action.classId)
+  // Boş ad yok sayılır: listede adsız sınıf kalmasın.
+  const name = cleanName(action.name, TEXT_LIMITS.className)
+  if (name === '' || name === entry.name) return { state }
+  return { state: withClass(state, entry, { ...entry, name }) }
+}
+
+function removeClass(state: FullState, action: ActionOf<'class/remove'>): ReduceResult {
+  const entry = classById(state.app, action.classId)
+  if (!entry) return classNotFound(state, action.classId)
+  const app = state.app
+  const players = mapChanged(app.players, (player) => (player.classId === entry.id ? { ...player, classId: null } : player))
+  return { state: withApp(state, { ...app, classes: app.classes.filter((other) => other !== entry), players }) }
+}
+
+function moveClass(state: FullState, action: ActionOf<'class/move'>): ReduceResult {
+  const classes = moveInList(state.app.classes, action.classId, action.to)
+  if (classes === null) return reject(state, 'DND-306', `class/move: sınıf ya da yön geçersiz: ${show(action.classId)} ${show(action.to)}`)
+  return classes === state.app.classes ? { state } : { state: withClasses(state, classes) }
+}
+
+function addSkill(state: FullState, action: ActionOf<'skill/add'>): ReduceResult {
+  const entry = classById(state.app, action.classId)
+  if (!entry) return classNotFound(state, action.classId)
+  const raw: unknown = action.skill
+  if (!isRecord(raw) || !isId(raw.id) || !isAbility(raw.ability)) return reject(state, 'DND-306', 'skill/add: beceri eksik ya da hatalı alanlı.')
+  if (entry.skills.some((skill) => skill.id === raw.id)) return reject(state, 'DND-306', `skill/add: bu kimlikle bir beceri zaten var: ${show(raw.id)}`)
+  if (entry.skills.length >= MAX_SKILLS) return reject(state, 'DND-306', `skill/add: bir sınıfta en fazla ${MAX_SKILLS} beceri olabilir.`)
+  const skill: Skill = {
+    id: raw.id,
+    name: cleanName(raw.name, TEXT_LIMITS.skillName) || `Beceri ${entry.skills.length + 1}`,
+    ability: raw.ability,
+    requirement: isFiniteNumber(raw.requirement) ? clamp(Math.round(raw.requirement), 1, MAX_REQUIREMENT) : DEFAULT_REQUIREMENT
+  }
+  return { state: withClass(state, entry, { ...entry, skills: [...entry.skills, skill] }) }
+}
+
+function updateSkill(state: FullState, action: ActionOf<'skill/update'>): ReduceResult {
+  const entry = classById(state.app, action.classId)
+  if (!entry) return classNotFound(state, action.classId)
+  const skill = entry.skills.find((other) => other.id === action.skillId)
+  if (!skill) return reject(state, 'DND-302', `Beceri bulunamadı: ${show(action.skillId)}`)
+  const patch: unknown = action.patch
+  if (!isRecord(patch)) return reject(state, 'DND-306', 'skill/update: patch bir nesne değil.')
+  const next: Skill = {
+    ...skill,
+    name: cleanName(patch.name, TEXT_LIMITS.skillName) || skill.name,
+    ability: isAbility(patch.ability) ? patch.ability : skill.ability,
+    requirement: isFiniteNumber(patch.requirement) ? clamp(Math.round(patch.requirement), 1, MAX_REQUIREMENT) : skill.requirement
+  }
+  if (shallowEqual(skill, next)) return { state }
+  return { state: withClass(state, entry, { ...entry, skills: entry.skills.map((other) => (other === skill ? next : other)) }) }
+}
+
+function removeSkill(state: FullState, action: ActionOf<'skill/remove'>): ReduceResult {
+  const entry = classById(state.app, action.classId)
+  if (!entry) return classNotFound(state, action.classId)
+  const skills = entry.skills.filter((skill) => skill.id !== action.skillId)
+  if (skills.length === entry.skills.length) return reject(state, 'DND-302', `Beceri bulunamadı: ${show(action.skillId)}`)
+  return { state: withClass(state, entry, { ...entry, skills }) }
+}
+
+function moveSkill(state: FullState, action: ActionOf<'skill/move'>): ReduceResult {
+  const entry = classById(state.app, action.classId)
+  if (!entry) return classNotFound(state, action.classId)
+  const skills = moveInList(entry.skills, action.skillId, action.to)
+  if (skills === null) return reject(state, 'DND-306', `skill/move: beceri ya da yön geçersiz: ${show(action.skillId)} ${show(action.to)}`)
+  return skills === entry.skills ? { state } : { state: withClass(state, entry, { ...entry, skills }) }
+}
+
+/** Listede bir yukarı / aşağı. Uçtaysa aynı dizi; kimlik ya da yön geçersizse null. */
+function moveInList<T extends { id: ID }>(list: T[], id: unknown, to: unknown): T[] | null {
+  if (to !== 'up' && to !== 'down') return null
+  const index = list.findIndex((entry) => entry.id === id)
+  if (index === -1) return null
+  const target = to === 'up' ? index - 1 : index + 1
+  if (target < 0 || target >= list.length) return list
+  const next = list.slice()
+  const [moved] = next.splice(index, 1)
+  next.splice(target, 0, moved)
+  return next
+}
+
+function cleanName(name: unknown, max: number): string {
+  if (typeof name !== 'string') return ''
+  return truncate(name.trim(), max).trimEnd()
+}
+
+function classById(app: AppState, classId: unknown): CharacterClass | undefined {
+  return typeof classId === 'string' ? app.classes.find((entry) => entry.id === classId) : undefined
+}
+
+function classNotFound(state: FullState, classId: unknown): ReduceResult {
+  return reject(state, 'DND-302', `Sınıf bulunamadı: ${show(classId)}`)
+}
+
+function withClasses(state: FullState, classes: CharacterClass[]): FullState {
+  return withApp(state, { ...state.app, classes })
+}
+
+function withClass(state: FullState, entry: CharacterClass, next: CharacterClass): FullState {
+  return withClasses(state, state.app.classes.map((other) => (other === entry ? next : other)))
 }
 
 // --- Müzik -------------------------------------------------------------------

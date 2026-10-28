@@ -30,6 +30,29 @@ export interface RevealSpot {
   y: number
 }
 
+/**
+ * center: tek zar, oyun alanının ortası · left / right: avantaj / dezavantajda iki zar yan yana düşer.
+ */
+export type ThrowLane = 'center' | 'left' | 'right'
+
+export interface ThrowOptions {
+  lane?: ThrowLane
+  /** Zar durduktan sonra kaybolmaya başlayana kadar geçen süre (saniye). */
+  holdSeconds?: number
+  /**
+   * false: zar durduktan sonra kaybolmaz ve onFinish çağrılmaz; atış dönen fonksiyonla iptal edilene
+   * kadar yerinde kalır (iki zarlı atışta ikinci zar, birinci zarla birlikte kaldırılır).
+   */
+  fade?: boolean
+}
+
+/** Şeritlerin oyun alanındaki yatay yeri (oran): başlangıç ve genişlik. */
+const LANES: Record<ThrowLane, { x: number; width: number }> = {
+  center: { x: 0.3, width: 0.4 },
+  left: { x: 0.16, width: 0.28 },
+  right: { x: 0.56, width: 0.28 }
+}
+
 export interface ThrowHandlers {
   /** Zar durdu; sonuç gösterilebilir. */
   onSettle(spot: RevealSpot): void
@@ -53,8 +76,11 @@ export function playThrow(
   canvas: HTMLCanvasElement,
   sides: DiceSides,
   value: number,
-  handlers: ThrowHandlers
+  handlers: ThrowHandlers,
+  options: ThrowOptions = {}
 ): () => void {
+  const lane = LANES[options.lane ?? 'center']
+  const fades = options.fade ?? true
   const model = modelFor(sides)
   // Kök öğe 1920x1080 sanal kutuyu kaplar; kutu pencereye CSS dönüşümüyle ölçeklenir.
   const width = root.clientWidth || STAGE_WIDTH
@@ -82,9 +108,9 @@ export function playThrow(
     height: height / unit,
     // Oyun alanının ortası; üstte büyük sayıya yer kalsın diye biraz aşağıda.
     landing: {
-      x: (area.x + area.width * 0.3) / EDGE_PX,
+      x: (area.x + area.width * lane.x) / EDGE_PX,
       y: (area.y + area.height * 0.44) / EDGE_PX,
-      width: (area.width * 0.4) / EDGE_PX,
+      width: (area.width * lane.width) / EDGE_PX,
       height: (area.height * 0.24) / EDGE_PX
     }
   }
@@ -93,7 +119,7 @@ export function playThrow(
   const drawScale = unit * ratio
 
   const settleAt = plan.duration
-  const fadeAt = settleAt + REVEAL_SECONDS
+  const fadeAt = fades ? settleAt + (options.holdSeconds ?? REVEAL_SECONDS) : Number.POSITIVE_INFINITY
   const endAt = fadeAt + FADE_SECONDS
   const startedAt = performance.now()
 
@@ -144,7 +170,10 @@ export function playThrow(
     if (time >= endAt) {
       stop()
       handlers.onFinish()
+      return
     }
+    // Kaybolmayan zar durduktan ve son karesi çizildikten sonra kare döngüsünü boşuna döndürmez.
+    if (!fades && settled && restDrawn) stop()
   }
 
   const guarded = (now: number): void => {
@@ -163,7 +192,8 @@ export function playThrow(
   frame = requestAnimationFrame(loop)
 
   for (const at of [settleAt, fadeAt, endAt]) {
-    timers.push(window.setTimeout(() => guarded(performance.now()), at * 1000 + TIMER_SLACK_MS))
+    // Kaybolmayan zarın sonsuz zamanı için zamanlayıcı kurulmaz (setTimeout sonsuzu hemen çalıştırırdı).
+    if (Number.isFinite(at)) timers.push(window.setTimeout(() => guarded(performance.now()), at * 1000 + TIMER_SLACK_MS))
   }
 
   return () => {

@@ -2,11 +2,13 @@
  * Zarlar (d4, d10, d20). Sonuç ana süreçte üretilir; geçmiş hem oturum durumunda hem `zar.json`'da tutulur.
  */
 import { randomInt } from 'node:crypto'
+import { computeSkillCheck, findClass } from '@shared/character'
+import { isPlayerFilled } from '@shared/layout'
 import { newId } from '@shared/id'
 import { IPC } from '@shared/ipc'
-import { DiceRoll, DiceSides } from '@shared/types'
+import { CheckMode, DiceRoll, DiceSides, MAX_PLAYERS } from '@shared/types'
 import { log } from './logger'
-import { broadcast, notify } from './notify'
+import { broadcast, notify, report } from './notify'
 import { DICE_HISTORY_LIMIT, clearDiceHistory, writeDiceHistory } from './storage'
 import { Store } from './store'
 
@@ -25,6 +27,44 @@ export function rollDice(store: Store, diceFile: string, sides: DiceSides): Dice
     return null
   }
   const roll: DiceRoll = { id: newId(), sides, value: randomInt(1, sides + 1), at: new Date().toISOString() }
+  record(store, diceFile, roll)
+  log.info(`Zar atıldı: d${sides} = ${roll.value}`)
+  return roll
+}
+
+export type SkillRollFailure = 'not-playing' | 'invalid'
+
+/**
+ * Beceri atışı: d20 (avantaj / dezavantajda iki) atılır, oyuncunun istatistiği ve geçici artı / eksileri
+ * eklenir, yeterlilik düşülmüş gereksinimle karşılaştırılır. Sayılı etkiler bir azalır.
+ */
+export function rollSkill(store: Store, diceFile: string, slot: number, skillId: string, mode: CheckMode): DiceRoll | SkillRollFailure {
+  const { app, session } = store.getState()
+  if (session.phase !== 'playing') {
+    log.code('DND-401')
+    return 'not-playing'
+  }
+  const player = Number.isInteger(slot) && slot >= 0 && slot < MAX_PLAYERS ? app.players[slot] : undefined
+  const skill = player ? findClass(app, player.classId)?.skills.find((entry) => entry.id === skillId) : undefined
+  if (!player || !isPlayerFilled(player) || !skill) {
+    report('DND-402', `yuva ${slot}, beceri ${skillId}`)
+    return 'invalid'
+  }
+
+  const dice = mode === 'normal' ? [randomInt(1, 21)] : [randomInt(1, 21), randomInt(1, 21)]
+  const check = computeSkillCheck({ slot, player, skill, mode, dice })
+  const roll: DiceRoll = { id: newId(), sides: 20, value: dice[check.keptIndex], at: new Date().toISOString(), check }
+  // Önce etkiler düşer: oyun ekranı atışı alırken kontrol paneli yeni sayıları göstersin.
+  store.dispatch({ type: 'player/consumeEffects', slot }, { trusted: true })
+  record(store, diceFile, roll)
+  log.info(
+    `Beceri atışı: yuva ${slot}, ${mode}, zar ${dice.join('/')} → ${check.total} / ${check.requirement} ${check.success ? 'başarılı' : 'başarısız'}`
+  )
+  return roll
+}
+
+/** Atışı geçmişe ve zar.json'a yazar, bütün pencerelere yayar. */
+function record(store: Store, diceFile: string, roll: DiceRoll): void {
   const history = [roll, ...store.getState().session.diceHistory].slice(0, DICE_HISTORY_LIMIT)
   try {
     writeDiceHistory(diceFile, history)
@@ -33,8 +73,6 @@ export function rollDice(store: Store, diceFile: string, sides: DiceSides): Dice
   }
   store.updateSession((session) => ({ ...session, diceHistory: history }))
   broadcast(IPC.diceRoll, roll)
-  log.info(`Zar atıldı: d${sides} = ${roll.value}`)
-  return roll
 }
 
 /** Oyun normal bittiğinde ve düzgün kapanışta çağrılır. */

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { AppState, createInitialAppState } from '@shared/types'
+import { AppState, createEmptyPlayer, createInitialAppState } from '@shared/types'
 
 export function makeTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'dndoynatma-test-'))
@@ -19,7 +19,7 @@ export function sampleAppState(): AppState {
     { id: 'img-npc', kind: 'npc', fileName: 'npc.webp', originalName: 'Kral', width: 400, height: 600, addedAt: '2026-01-02T10:00:00.000Z' },
     { id: 'img-portrait', kind: 'portrait', fileName: 'portre.jpg', originalName: 'Savaşçı', width: 512, height: 512, addedAt: '2026-01-03T10:00:00.000Z' }
   ]
-  state.players[0] = { portraitId: 'img-portrait', name: 'Şövalye', level: 5, hp: 7, note: 'iksiri var' }
+  state.players[0] = { ...createEmptyPlayer(), portraitId: 'img-portrait', name: 'Şövalye', level: 5, hp: 7, note: 'iksiri var' }
   state.scenes = [
     {
       id: 'scene-1',

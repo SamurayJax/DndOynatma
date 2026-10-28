@@ -7,10 +7,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { BrowserWindow, OpenDialogOptions, SaveDialogOptions, dialog } from 'electron'
 import { CharacterExportResult, CharacterImportPreview, CharacterImportResult, IncomingCard } from '@shared/ipc'
+import { findClass } from '@shared/character'
 import { findImage, isPlayerPristine } from '@shared/layout'
-import { AppState, ID, LibraryImage, PlayerProfile } from '@shared/types'
+import { ABILITIES, AppState, CharacterClass, ID, LibraryImage, PlayerProfile } from '@shared/types'
 import {
   CHARACTER_FILE_EXTENSION,
+  CardClass,
   CharacterCard,
   DecodeResult,
   DecodedCard,
@@ -61,12 +63,18 @@ export async function collectCards(app: AppState, imagesDir: string): Promise<{ 
     if (isPlayerPristine(player)) continue
     const portrait = await readPortrait(app, imagesDir, player)
     if (player.portraitId !== null && portrait === null) missingPortraits.push(slot)
+    const characterClass = findClass(app, player.classId)
     const card: CharacterCard = {
       slot,
       name: player.name,
       level: player.level,
       hp: player.hp,
       note: player.note,
+      abilities: { ...player.abilities },
+      proficiency: player.proficiency,
+      characterClass: characterClass
+        ? { name: characterClass.name, skills: characterClass.skills.map(({ name, ability, requirement }) => ({ name, ability, requirement })) }
+        : null,
       portrait: portrait ? { data: portrait.data, originalName: portrait.image.originalName } : null
     }
     // Tek içeriği okunamayan portre olan karttan geriye yazılacak bir şey kalmaz.
@@ -143,10 +151,22 @@ async function readCharacterFile(filePath: string): Promise<DecodeResult> {
   }
 }
 
+/** Dosyadaki sınıfın bu kayıttaki karşılığı: adı aynı olan sınıf (büyük / küçük harf ayrımı yapılmaz). */
+function matchingClass(app: AppState, cardClass: CardClass): CharacterClass | undefined {
+  const key = cardClass.name.trim().toLocaleLowerCase('tr')
+  return app.classes.find((entry) => entry.name.trim().toLocaleLowerCase('tr') === key)
+}
+
 /** Kart şu an dosyadakiyle aynı mı (portrenin baytları dahil). */
 async function isUnchanged(app: AppState, imagesDir: string, card: DecodedCard): Promise<boolean> {
   const player = app.players[card.slot]
   if (player.name !== card.name || player.level !== card.level || player.hp !== card.hp || player.note !== card.note) return false
+  if (player.proficiency !== card.proficiency || ABILITIES.some((ability) => player.abilities[ability] !== card.abilities[ability])) return false
+  // Sınıf adıyla eşleşir: kartın sınıfı, oyuncunun şu anki sınıfıyla aynı adı taşımalı.
+  const currentClass = findClass(app, player.classId)
+  const wantedClass = card.characterClass === null ? undefined : matchingClass(app, card.characterClass)
+  if (card.characterClass !== null && wantedClass === undefined) return false
+  if (currentClass?.id !== wantedClass?.id) return false
   if (card.portrait === null) return player.portraitId === null
   const current = await readPortrait(app, imagesDir, player)
   return current !== null && current.data.equals(card.portrait.data)
@@ -172,6 +192,7 @@ export async function previewCharacterFile(deps: CharacterDeps, filePath: string
       hp: card.hp,
       hasNote: card.note !== '',
       hasPortrait: card.portrait !== null,
+      className: card.characterClass?.name ?? null,
       unchanged: await isUnchanged(app, deps.imagesDir, card)
     })
   }
@@ -246,14 +267,36 @@ export async function applyCharacterImport(deps: CharacterDeps, token: unknown):
 
   for (const card of changing) {
     const portraitId = portraitIds.get(card.slot) ?? null
-    store.dispatch({ type: 'player/update', slot: card.slot, patch: { name: card.name, level: card.level, note: card.note, portraitId } })
+    const classId = card.characterClass === null ? null : resolveClass(store, card.characterClass)
+    store.dispatch({
+      type: 'player/update',
+      slot: card.slot,
+      patch: { name: card.name, level: card.level, note: card.note, portraitId, classId, proficiency: card.proficiency }
+    })
     store.dispatch({ type: 'player/setHp', slot: card.slot, hp: card.hp })
+    for (const ability of ABILITIES) store.dispatch({ type: 'player/setAbility', slot: card.slot, ability, value: card.abilities[ability] })
   }
 
   const after = store.getState().app
   const slots = changing.map((card) => card.slot).filter((slot) => after.players[slot] !== before.players[slot])
   log.info(`Karakterler içe aktarıldı: ${slots.length} kart`)
   return { ok: true, code: null, slots }
+}
+
+/**
+ * Dosyadaki sınıfın kimliği: aynı adda sınıf varsa o kullanılır (DM'in kendi becerilerine dokunulmaz),
+ * yoksa becerileriyle birlikte yeni sınıf olarak eklenir. Eklenemezse (en fazla sınıf) null.
+ */
+function resolveClass(store: CharacterDeps['store'], cardClass: CardClass): ID | null {
+  const existing = matchingClass(store.getState().app, cardClass)
+  if (existing) return existing.id
+  const classId = randomUUID()
+  if (!store.dispatch({ type: 'class/add', classId, name: cardClass.name }, { trusted: true })) return null
+  for (const skill of cardClass.skills) {
+    store.dispatch({ type: 'skill/add', classId, skill: { id: randomUUID(), ...skill } }, { trusted: true })
+  }
+  log.info(`Karakter içe aktarma: yeni sınıf eklendi (${cardClass.skills.length} beceri)`)
+  return classId
 }
 
 export function cancelCharacterImport(token: unknown): void {

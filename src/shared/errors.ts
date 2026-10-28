@@ -150,6 +150,11 @@ export const ERROR_CODES = {
     title: 'Zar atılamadı',
     description: 'Oyun açık değilken zar atılmak istendi; yok sayıldı.'
   },
+  'DND-402': {
+    level: 'UYARI',
+    title: 'Beceri atışı yapılamadı',
+    description: 'Atılmak istenen beceri artık yok ya da oyuncunun sınıfında değil (sınıf bu arada değişmiş ya da silinmiş olabilir). Zar atılmadı.'
+  },
   'DND-501': {
     level: 'UYARI',
     title: 'Desteklenmeyen ses dosyası',

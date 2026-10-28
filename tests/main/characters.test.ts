@@ -223,9 +223,9 @@ describe('karakterleri içe aktarma', () => {
     expect(preview).toMatchObject({ ok: true, canceled: false, code: null, fileName: 'kartlar.dndkarakter' })
     expect(Number.isNaN(Date.parse(preview.exportedAt ?? ''))).toBe(false)
     expect(preview.cards).toEqual([
-      { slot: 0, name: 'Kenji', level: 4, hp: 7, hasNote: true, hasPortrait: true, unchanged: false },
-      { slot: 1, name: 'Jasper', level: 5, hp: MAX_HP, hasNote: false, hasPortrait: true, unchanged: false },
-      { slot: 3, name: 'Mira', level: 2, hp: 0, hasNote: false, hasPortrait: false, unchanged: false }
+      { slot: 0, name: 'Kenji', level: 4, hp: 7, hasNote: true, hasPortrait: true, className: null, unchanged: false },
+      { slot: 1, name: 'Jasper', level: 5, hp: MAX_HP, hasNote: false, hasPortrait: true, className: null, unchanged: false },
+      { slot: 3, name: 'Mira', level: 2, hp: 0, hasNote: false, hasPortrait: false, className: null, unchanged: false }
     ])
     // Önizleme kayda dokunmaz.
     expect(cardsOf(target)).toEqual(cardsOf(makeFixture('bos')))
@@ -297,7 +297,7 @@ describe('karakterleri içe aktarma', () => {
     const preview = await previewCharacterFile(target.deps, exportFile)
     await applyCharacterImport(target.deps, preview.token)
 
-    expect(target.store.getState().app.players[1]).toEqual({ portraitId: null, name: 'Portresiz', level: 3, hp: MAX_HP, note: '' })
+    expect(target.store.getState().app.players[1]).toMatchObject({ portraitId: null, name: 'Portresiz', level: 3, hp: MAX_HP, note: '' })
     expect(target.trashed).toHaveLength(1)
     expect(target.store.getState().app.library).toEqual([])
   })
@@ -328,7 +328,7 @@ describe('karakterleri içe aktarma', () => {
     expect(preview.cards[0].unchanged).toBe(false)
     expect((await applyCharacterImport(target.deps, preview.token)).slots).toEqual([0])
 
-    expect(target.store.getState().app.players[0]).toEqual({ portraitId, name: 'Yeni İsim', level: 8, hp: 2, note: '' })
+    expect(target.store.getState().app.players[0]).toMatchObject({ portraitId, name: 'Yeni İsim', level: 8, hp: 2, note: '' })
     expect(imageFiles(target)).toEqual(files)
     expect(target.trashed).toEqual([])
   })
@@ -409,7 +409,7 @@ describe('karakterleri içe aktarma: hatalı durumlar', () => {
   it('daha yeni biçimdeki dosyayı ayrı kodla reddeder (DND-113)', async () => {
     const target = await filledTarget()
     const file = encodeCharacterFile([], { appVersion: '9.0.0', exportedAt: new Date().toISOString() })
-    const text = file.toString('latin1').replace('"version":1', '"version":2')
+    const text = file.toString('latin1').replace('"version":2', '"version":3')
     const preview = await previewCharacterFile(target.deps, sourceFile('yeni.dndkarakter', Buffer.from(text, 'latin1')))
     expect(preview).toMatchObject({ ok: false, code: 'DND-113', token: null })
   })

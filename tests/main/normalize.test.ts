@@ -74,7 +74,7 @@ describe('normalizeAppState', () => {
 
     it('metin olmayan isim ve notu boşaltır', () => {
       const player = repaired({ players: [{ portraitId: null, name: 12, level: 3, hp: 5, note: { a: 1 } }] }).players[0]
-      expect(player).toEqual({ portraitId: null, name: '', level: 3, hp: 5, note: '' })
+      expect(player).toEqual({ ...createEmptyPlayer(), portraitId: null, name: '', level: 3, hp: 5, note: '' })
     })
 
     it('kütüphanede olmayan portreyi boşaltır', () => {

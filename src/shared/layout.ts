@@ -9,6 +9,7 @@ import {
   LibraryImage,
   MAX_HP,
   MIN_LEVEL,
+  DEFAULT_ABILITY,
   PlayerProfile,
   PORTRAIT_COLUMN_WIDTH,
   SceneWindow,
@@ -59,7 +60,17 @@ export function isPlayerFilled(player: PlayerProfile): boolean {
  * oyunda alınmış not ya da eksilmiş can durabilir; o kart oyunda görünmez ama boş da değildir.
  */
 export function isPlayerPristine(player: PlayerProfile): boolean {
-  return player.portraitId === null && player.name === '' && player.note === '' && player.level === MIN_LEVEL && player.hp === MAX_HP
+  return (
+    player.portraitId === null &&
+    player.name === '' &&
+    player.note === '' &&
+    player.level === MIN_LEVEL &&
+    player.hp === MAX_HP &&
+    player.classId === null &&
+    player.proficiency === null &&
+    player.effects.length === 0 &&
+    Object.values(player.abilities).every((score) => score === DEFAULT_ABILITY)
+  )
 }
 
 /** Dolu oyuncular, yuva numaralarıyla (0..3) birlikte. */

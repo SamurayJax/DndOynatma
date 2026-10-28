@@ -60,6 +60,7 @@ Kodların kaynağı `src/shared/errors.ts` dosyasıdır; bu liste onunla aynı t
 | Kod | Seviye | Durum | Açıklama |
 |-----|--------|-------|----------|
 | DND-401 | BILGI | Zar atılamadı | Oyun açık değilken zar atılmak istendi; yok sayıldı. |
+| DND-402 | UYARI | Beceri atışı yapılamadı | Atılmak istenen beceri artık yok ya da oyuncunun sınıfında değil (sınıf bu arada değişmiş ya da silinmiş olabilir). Zar atılmadı. |
 
 ## 5xx — Müzik ve sesler
 

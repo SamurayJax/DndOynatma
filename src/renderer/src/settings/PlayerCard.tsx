@@ -5,8 +5,9 @@ import type { ImportResult } from '@shared/ipc'
 import { isPlayerFilled, isPlayerPristine } from '@shared/layout'
 import { TEXT_LIMITS } from '@shared/reducer'
 import { MAX_LEVEL, MIN_LEVEL } from '@shared/types'
-import type { LibraryImage, PlayerProfile } from '@shared/types'
+import type { CharacterClass, LibraryImage, PlayerProfile } from '@shared/types'
 import { reportError } from '@renderer/lib/reportError'
+import { CharacterSheet } from './CharacterSheet'
 import { dispatch } from '@renderer/lib/useAppState'
 import {
   Button,
@@ -30,6 +31,8 @@ export interface PlayerCardProps {
   player: PlayerProfile
   /** Portre görseli; yoksa ya da kütüphanede bulunamadıysa `undefined`. */
   portrait: LibraryImage | undefined
+  /** Seçilebilecek sınıflar. */
+  classes: readonly CharacterClass[]
 }
 
 function carriesFiles(event: DragEvent<HTMLElement>): boolean {
@@ -43,7 +46,7 @@ function reportSkipped(result: ImportResult): void {
 }
 
 /** Tek oyuncu kartı: portre (tıkla ya da bırak), isim, seviye, oyunda görünürlük durumu. */
-export const PlayerCard = memo(function PlayerCard({ slot, player, portrait }: PlayerCardProps): JSX.Element {
+export const PlayerCard = memo(function PlayerCard({ slot, player, portrait, classes }: PlayerCardProps): JSX.Element {
   const titleId = useId()
   const [busy, setBusy] = useState(false)
   const [dropActive, setDropActive] = useState(false)
@@ -117,7 +120,7 @@ export const PlayerCard = memo(function PlayerCard({ slot, player, portrait }: P
     const confirmed = await confirmDialog({
       title: `${title} kartı boşaltılsın mı?`,
       message:
-        'İsim, portre ve oyun sırasında alınan not silinir; seviye 1’e döner, can dolar. Boş kart oyunda görünmez.',
+        'İsim, portre, sınıf, istatistikler, etkiler ve oyun sırasında alınan not silinir; seviye 1’e döner, can dolar. Boş kart oyunda görünmez.',
       danger: true,
       confirmLabel: 'Boşalt'
     })
@@ -220,6 +223,8 @@ export const PlayerCard = memo(function PlayerCard({ slot, player, portrait }: P
           onChange={(level) => dispatch({ type: 'player/update', slot, patch: { level } })}
         />
       </div>
+
+      <CharacterSheet slot={slot} player={player} classes={classes} />
     </section>
   )
 })

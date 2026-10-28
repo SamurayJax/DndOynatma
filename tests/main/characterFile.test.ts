@@ -9,6 +9,7 @@ import {
   encodeCharacterFile,
   isBlankCard
 } from '../../src/main/characterFile'
+import { createDefaultAbilities } from '@shared/types'
 import { MAX_IMAGE_BYTES } from '../../src/main/importer'
 import { JFIF_SEGMENT, jpegBytes, jpegFrame, pngBytes, webpLossyBytes } from './helpers'
 
@@ -16,7 +17,7 @@ const MAGIC = 'DNDOYNATMA-KARAKTER\n'
 const META = { appVersion: '0.9.3', exportedAt: '2026-10-05T18:30:00.000Z' }
 
 function card(slot: number, patch: Partial<CharacterCard> = {}): CharacterCard {
-  return { slot, name: `Kahraman ${slot + 1}`, level: 3, hp: 8, note: '', portrait: null, ...patch }
+  return { slot, name: `Kahraman ${slot + 1}`, level: 3, hp: 8, note: '', abilities: createDefaultAbilities(), proficiency: null, characterClass: null, portrait: null, ...patch }
 }
 
 /** Dosyayı elle kurar: başlık istenen (bozuk) içerikle yazılabilir. */
@@ -181,7 +182,7 @@ describe('karakter dosyası: bozuk ve yabancı dosyalar', () => {
   })
 
   it('daha yeni biçimi ayrı kodla bildirir (DND-113)', () => {
-    expectBroken(decodeCharacterFile(rawFile(header([rawCard()], { version: 2 }))), 'DND-113')
+    expectBroken(decodeCharacterFile(rawFile(header([rawCard()], { version: 3 }))), 'DND-113')
     expectBroken(decodeCharacterFile(rawFile(header([rawCard()], { version: 0 }))))
     expectBroken(decodeCharacterFile(rawFile(header([rawCard()], { version: '1' }))))
     expectBroken(decodeCharacterFile(rawFile(header([rawCard()], { version: 1.5 }))))

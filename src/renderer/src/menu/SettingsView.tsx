@@ -3,13 +3,14 @@ import type { JSX } from 'react'
 import { categoryInfo, filledPlayers } from '@shared/layout'
 import { LibraryPanel } from '@renderer/library/LibraryPanel'
 import { useApp } from '@renderer/lib/useAppState'
+import { ClassesTab } from '@renderer/settings/ClassesTab'
 import { ProfilesTab } from '@renderer/settings/ProfilesTab'
 import { ScenesTab } from '@renderer/settings/ScenesTab'
 import { Button, ChevronLeftIcon, Tabs } from '@renderer/ui'
 import type { TabItem } from '@renderer/ui'
 import { GeneralTab } from './GeneralTab'
 
-type SettingsTab = 'players' | 'library' | 'scenes' | 'general'
+type SettingsTab = 'players' | 'classes' | 'library' | 'scenes' | 'general'
 
 /** Sıfır rozet göstermek kalabalık yapar; boşsa rozet hiç çizilmez. */
 function countBadge(count: number): number | undefined {
@@ -20,6 +21,8 @@ function TabContent({ tab }: { tab: SettingsTab }): JSX.Element {
   switch (tab) {
     case 'players':
       return <ProfilesTab />
+    case 'classes':
+      return <ClassesTab />
     case 'library':
       return <LibraryPanel mode="manage" />
     case 'scenes':
@@ -43,6 +46,7 @@ export function SettingsView({ onBack }: SettingsViewProps): JSX.Element {
 
   const tabs: TabItem<SettingsTab>[] = [
     { id: 'players', label: 'Oyuncular', badge: countBadge(filledPlayers(app).length) },
+    { id: 'classes', label: 'Sınıflar', badge: countBadge(app.classes.length) },
     { id: 'library', label: 'Kütüphane', badge: countBadge(libraryCount) },
     { id: 'scenes', label: 'Pencereler', badge: countBadge(app.scenes.length) },
     { id: 'general', label: 'Genel' }

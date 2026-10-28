@@ -7,7 +7,7 @@ import { AmbientImportResult, AppInfo, CharacterExportResult, CharacterImportPre
 import { CATEGORIES } from '@shared/layout'
 import { LibraryCategory, MAX_PLAYERS, isDiceSides } from '@shared/types'
 import { CharacterDeps, applyCharacterImport, cancelCharacterImport, exportCharacters, pickCharacterImport } from './characters'
-import { rollDice } from './dice'
+import { rollDice, rollSkill } from './dice'
 import { describeDisplays } from './displays'
 import { LibraryDeps, importFiles, importPortrait, importPortraitFile, importWithDialog } from './library'
 import { log } from './logger'
@@ -203,6 +203,14 @@ export function registerIpc(deps: IpcDeps): void {
       return null
     }
     return rollDice(store, paths.diceFile, sides)
+  })
+
+  handle(IPC.diceRollSkill, (_role, _event, slot, skillId, mode) => {
+    if (typeof slot !== 'number' || typeof skillId !== 'string' || (mode !== 'normal' && mode !== 'advantage' && mode !== 'disadvantage')) {
+      report('DND-306', 'beceri atışı: geçersiz yuva, beceri ya da kip')
+      return 'invalid'
+    }
+    return rollSkill(store, paths.diceFile, slot, skillId, mode)
   })
 
   // Karakter aktarma yalnızca ayarlardan (ana menü) yapılır; oyun sırasında kartlar topluca değişmez.

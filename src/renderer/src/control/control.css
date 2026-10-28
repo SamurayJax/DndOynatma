@@ -152,6 +152,26 @@
   border-radius: 0;
 }
 
+/* Çok dar pencerede sekmeler yalnızca simge olur; adları ekran okuyucu ve ipucu için durur. */
+@media (max-width: 680px) {
+  .ctl-pages.ui-tabs {
+    padding-left: var(--space-2);
+  }
+
+  .ctl-pages .ui-tab {
+    padding: 0 var(--space-3);
+  }
+
+  .ctl-pages .ui-tab > span:not(.ui-tab__icon) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 /* Müzik ya da ortam sesi çalarken nota hafifçe nabız atar. */
 .ctl-pages__playing {
   color: var(--accent);
@@ -839,6 +859,30 @@
   min-width: 2ch;
   font-weight: 700;
   text-align: right;
+}
+
+/* Beceri atışı: zarın adı yerine oyuncu ve beceri, sayının yerine toplam / gereksinim. */
+:is(.ctl-dice__roll.is-success, .ctl-dice__roll.is-fail) .ctl-dice__roll-die {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:is(.ctl-dice__roll.is-success, .ctl-dice__roll.is-fail) .ctl-dice__roll-time {
+  margin-left: 0;
+}
+
+.ctl-dice__roll.is-success .ctl-dice__roll-value,
+.ctl-dice__value.is-success {
+  color: var(--success);
+}
+
+.ctl-dice__roll.is-fail .ctl-dice__roll-value,
+.ctl-dice__value.is-fail {
+  color: var(--danger-text);
 }
 
 .ctl-dice__roll-time {

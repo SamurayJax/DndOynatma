@@ -421,7 +421,7 @@ koduyla bildirilir.
 Durum (2026-10-28): Discord dışındaki her madde otomatik denetimle doğrulandı (`e2e/oyun/08-muzik.mjs`).
 Discord'da pencere paylaşımında sesin karşıya gidip gitmediği kullanıcının denemesini bekliyor.
 
-### 6. Sınıflar, beceriler ve karakter ekranı (0.9.7)
+### 6. Sınıflar, beceriler ve karakter ekranı (0.9.7) — yapıldı
 
 Müzikten sonra yapılır. Oyuncuların istatistikleri girilir; DM bir oyuncunun becerisine basınca
 zar kendiliğinden atılır ve istatistiğe göre artı / eksi eklenir. Sınıfları ve becerileri tamamen
@@ -438,7 +438,9 @@ Karakter ekranı (Ayarlar › Oyuncular, her kartta):
 Sınıflar ve beceriler (Ayarlar'da yeni bölüm):
 
 - DM sınıf oluşturur (Savaşçı, Büyücü...) ve her sınıfa beceri ekler.
-- Beceri: ad + hangi istatistikle atıldığı ("Ac" → STR gibi).
+- Beceri: ad + hangi istatistikle atıldığı ("Ac" → STR gibi) + gereksinim.
+- Ayarlar › Sınıflar sekmesi. Sınıflar ve beceriler sıralanır, yeniden adlandırılır, silinir;
+  silinen sınıftaki oyuncuların sınıfı boşalır.
 
 Kontrol panelinde "Karakterler" sekmesi (karar, 2026-10-28):
 
@@ -448,6 +450,9 @@ Kontrol panelinde "Karakterler" sekmesi (karar, 2026-10-28):
   Böylece bir oyuncunun yeri hiç kaymaz.
 - Yalnızca kontrol panelinde; oyuncular beceri listesini görmez.
 - Son atış bu sekmede de görünür; zar paneline geçmeden sonuç okunur.
+- Oyun sırasında ana menüye dönülemediği için oyuncunun sınıfı ve istatistikleri bu sütundan da
+  değiştirilir ("İstatistikleri düzenle"). Sınıf ve beceri tanımı yalnızca Ayarlar'dadır.
+- Avantaj / dezavantaj tek atış içindir; atıştan sonra seçim Normal'e döner.
 - Atıştan önce Normal / Avantaj / Dezavantaj seçilir. Avantajda iki d20 atılır, yüksek olan alınır;
   dezavantajda düşük olan.
 - Düğmeye basınca oyun ekranına d20 düşer; sonuç aşağıdaki "Gereksinim ve yeterlilik" kuralıyla
@@ -459,15 +464,19 @@ yalnızca beceriye bağlı d20 + istatistik artısı vardır.
 
 Teknik notlar:
 
-- Bugün oyun ekranı tek seferde tek zar atar; avantaj için iki d20'nin birlikte düşmesi gerekir.
-- Kayıt şeması büyür (istatistikler, sınıflar, beceriler); eski kayıt sorunsuz açılmalı.
+- Zar oynatıcısına şerit eklendi: avantaj / dezavantajda iki d20 oyun alanının solunda ve sağında
+  ayrı tuvallerde düşer. Hesap `src/shared/character.ts` içindedir; zar ana süreçte atılır.
+- Kayıt şeması büyüdü (istatistikler, sınıflar, beceriler, etkiler); eski kayıtlar varsayılanlarla
+  (bütün istatistikler 10, sınıf yok) açılır.
 
 Oyun ekranında sonuç (karar, 2026-10-28):
 
 - Zar durup sayıyı gösterdikten sonra artı / eksi ekranın kenarından uçarak gelir ("+2" yeşil,
   "-2" kırmızı), zarın sayısına çarpar ve sayı tek tek sayarak sonuca döner (14 → 15 → 16).
   Oyunlardaki yükseltme efekti gibi. Artı / eksi 0 ise yalnızca zar görünür.
-- Altında becerinin adı yazar ("Ac"). Avantaj / dezavantajda alınmayan zar soluklaşır.
+- Altta oyuncunun ve becerinin adı yazar ("Aras · Ac"). Avantaj / dezavantajda alınmayan zar
+  soluklaşır. Uygulanan artı / eksiler sayının yanında listelenir; en sonda madalyonun altında
+  "Başarılı" (yeşil) ya da "Başarısız" (kırmızı) ve gereksinim yazar.
 
 Gereksinim ve yeterlilik (karar, 2026-10-28):
 

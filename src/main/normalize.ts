@@ -2,9 +2,30 @@
  * Diskten okunan kaydı doğrular ve onarır. Elle düzenlenmiş ya da yarım kalmış bir
  * kayıt uygulamayı çökertmesin diye her alan tek tek denetlenir.
  */
-import { MAX_AMBIENTS, MIN_VIDEO_LOOP } from '@shared/reducer'
 import {
+  DEFAULT_REQUIREMENT,
+  MAX_AMBIENTS,
+  MAX_CLASSES,
+  MAX_EFFECTS,
+  MAX_EFFECT_ROLLS,
+  MAX_EFFECT_VALUE,
+  MAX_PROFICIENCY,
+  MAX_REQUIREMENT,
+  MAX_SKILLS,
+  MIN_VIDEO_LOOP
+} from '@shared/reducer'
+import {
+  ABILITIES,
+  AbilityScores,
   AmbientSound,
+  CharacterClass,
+  DEFAULT_ABILITY,
+  MAX_ABILITY,
+  MIN_ABILITY,
+  PlayerEffect,
+  Skill,
+  createDefaultAbilities,
+  isAbility,
   AppSettings,
   AppState,
   ID,
@@ -79,33 +100,94 @@ export function normalizeAppState(raw: unknown): AppState | null {
   const videoIds = new Set(music.tracks.filter((track) => track.loop !== null).map((track) => track.id))
   const scenes = normalizeScenes(raw.scenes, imageIds, videoIds)
   const activeSceneId = scenes.some((scene) => scene.id === raw.activeSceneId) ? (raw.activeSceneId as ID) : null
+  const classes = normalizeClasses(raw.classes)
+  const classIds = new Set(classes.map((entry) => entry.id))
 
   return {
     schema: SCHEMA_VERSION,
-    players: normalizePlayers(raw.players, imageIds),
+    players: normalizePlayers(raw.players, imageIds, classIds),
     library,
     scenes,
     activeSceneId,
     generalNote: text(raw.generalNote),
     settings: normalizeSettings(raw.settings),
-    music
+    music,
+    classes
   }
 }
 
-function normalizePlayers(raw: unknown, imageIds: ReadonlySet<ID>): PlayerProfile[] {
+function normalizePlayers(raw: unknown, imageIds: ReadonlySet<ID>, classIds: ReadonlySet<ID>): PlayerProfile[] {
   const list = Array.isArray(raw) ? raw : []
-  return Array.from({ length: MAX_PLAYERS }, (_, slot) => normalizePlayer(list[slot], imageIds))
+  return Array.from({ length: MAX_PLAYERS }, (_, slot) => normalizePlayer(list[slot], imageIds, classIds))
 }
 
-function normalizePlayer(raw: unknown, imageIds: ReadonlySet<ID>): PlayerProfile {
+function normalizePlayer(raw: unknown, imageIds: ReadonlySet<ID>, classIds: ReadonlySet<ID>): PlayerProfile {
   if (!isRecord(raw)) return createEmptyPlayer()
+  // Sınıf, istatistikler, yeterlilik ve etkiler sonradan eklendi; eski kayıtlarda bu alanlar yoktur.
   return {
     portraitId: isId(raw.portraitId) && imageIds.has(raw.portraitId) ? raw.portraitId : null,
     name: text(raw.name),
     level: clampInt(raw.level, MIN_LEVEL, MAX_LEVEL, MIN_LEVEL),
     hp: clampInt(raw.hp, 0, MAX_HP, MAX_HP),
-    note: text(raw.note)
+    note: text(raw.note),
+    classId: isId(raw.classId) && classIds.has(raw.classId) ? raw.classId : null,
+    abilities: normalizeAbilities(raw.abilities),
+    proficiency: isFiniteNumber(raw.proficiency) ? clampInt(raw.proficiency, 0, MAX_PROFICIENCY, 0) : null,
+    effects: normalizeEffects(raw.effects)
   }
+}
+
+function normalizeAbilities(raw: unknown): AbilityScores {
+  const abilities = createDefaultAbilities()
+  if (!isRecord(raw)) return abilities
+  for (const ability of ABILITIES) abilities[ability] = clampInt(raw[ability], MIN_ABILITY, MAX_ABILITY, DEFAULT_ABILITY)
+  return abilities
+}
+
+function normalizeEffects(raw: unknown): PlayerEffect[] {
+  if (!Array.isArray(raw)) return []
+  const seen = new Set<ID>()
+  const effects: PlayerEffect[] = []
+  for (const entry of raw) {
+    if (effects.length >= MAX_EFFECTS) break
+    if (!isRecord(entry) || !isId(entry.id) || seen.has(entry.id)) continue
+    const value = clampInt(entry.value, -MAX_EFFECT_VALUE, MAX_EFFECT_VALUE, 0)
+    if (value === 0) continue
+    seen.add(entry.id)
+    effects.push({
+      id: entry.id,
+      label: text(entry.label).trim() || (value > 0 ? 'Artı' : 'Eksi'),
+      value,
+      rolls: entry.rolls === null ? null : clampInt(entry.rolls, 1, MAX_EFFECT_ROLLS, 1)
+    })
+  }
+  return effects
+}
+
+/** Sınıflar sonradan eklendi; eski kayıtlarda bu alan yoktur. */
+function normalizeClasses(raw: unknown): CharacterClass[] {
+  if (!Array.isArray(raw)) return []
+  const seen = new Set<ID>()
+  const classes: CharacterClass[] = []
+  for (const entry of raw) {
+    if (classes.length >= MAX_CLASSES) break
+    if (!isRecord(entry) || !isId(entry.id) || seen.has(entry.id)) continue
+    seen.add(entry.id)
+    const skills: Skill[] = []
+    for (const rawSkill of Array.isArray(entry.skills) ? entry.skills : []) {
+      if (skills.length >= MAX_SKILLS) break
+      if (!isRecord(rawSkill) || !isId(rawSkill.id) || seen.has(rawSkill.id) || !isAbility(rawSkill.ability)) continue
+      seen.add(rawSkill.id)
+      skills.push({
+        id: rawSkill.id,
+        name: text(rawSkill.name).trim() || `Beceri ${skills.length + 1}`,
+        ability: rawSkill.ability,
+        requirement: clampInt(rawSkill.requirement, 1, MAX_REQUIREMENT, DEFAULT_REQUIREMENT)
+      })
+    }
+    classes.push({ id: entry.id, name: text(entry.name).trim() || `Sınıf ${classes.length + 1}`, skills })
+  }
+  return classes
 }
 
 function normalizeLibrary(raw: unknown): LibraryImage[] {

@@ -3,7 +3,7 @@
  */
 import { Action } from './actions'
 import { ErrorCode, LogLevel } from './errors'
-import { AmbientSound, DiceRoll, DiceSides, FullState, ID, LibraryCategory, LibraryImage, MusicTrack } from './types'
+import { AmbientSound, CheckMode, DiceRoll, DiceSides, FullState, ID, LibraryCategory, LibraryImage, MusicTrack } from './types'
 
 /**
  * menu: ana menü ve ayarlar · game: oyuncuların gördüğü oyun ekranı · control: DM'in kontrol paneli ·
@@ -24,6 +24,7 @@ export const IPC = {
   gameStart: 'dnd:game:start',
   gameEnd: 'dnd:game:end',
   diceRollRequest: 'dnd:dice:roll',
+  diceRollSkill: 'dnd:dice:rollSkill',
   musicImport: 'dnd:music:import',
   musicImportFiles: 'dnd:music:importFiles',
   ambientAdd: 'dnd:ambient:add',
@@ -119,6 +120,8 @@ export interface IncomingCard {
   hp: number
   hasNote: boolean
   hasPortrait: boolean
+  /** Karttaki sınıfın adı; sınıf yoksa null. Bu kayıtta aynı adda sınıf yoksa yeni sınıf olarak eklenir. */
+  className: string | null
   /** Kart şu an zaten aynı (portresi dahil); içe aktarma bu karta dokunmaz. */
   unchanged: boolean
 }
@@ -275,6 +278,11 @@ export interface DndApi {
   dice: {
     /** Seçilen zarı atar. Sonuç ana süreçte üretilir, kaydedilir ve onDiceRoll ile yayılır. */
     roll(sides: DiceSides): Promise<DiceRoll | null>
+    /**
+     * Oyuncunun becerisini atar (d20 + istatistik + geçici artı / eksiler, yeterlilik düşülmüş gereksinime
+     * karşı). Oyun açık değilse 'not-playing', beceri ya da oyuncu geçersizse 'invalid' (DND-402).
+     */
+    rollSkill(slot: number, skillId: ID, mode: CheckMode): Promise<DiceRoll | 'not-playing' | 'invalid'>
   }
 
   /** Oyuncu kartlarını (bilgiler + portreler) tek dosyaya aktarma. Yalnızca ana menüden çalışır. */

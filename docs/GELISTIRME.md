@@ -53,6 +53,17 @@ parça parça (Range isteği, 206 yanıtı) sunulur; ileri-geri sarma ve büyük
   (`game/SceneVideo.tsx`); Konva tuvali saydam olduğu için altında durur. Seçilen aralık her karede
   denetlenerek döndürülür; video kesilmez, dönüştürülmez.
 
+### Karakterler ve beceriler
+
+- Sınıflar (`app.classes`) ve oyuncunun istatistikleri, sınıfı, yeterliliği ve geçici artı / eksileri
+  (`PlayerProfile`) kalıcı durumdadır.
+- Hesaplar saf fonksiyonlardır: `src/shared/character.ts` (istatistik artısı, yeterlilik, avantajda
+  alınan zar, toplam ve başarı).
+- Beceri atışı ana süreçte yapılır (`rollSkill`, `src/main/dice.ts`): zar atılır, hesap `DiceRoll.check`
+  olarak geçmişe ve `zar.json`'a yazılır, sayılı etkiler `player/consumeEffects` ile azalır.
+- Oyun ekranı (`game/DiceOverlay.tsx`) hesabı gösterir; zar oynatıcısı (`game/dice/player.ts`) iki zar
+  için şerit (sol / sağ) ve bekleme süresi alır.
+
 ### Kayıt klasörü
 
 Kullanıcının seçtiği yerdeki `DndOynatma-Kayit` klasörü. Yeri, uygulamanın ayar klasöründeki
@@ -89,11 +100,13 @@ src/renderer/   arayüz
   src/lib/        useAppState, ortak yardımcılar
   src/ui/         ortak arayüz parçaları (düğme, panel, sekme, bildirim)
   src/menu/       ana menü
-  src/settings/   ayarlar: oyuncu profilleri (ve kartları dışa / içe aktarma), pencereler
+  src/settings/   ayarlar: oyuncu profilleri ve karakter (istatistikler, sınıf), sınıflar ve beceriler,
+                  kartları dışa / içe aktarma, pencereler
   src/library/    kütüphane paneli (ayarlarda ve kontrol panelinde kullanılır)
   src/game/       oyun ekranı: portre sütunu, oyun alanı, çizim, zar animasyonu
     dice/           zarlar: biçim (geometry), fizik, atış planı, çizim; üç zar aynı kodu kullanır
-  src/control/    kontrol paneli (üst sekmeler: Kontrol Paneli, Müzik)
+  src/control/    kontrol paneli (üst sekmeler: Kontrol Paneli, Karakterler, Müzik)
+  src/characters/ kontrol panelinin Karakterler sayfası: beceri düğmeleri, atış türü, geçici artı / eksiler
   src/music/      kontrol panelinin Müzik sayfası: oynatıcı, parça listesi, ortam sesleri, MP4 döngü seçimi
 tests/          birim testleri (vitest)
   shared/ main/   ortak kod ve ana süreç

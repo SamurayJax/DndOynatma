@@ -3,7 +3,7 @@
  * yollar parametre olarak gelir, böylece geçici klasörlerde test edilebilir.
  */
 import fs from 'node:fs'
-import { AppState, DiceRoll, SCHEMA_VERSION, createInitialAppState, isDiceSides } from '@shared/types'
+import { AppState, DiceRoll, SCHEMA_VERSION, SkillCheck, createInitialAppState, isAbility, isDiceSides } from '@shared/types'
 import { normalizeAppState } from './normalize'
 
 export const SAVE_DEBOUNCE_MS = 300
@@ -332,6 +332,53 @@ function isDiceRoll(value: unknown): value is DiceRoll {
   )
 }
 
+/** zar.json'daki beceri atışının hesabı. Bozuksa atış hesapsız (düz d20 olarak) alınır. */
+function parseSkillCheck(raw: unknown): SkillCheck | undefined {
+  if (typeof raw !== 'object' || raw === null) return undefined
+  const check = raw as Record<string, unknown>
+  const isInt = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value)
+  const dice = check.dice
+  if (!Array.isArray(dice) || dice.length < 1 || dice.length > 2 || !dice.every((die) => isInt(die) && die >= 1 && die <= 20)) return undefined
+  const modifiers = check.modifiers
+  if (!Array.isArray(modifiers)) return undefined
+  const parsedModifiers = modifiers.filter(
+    (entry): entry is SkillCheck['modifiers'][number] =>
+      typeof entry === 'object' && entry !== null && typeof entry.label === 'string' && isInt(entry.value) && (entry.kind === 'ability' || entry.kind === 'effect')
+  )
+  if (
+    !isInt(check.slot) ||
+    typeof check.playerName !== 'string' ||
+    typeof check.skillName !== 'string' ||
+    !isAbility(check.ability) ||
+    (check.mode !== 'normal' && check.mode !== 'advantage' && check.mode !== 'disadvantage') ||
+    !isInt(check.keptIndex) ||
+    check.keptIndex < 0 ||
+    check.keptIndex >= dice.length ||
+    !isInt(check.total) ||
+    !isInt(check.baseRequirement) ||
+    !isInt(check.proficiency) ||
+    !isInt(check.requirement) ||
+    typeof check.success !== 'boolean'
+  ) {
+    return undefined
+  }
+  return {
+    slot: check.slot,
+    playerName: check.playerName,
+    skillName: check.skillName,
+    ability: check.ability,
+    mode: check.mode,
+    dice: dice as number[],
+    keptIndex: check.keptIndex,
+    modifiers: parsedModifiers.map(({ label, value, kind }) => ({ label, value, kind })),
+    total: check.total,
+    baseRequirement: check.baseRequirement,
+    proficiency: check.proficiency,
+    requirement: check.requirement,
+    success: check.success
+  }
+}
+
 export interface DiceLoadResult {
   rolls: DiceRoll[]
   /** Dosya vardı ama okunamadıysa neden (DND-105). */
@@ -355,7 +402,14 @@ export function loadDiceHistory(diceFile: string): DiceLoadResult {
   }
   if (!Array.isArray(raw)) return { rolls: [], error: 'içerik bir liste değil' }
   return {
-    rolls: raw.filter(isDiceRoll).slice(0, DICE_HISTORY_LIMIT).map(({ id, sides, value, at }) => ({ id, sides, value, at })),
+    rolls: raw
+      .filter(isDiceRoll)
+      .slice(0, DICE_HISTORY_LIMIT)
+      .map((roll) => {
+        const check = roll.sides === 20 ? parseSkillCheck(roll.check) : undefined
+        const { id, sides, value, at } = roll
+        return check ? { id, sides, value, at, check } : { id, sides, value, at }
+      }),
     error: null
   }
 }

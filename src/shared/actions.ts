@@ -6,6 +6,7 @@
  */
 import { ErrorCode } from './errors'
 import {
+  Ability,
   AmbientSound,
   AppSettings,
   FullState,
@@ -13,8 +14,10 @@ import {
   LibraryImage,
   MusicTrack,
   PenWidth,
+  PlayerEffect,
   PlayerProfile,
   RepeatMode,
+  Skill,
   StageItem,
   Tool,
   VideoLoop
@@ -22,7 +25,13 @@ import {
 
 export type AppAction =
   // --- Oyuncular ---
-  | { type: 'player/update'; slot: number; patch: Partial<Pick<PlayerProfile, 'name' | 'level' | 'note' | 'portraitId'>> }
+  | { type: 'player/update'; slot: number; patch: Partial<Pick<PlayerProfile, 'name' | 'level' | 'note' | 'portraitId' | 'classId' | 'proficiency'>> }
+  | { type: 'player/setAbility'; slot: number; ability: Ability; value: number }
+  /** Geçici artı / eksi ekler. `rolls: null` kalıcıdır. */
+  | { type: 'player/addEffect'; slot: number; effect: PlayerEffect }
+  | { type: 'player/removeEffect'; slot: number; effectId: ID }
+  /** Beceri atışından sonra ana süreç gönderir: sayılı etkiler bir azalır, sıfırlananlar düşer. */
+  | { type: 'player/consumeEffects'; slot: number }
   | { type: 'player/setHp'; slot: number; hp: number }
   | { type: 'player/adjustHp'; slot: number; delta: number }
   /** Kartı boşaltır (isim, portre, not silinir; seviye 1, can dolu). */
@@ -58,6 +67,16 @@ export type AppAction =
   | { type: 'stage/reorderItem'; sceneId: ID; itemId: ID; to: 'front' | 'back' | 'forward' | 'backward' }
   /** Arka plan dışındaki tüm görselleri kaldırır. */
   | { type: 'stage/clearItems'; sceneId: ID }
+  // --- Sınıflar ve beceriler ---
+  | { type: 'class/add'; classId: ID; name: string }
+  | { type: 'class/update'; classId: ID; name: string }
+  /** Sınıfı siler; o sınıftaki oyuncuların sınıfı boşalır. */
+  | { type: 'class/remove'; classId: ID }
+  | { type: 'class/move'; classId: ID; to: 'up' | 'down' }
+  | { type: 'skill/add'; classId: ID; skill: Skill }
+  | { type: 'skill/update'; classId: ID; skillId: ID; patch: Partial<Pick<Skill, 'name' | 'ability' | 'requirement'>> }
+  | { type: 'skill/remove'; classId: ID; skillId: ID }
+  | { type: 'skill/move'; classId: ID; skillId: ID; to: 'up' | 'down' }
   /** Pencerenin hareketli arka planı; null kaldırır. Konunca görsel arka plan kalkar. */
   | { type: 'scene/setVideo'; sceneId: ID; trackId: ID | null }
   // --- Müzik ---

@@ -46,6 +46,32 @@ export interface LibraryImage {
   addedAt: string
 }
 
+/** Altı istatistik: Güç, Çeviklik, Dayanıklılık, Zeka, Bilgelik, Karizma. */
+export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const
+export type Ability = (typeof ABILITIES)[number]
+export type AbilityScores = Record<Ability, number>
+
+export const MIN_ABILITY = 1
+export const MAX_ABILITY = 30
+export const DEFAULT_ABILITY = 10
+
+export function isAbility(value: unknown): value is Ability {
+  return ABILITIES.some((ability) => ability === value)
+}
+
+/**
+ * DM'in oyuncuya verdiği geçici artı / eksi ("İyi rol +2", "Kırık kol -2"). Oyuncunun her beceri
+ * atışına eklenir.
+ */
+export interface PlayerEffect {
+  id: ID
+  label: string
+  /** -20..20, 0 olamaz. */
+  value: number
+  /** Kalan atış sayısı; her beceri atışında bir azalır, 0 olunca düşer. null: kalıcı (DM kaldırana kadar). */
+  rolls: number | null
+}
+
 export interface PlayerProfile {
   portraitId: ID | null
   name: string
@@ -54,6 +80,59 @@ export interface PlayerProfile {
   hp: number
   /** Sadece kontrol panelinde görünen not. */
   note: string
+  /** DM'in tanımladığı sınıflardan biri; yoksa null. */
+  classId: ID | null
+  abilities: AbilityScores
+  /** Yeterlilik; null ise seviyeden hesaplanır (1-4 → 2 … 17+ → 6). Becerilerin gereksinimini düşürür. */
+  proficiency: number | null
+  effects: PlayerEffect[]
+}
+
+/** Bir beceri: adı, hangi istatistikle atıldığı ve başarmak için en az kaç gelmesi gerektiği. */
+export interface Skill {
+  id: ID
+  name: string
+  ability: Ability
+  /** 1..MAX_REQUIREMENT */
+  requirement: number
+}
+
+/** DM'in tanımladığı sınıf (Savaşçı, Büyücü…) ve becerileri. */
+export interface CharacterClass {
+  id: ID
+  name: string
+  skills: Skill[]
+}
+
+export type CheckMode = 'normal' | 'advantage' | 'disadvantage'
+
+/** Beceri atışına eklenen tek bir artı / eksi (istatistik ya da geçici etki). */
+export interface CheckModifier {
+  label: string
+  value: number
+  kind: 'ability' | 'effect'
+}
+
+/** Beceri atışının hesabı; zar atışıyla birlikte saklanır ve oyun ekranında gösterilir. */
+export interface SkillCheck {
+  slot: number
+  playerName: string
+  skillName: string
+  ability: Ability
+  mode: CheckMode
+  /** Atılan d20'ler (avantaj / dezavantajda iki). */
+  dice: number[]
+  /** `dice` içinde alınan zarın sırası. */
+  keptIndex: number
+  /** Sıfır olmayan artı / eksiler, eklenme sırasıyla. */
+  modifiers: CheckModifier[]
+  total: number
+  /** Becerinin gereksinimi (yeterlilik düşülmeden). */
+  baseRequirement: number
+  proficiency: number
+  /** Yeterlilik düşüldükten sonraki gereksinim (en az 1). */
+  requirement: number
+  success: boolean
 }
 
 /**
@@ -163,6 +242,7 @@ export interface AppState {
   generalNote: string
   settings: AppSettings
   music: MusicLibrary
+  classes: CharacterClass[]
 }
 
 export type Tool = 'mouse' | 'pen-red' | 'pen-black' | 'eraser'
@@ -184,10 +264,12 @@ export function isDiceSides(value: unknown): value is DiceSides {
 export interface DiceRoll {
   id: ID
   sides: DiceSides
-  /** 1..sides */
+  /** 1..sides; beceri atışında alınan zar. */
   value: number
   /** ISO tarih. */
   at: string
+  /** Beceri atışıysa hesabı; düz zar atışında yoktur. */
+  check?: SkillCheck
 }
 
 /** Kaydedilmeyen, yalnızca uygulama açıkken yaşayan durum. Zar geçmişi ayrıca `zar.json`'a yazılır. */
@@ -208,8 +290,22 @@ export interface FullState {
   session: SessionState
 }
 
+export function createDefaultAbilities(): AbilityScores {
+  return { str: DEFAULT_ABILITY, dex: DEFAULT_ABILITY, con: DEFAULT_ABILITY, int: DEFAULT_ABILITY, wis: DEFAULT_ABILITY, cha: DEFAULT_ABILITY }
+}
+
 export function createEmptyPlayer(): PlayerProfile {
-  return { portraitId: null, name: '', level: 1, hp: MAX_HP, note: '' }
+  return {
+    portraitId: null,
+    name: '',
+    level: 1,
+    hp: MAX_HP,
+    note: '',
+    classId: null,
+    abilities: createDefaultAbilities(),
+    proficiency: null,
+    effects: []
+  }
 }
 
 export function createInitialAppState(): AppState {
@@ -221,7 +317,8 @@ export function createInitialAppState(): AppState {
     activeSceneId: null,
     generalNote: '',
     settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true },
-    music: createEmptyMusic()
+    music: createEmptyMusic(),
+    classes: []
   }
 }
 

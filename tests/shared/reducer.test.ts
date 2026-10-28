@@ -78,9 +78,19 @@ function sampleMusic(): MusicLibrary {
  */
 function makeState(): FullState {
   const players: PlayerProfile[] = [
-    { portraitId: PORTRAIT_SOLO.id, name: 'Aragorn', level: 5, hp: 7, note: 'kılıcı var' },
-    { portraitId: PORTRAIT_SHARED.id, name: 'Legolas', level: 4, hp: MAX_HP, note: '' },
-    { portraitId: PORTRAIT_SHARED.id, name: '', level: 1, hp: 0, note: '' },
+    {
+      ...createEmptyPlayer(),
+      portraitId: PORTRAIT_SOLO.id,
+      name: 'Aragorn',
+      level: 5,
+      hp: 7,
+      note: 'kılıcı var',
+      classId: 'savasci',
+      abilities: { ...createEmptyPlayer().abilities, str: 15 },
+      effects: [{ id: 'iyi-rol', label: 'İyi rol', value: 2, rolls: 1 }]
+    },
+    { ...createEmptyPlayer(), portraitId: PORTRAIT_SHARED.id, name: 'Legolas', level: 4, hp: MAX_HP, note: '' },
+    { ...createEmptyPlayer(), portraitId: PORTRAIT_SHARED.id, name: '', level: 1, hp: 0, note: '' },
     createEmptyPlayer()
   ]
   const scenes: SceneWindow[] = [
@@ -104,7 +114,8 @@ function makeState(): FullState {
       activeSceneId: 's1',
       generalNote: 'genel not',
       settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true },
-      music: sampleMusic()
+      music: sampleMusic(),
+      classes: [{ id: 'savasci', name: 'Savaşçı', skills: [{ id: 'ac', name: 'Ac', ability: 'str', requirement: 10 }, { id: 'kos', name: 'Koş', ability: 'dex', requirement: 12 }] }]
     },
     session: {
       phase: 'playing',
@@ -232,7 +243,19 @@ const ALL_ACTION_TYPES: Record<Action['type'], true> = {
   'playback/stop': true,
   'playback/ended': true,
   'ambient/toggle': true,
-  'ambient/stopAll': true
+  'ambient/stopAll': true,
+  'player/setAbility': true,
+  'player/addEffect': true,
+  'player/removeEffect': true,
+  'player/consumeEffects': true,
+  'class/add': true,
+  'class/update': true,
+  'class/remove': true,
+  'class/move': true,
+  'skill/add': true,
+  'skill/update': true,
+  'skill/remove': true,
+  'skill/move': true
 }
 
 /** Her tür için değiştiren, değiştirmeyen ve reddedilen örnekler. */
@@ -390,6 +413,41 @@ function everyAction(): Action[] {
     { type: 'ambient/toggle', ambientId: 'am1' },
     { type: 'ambient/toggle', ambientId: 'yok' },
     { type: 'ambient/stopAll' },
+    { type: 'player/update', slot: 1, patch: { classId: 'savasci', proficiency: 4 } },
+    { type: 'player/update', slot: 1, patch: { classId: 'yok' } },
+    { type: 'player/update', slot: 0, patch: { classId: null, proficiency: null } },
+    { type: 'player/setAbility', slot: 0, ability: 'dex', value: 18 },
+    { type: 'player/setAbility', slot: 0, ability: 'str', value: 15 },
+    bad({ type: 'player/setAbility', slot: 0, ability: 'sans', value: 12 }),
+    { type: 'player/setAbility', slot: 9, ability: 'str', value: 12 },
+    { type: 'player/addEffect', slot: 1, effect: { id: 'kirik-kol', label: 'Kırık kol', value: -2, rolls: null } },
+    { type: 'player/addEffect', slot: 0, effect: { id: 'iyi-rol', label: 'İyi rol', value: 2, rolls: 1 } },
+    { type: 'player/addEffect', slot: 0, effect: { id: 'sifir', label: 'Hiç', value: 0, rolls: 1 } },
+    bad({ type: 'player/addEffect', slot: 0, effect: null }),
+    { type: 'player/removeEffect', slot: 0, effectId: 'iyi-rol' },
+    { type: 'player/removeEffect', slot: 0, effectId: 'yok' },
+    { type: 'player/consumeEffects', slot: 0 },
+    { type: 'player/consumeEffects', slot: 1 },
+    { type: 'class/add', classId: 'buyucu', name: 'Büyücü' },
+    { type: 'class/add', classId: 'savasci', name: 'Tekrar' },
+    bad({ type: 'class/add', classId: '', name: 'x' }),
+    { type: 'class/update', classId: 'savasci', name: 'Şövalye' },
+    { type: 'class/update', classId: 'savasci', name: '   ' },
+    { type: 'class/update', classId: 'yok', name: 'x' },
+    { type: 'class/remove', classId: 'savasci' },
+    { type: 'class/remove', classId: 'yok' },
+    { type: 'class/move', classId: 'savasci', to: 'up' },
+    bad({ type: 'class/move', classId: 'savasci', to: 'yana' }),
+    { type: 'skill/add', classId: 'savasci', skill: { id: 'kalkan', name: 'Kalkan', ability: 'con', requirement: 11 } },
+    { type: 'skill/add', classId: 'savasci', skill: { id: 'ac', name: 'Ac', ability: 'str', requirement: 10 } },
+    bad({ type: 'skill/add', classId: 'savasci', skill: { id: 'x', name: 'x', ability: 'sans', requirement: 10 } }),
+    { type: 'skill/update', classId: 'savasci', skillId: 'ac', patch: { requirement: 12, ability: 'dex' } },
+    { type: 'skill/update', classId: 'savasci', skillId: 'ac', patch: { name: 'Ac', requirement: 10 } },
+    { type: 'skill/update', classId: 'savasci', skillId: 'yok', patch: { name: 'x' } },
+    { type: 'skill/remove', classId: 'savasci', skillId: 'kos' },
+    { type: 'skill/remove', classId: 'savasci', skillId: 'yok' },
+    { type: 'skill/move', classId: 'savasci', skillId: 'kos', to: 'up' },
+    { type: 'skill/move', classId: 'savasci', skillId: 'ac', to: 'up' },
     bad({ type: 'bilinmeyen/islem' }),
     bad({}),
     bad(null),
@@ -555,7 +613,7 @@ describe('player/update', () => {
 
   it('birden çok alanı birlikte uygular, cana dokunmaz', () => {
     const next = apply(makeState(), { type: 'player/update', slot: 0, patch: { name: 'Boromir', level: 9, note: 'kalkan' } })
-    expect(next.app.players[0]).toEqual({ portraitId: PORTRAIT_SOLO.id, name: 'Boromir', level: 9, hp: 7, note: 'kalkan' })
+    expect(next.app.players[0]).toMatchObject({ portraitId: PORTRAIT_SOLO.id, name: 'Boromir', level: 9, hp: 7, note: 'kalkan', classId: 'savasci' })
   })
 
   it('yanlış tipteki alanları yok sayar', () => {

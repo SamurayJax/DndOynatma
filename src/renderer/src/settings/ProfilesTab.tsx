@@ -30,7 +30,7 @@ export function ProfilesTab(): JSX.Element {
       <div className="set-profiles__grid">
         {app.players.map((player, slot) => (
           // Yuvalar sabittir; sıra numarası kalıcı kimliktir.
-          <PlayerCard key={slot} slot={slot} player={player} portrait={findImage(app, player.portraitId)} />
+          <PlayerCard key={slot} slot={slot} player={player} portrait={findImage(app, player.portraitId)} classes={app.classes} />
         ))}
       </div>
     </div>

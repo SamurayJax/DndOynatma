@@ -102,3 +102,240 @@
     transform: translate(-50%, -50%) scale(1);
   }
 }
+
+/* ---------- Beceri atışı ---------- */
+
+/*
+ * Avantaj / dezavantajda alınmayan zarın sayısı soluklaşır. Saydamlık kullanılmaz: belirme canlanması
+ * (`dice-pop`, both) saydamlığı 1'de tutar ve sınıfın verdiğini ezer.
+ */
+.dice-result.is-dropped {
+  --dice-ring: var(--border-strong);
+
+  filter: grayscale(1) brightness(0.45);
+  transition: filter 400ms ease;
+}
+
+.dice-result.is-success {
+  --dice-ring: var(--success);
+}
+
+.dice-result.is-fail {
+  --dice-ring: var(--danger);
+}
+
+/* Artı / eksi çarpınca sayı bir an büyür ve renk alır. */
+.dice-result__number.is-bumped {
+  animation: dice-bump 360ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.dice-result__number.is-up {
+  color: #a9e08f;
+}
+
+.dice-result__number.is-down {
+  color: var(--danger-text);
+}
+
+@keyframes dice-bump {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.28);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Ekranın kenarından uçup sayıya çarpan artı / eksi. Artı sağdan, eksi soldan gelir. */
+.dice-fly {
+  position: absolute;
+  z-index: 2;
+  padding: calc(var(--dice-u) * 10px) calc(var(--dice-u) * 22px);
+  border: calc(var(--dice-u) * 3px) solid currentColor;
+  border-radius: 999px;
+  background: rgba(12, 10, 8, 0.88);
+  font-family: var(--dice-font);
+  font-size: calc(var(--dice-u) * 40px);
+  white-space: nowrap;
+  box-shadow: 0 0 calc(var(--dice-u) * 24px) currentColor;
+  transform: translate(-50%, -50%);
+  animation: dice-fly 560ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
+}
+
+.dice-fly strong {
+  font-size: 1.25em;
+}
+
+.dice-fly.is-plus {
+  color: #8fd86f;
+}
+
+.dice-fly.is-minus {
+  color: #f07a6e;
+}
+
+@keyframes dice-fly {
+  0% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dice-from) * var(--dice-u) * 1150px), -50%) scale(1.1);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  82% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+}
+
+/* Uygulanan artı / eksiler: sayının yanında küçük bir liste. */
+.dice-applied {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--dice-u) * 8px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transform: translate(calc(var(--dice-u) * 140px), -50%);
+}
+
+.dice-applied.is-left {
+  align-items: flex-end;
+  transform: translate(calc(-100% - var(--dice-u) * 140px), -50%);
+}
+
+.dice-applied li {
+  padding: calc(var(--dice-u) * 4px) calc(var(--dice-u) * 14px);
+  border-radius: 999px;
+  background: rgba(12, 10, 8, 0.82);
+  font-family: var(--dice-font);
+  font-size: calc(var(--dice-u) * 26px);
+  white-space: nowrap;
+  animation: dice-pop 300ms ease-out both;
+}
+
+.dice-applied li.is-plus {
+  color: #8fd86f;
+}
+
+.dice-applied li.is-minus {
+  color: #f07a6e;
+}
+
+/* Sonuç: madalyonun altında şerit. */
+.dice-verdict {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(var(--dice-u) * 8px) calc(var(--dice-u) * 30px);
+  border: calc(var(--dice-u) * 3px) solid currentColor;
+  border-radius: calc(var(--dice-u) * 14px);
+  background: rgba(12, 10, 8, 0.9);
+  box-shadow: 0 0 calc(var(--dice-u) * 30px) currentColor;
+  transform: translate(-50%, calc(var(--dice-u) * 128px));
+  animation: dice-verdict 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.dice-verdict.is-success {
+  color: #8fd86f;
+}
+
+.dice-verdict.is-fail {
+  color: #f07a6e;
+}
+
+.dice-verdict__word {
+  font-family: var(--dice-font);
+  font-size: calc(var(--dice-u) * 52px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dice-verdict__need {
+  color: var(--text-muted);
+  font-size: calc(var(--dice-u) * 22px);
+}
+
+@keyframes dice-verdict {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--dice-u) * 128px)) scale(0.6);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, calc(var(--dice-u) * 128px)) scale(1);
+  }
+}
+
+/* Alt yazı: kim, hangi beceri. Üstte olsaydı yüksek düşen zarın sayısıyla çakışırdı. */
+.dice-check {
+  position: absolute;
+  bottom: calc(var(--dice-u) * 40px);
+  left: 50%;
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--dice-u) * 18px);
+  padding: calc(var(--dice-u) * 10px) calc(var(--dice-u) * 30px);
+  border: calc(var(--dice-u) * 2px) solid var(--accent-ring);
+  border-radius: 999px;
+  background: rgba(12, 10, 8, 0.86);
+  transform: translateX(-50%);
+  animation: dice-pop-top 360ms ease-out both;
+}
+
+.dice-check__who {
+  color: var(--text-muted);
+  font-size: calc(var(--dice-u) * 28px);
+}
+
+.dice-check__skill {
+  color: var(--accent-hover);
+  font-family: var(--dice-font);
+  font-size: calc(var(--dice-u) * 40px);
+  font-weight: 700;
+}
+
+.dice-check__mode {
+  font-size: calc(var(--dice-u) * 24px);
+  font-weight: 700;
+}
+
+.dice-check__mode.is-advantage {
+  color: #8fd86f;
+}
+
+.dice-check__mode.is-disadvantage {
+  color: #f07a6e;
+}
+
+@keyframes dice-pop-top {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--dice-u) * 20px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice-fly,
+  .dice-result__number.is-bumped,
+  .dice-verdict,
+  .dice-check {
+    animation-duration: 1ms;
+  }
+}

@@ -3,8 +3,9 @@ import type { JSX } from 'react'
 import { LibraryPanel } from '@renderer/library/LibraryPanel'
 import { useFullState, useSession } from '@renderer/lib/useAppState'
 import { MusicPage } from '@renderer/music/MusicPage'
+import { CharactersPage } from '@renderer/characters/CharactersPage'
 import { useSceneHotkeys } from '@renderer/lib/useSceneHotkeys'
-import { DiceIcon, EmptyState, ErrorBoundary, LoadingScreen, MusicIcon, Tabs, ToastHost, WarningIcon } from '@renderer/ui'
+import { DiceIcon, EmptyState, ErrorBoundary, LoadingScreen, MusicIcon, ShieldIcon, Tabs, ToastHost, WarningIcon } from '@renderer/ui'
 import type { TabItem } from '@renderer/ui'
 import { DicePanel } from './DicePanel'
 import { NotePanel } from './NotePanel'
@@ -16,7 +17,7 @@ import { TopBar } from './TopBar'
 import './control.css'
 
 type ColumnView = 'players' | 'library' | 'tools'
-type Page = 'control' | 'music'
+type Page = 'control' | 'characters' | 'music'
 
 const VIEWS: readonly TabItem<ColumnView>[] = [
   { id: 'players', label: 'Oyuncular' },
@@ -35,6 +36,7 @@ function ControlPages(): JSX.Element {
 
   const pages: readonly TabItem<Page>[] = [
     { id: 'control', label: 'Kontrol Paneli', icon: <DiceIcon size={18} /> },
+    { id: 'characters', label: 'Karakterler', icon: <ShieldIcon size={18} /> },
     {
       id: 'music',
       label: 'Müzik',
@@ -48,6 +50,20 @@ function ControlPages(): JSX.Element {
       <TopBar pages={<Tabs className="ctl-pages" tabs={pages} value={page} onChange={setPage} label="Kontrol paneli sayfaları" idBase="ctl-page" />} />
       <div className="ctl-page" role="tabpanel" aria-labelledby="ctl-page-control" hidden={page !== 'control'}>
         <ControlLayout />
+      </div>
+      <div className="ctl-page" role="tabpanel" aria-labelledby="ctl-page-characters" hidden={page !== 'characters'}>
+        <ErrorBoundary
+          scope="kontrol paneli karakterleri"
+          fallback={
+            <EmptyState
+              icon={<WarningIcon size={24} />}
+              title="Karakterler gösterilemiyor"
+              hint="Beklenmeyen bir hata oluştu (DND-902). Ayrıntı log dosyasında; diğer kontroller çalışmaya devam eder."
+            />
+          }
+        >
+          <CharactersPage />
+        </ErrorBoundary>
       </div>
       <div className="ctl-page" role="tabpanel" aria-labelledby="ctl-page-music" hidden={page !== 'music'}>
         <ErrorBoundary
