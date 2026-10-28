@@ -10,6 +10,7 @@ import { Action, ReduceIssue, ReduceResult } from './actions'
 import { ErrorCode } from './errors'
 import { categoryInfo, containRect, coverRect, findImage, playArea, Rect } from './layout'
 import {
+  AmbientSound,
   AppSettings,
   AppState,
   createEmptyPlayer,
@@ -17,6 +18,11 @@ import {
   ID,
   ImageKind,
   LibraryImage,
+  MusicLibrary,
+  MusicTrack,
+  Playback,
+  RepeatMode,
+  VideoLoop,
   MAX_HP,
   MAX_LEVEL,
   MAX_PLAYERS,
@@ -36,13 +42,19 @@ export const TEXT_LIMITS = {
   playerNote: 2000,
   sceneName: 40,
   itemLabel: 40,
-  generalNote: 20000
+  generalNote: 20000,
+  trackName: 80,
+  ambientName: 24
 } as const
 
 export const MIN_HOTKEY = 1
 export const MAX_HOTKEY = 9
+/** Hareketli arka planın en kısa döngüsü (saniye); daha kısası titrer. */
+export const MIN_VIDEO_LOOP = 0.5
+export const MAX_AMBIENTS = 24
 
 const TOOLS: readonly Tool[] = ['mouse', 'pen-red', 'pen-black', 'eraser']
+const REPEAT_MODES: readonly RepeatMode[] = ['off', 'all', 'one']
 const PEN_WIDTHS: readonly PenWidth[] = ['thin', 'medium', 'thick']
 const REORDER_TARGETS = ['front', 'back', 'forward', 'backward'] as const
 const GEOMETRY_KEYS = ['x', 'y', 'width', 'height', 'rotation'] as const
@@ -101,6 +113,55 @@ export function reduce(state: FullState, action: Action): ReduceResult {
       return reorderItem(state, action)
     case 'stage/clearItems':
       return clearItems(state, action)
+
+    case 'scene/setVideo':
+      return setSceneVideo(state, action)
+
+    case 'music/addTracks':
+      return addTracks(state, action)
+    case 'music/removeTrack':
+      return removeTrack(state, action)
+    case 'music/renameTrack':
+      return renameTrack(state, action)
+    case 'music/moveTrack':
+      return moveTrack(state, action)
+    case 'music/setLoop':
+      return setTrackLoop(state, action)
+    case 'music/setVolume':
+      return setMusicLevel(state, 'musicVolume', action.volume)
+    case 'music/setAmbientVolume':
+      return setMusicLevel(state, 'ambientVolume', action.volume)
+    case 'music/setRepeat':
+      return setRepeat(state, action)
+    case 'ambient/add':
+      return addAmbient(state, action)
+    case 'ambient/update':
+      return updateAmbient(state, action)
+    case 'ambient/remove':
+      return removeAmbient(state, action)
+
+    case 'playback/play':
+      return playTrack(state, action)
+    case 'playback/pause':
+      return setPlaying(state, false)
+    case 'playback/resume':
+      return setPlaying(state, true)
+    case 'playback/seek':
+      return seek(state, action)
+    case 'playback/next':
+      return stepTrack(state, 1, false)
+    case 'playback/previous':
+      return stepTrack(state, -1, false)
+    case 'playback/stop':
+      return stopPlayback(state)
+    case 'playback/ended':
+      return trackEnded(state, action)
+    case 'ambient/toggle':
+      return toggleAmbient(state, action)
+    case 'ambient/stopAll':
+      return state.session.playback.ambientIds.length === 0
+        ? { state }
+        : { state: withPlayback(state, { ...state.session.playback, ambientIds: [] }) }
 
     case 'note/setGeneral':
       return setGeneralNote(state, action)
@@ -371,7 +432,7 @@ function activateScene(state: FullState, scene: SceneWindow): ReduceResult {
 }
 
 function createScene(id: ID, name: string): SceneWindow {
-  return { id, name, hotkey: null, background: null, items: [] }
+  return { id, name, hotkey: null, background: null, videoTrackId: null, items: [] }
 }
 
 function cleanSceneName(name: unknown): string {
@@ -433,8 +494,13 @@ function placeImage(state: FullState, action: ActionOf<'stage/setBackground' | '
   }
 
   const area = playArea(app)
+  // Görsel arka plan konunca hareketli arka plan kalkar; ikisi aynı anda olmaz.
   const nextScene: SceneWindow = asBackground
-    ? { ...scene, background: { id: itemId, imageId: image.id, ...coverRect(image.width, image.height, area), rotation: 0, label: '' } }
+    ? {
+        ...scene,
+        background: { id: itemId, imageId: image.id, ...coverRect(image.width, image.height, area), rotation: 0, label: '' },
+        videoTrackId: null
+      }
     : {
         ...scene,
         items: [...scene.items, { id: itemId, imageId: image.id, ...initialItemRect(image, area), rotation: 0, label: '' }]
@@ -457,8 +523,25 @@ function initialItemRect(image: Size, area: Rect): Rect {
 function clearBackground(state: FullState, action: ActionOf<'stage/clearBackground'>): ReduceResult {
   const scene = sceneById(state.app, action.sceneId)
   if (!scene) return sceneNotFound(state, action.sceneId)
-  if (scene.background === null) return { state }
-  return { state: withScene(state, scene, { ...scene, background: null }) }
+  // Görsel ya da hareketli, hangisi varsa kalkar.
+  if (scene.background === null && scene.videoTrackId === null) return { state }
+  return { state: withScene(state, scene, { ...scene, background: null, videoTrackId: null }) }
+}
+
+function setSceneVideo(state: FullState, action: ActionOf<'scene/setVideo'>): ReduceResult {
+  const scene = sceneById(state.app, action.sceneId)
+  if (!scene) return sceneNotFound(state, action.sceneId)
+  const trackId: unknown = action.trackId
+  if (trackId === null) {
+    return scene.videoTrackId === null ? { state } : { state: withScene(state, scene, { ...scene, videoTrackId: null }) }
+  }
+  const track = trackById(state.app, trackId)
+  if (!track) return trackNotFound(state, trackId)
+  if (!track.hasVideo || track.loop === null) {
+    return reject(state, 'DND-306', `scene/setVideo: parçanın hareketli görüntüsü yok: ${show(trackId)}`)
+  }
+  if (scene.videoTrackId === track.id && scene.background === null) return { state }
+  return { state: withScene(state, scene, { ...scene, videoTrackId: track.id, background: null }) }
 }
 
 function clearItems(state: FullState, action: ActionOf<'stage/clearItems'>): ReduceResult {
@@ -659,6 +742,295 @@ function sameRect(a: Rect, b: Rect): boolean {
     Math.abs(a.width - b.width) <= SIZE_EPSILON &&
     Math.abs(a.height - b.height) <= SIZE_EPSILON
   )
+}
+
+// --- Müzik -------------------------------------------------------------------
+
+function addTracks(state: FullState, action: ActionOf<'music/addTracks'>): ReduceResult {
+  const tracks: unknown = action.tracks
+  if (!Array.isArray(tracks)) return reject(state, 'DND-306', 'music/addTracks: tracks bir dizi değil.')
+
+  const music = state.app.music
+  const knownIds = new Set(music.tracks.map((track) => track.id))
+  const added: MusicTrack[] = []
+  let invalidCount = 0
+  for (const candidate of tracks) {
+    const track = parseTrack(candidate)
+    if (!track) {
+      invalidCount += 1
+    } else if (!knownIds.has(track.id)) {
+      knownIds.add(track.id)
+      added.push(track)
+    }
+  }
+
+  const issue: ReduceIssue | undefined =
+    invalidCount > 0 ? { code: 'DND-306', detail: `music/addTracks: ${invalidCount} parça kaydı hatalı alanlı, atlandı.` } : undefined
+  if (added.length === 0) return result(state, issue)
+  return result(withMusic(state, { ...music, tracks: [...music.tracks, ...added] }), issue)
+}
+
+function parseTrack(value: unknown): MusicTrack | null {
+  if (!isRecord(value)) return null
+  if (!isId(value.id) || !isId(value.fileName) || typeof value.originalName !== 'string' || typeof value.addedAt !== 'string') return null
+  if (typeof value.hasVideo !== 'boolean') return null
+  const loop = value.loop === null || value.loop === undefined ? null : parseLoop(value.loop)
+  if (value.loop !== null && value.loop !== undefined && loop === null) return null
+  return {
+    id: value.id,
+    fileName: value.fileName,
+    originalName: truncate(value.originalName, TEXT_LIMITS.trackName),
+    hasVideo: value.hasVideo,
+    loop: value.hasVideo ? loop : null,
+    addedAt: value.addedAt
+  }
+}
+
+/** Döngü aralığı: 0 <= başlangıç < bitiş, en az MIN_VIDEO_LOOP saniye. Yüzde bir saniyeye yuvarlanır. */
+function parseLoop(value: unknown): VideoLoop | null {
+  if (!isRecord(value) || !isFiniteNumber(value.start) || !isFiniteNumber(value.end)) return null
+  const start = Math.round(Math.max(0, value.start) * 100) / 100
+  const end = Math.round(value.end * 100) / 100
+  return end - start >= MIN_VIDEO_LOOP ? { start, end } : null
+}
+
+function removeTrack(state: FullState, action: ActionOf<'music/removeTrack'>): ReduceResult {
+  const track = trackById(state.app, action.trackId)
+  if (!track) return trackNotFound(state, action.trackId)
+
+  const music = state.app.music
+  const app: AppState = {
+    ...state.app,
+    music: { ...music, tracks: music.tracks.filter((other) => other !== track) },
+    scenes: mapChanged(state.app.scenes, (scene) => (scene.videoTrackId === track.id ? { ...scene, videoTrackId: null } : scene))
+  }
+  const playback = state.session.playback
+  // Çalan parça silinirse müzik durur; sıradakine geçmek DM'e sormadan başka bir şarkı başlatırdı.
+  const session = playback.trackId === track.id ? { ...state.session, playback: { ...playback, trackId: null, playing: false, seekTo: 0 } } : state.session
+  return { state: { app, session } }
+}
+
+function renameTrack(state: FullState, action: ActionOf<'music/renameTrack'>): ReduceResult {
+  const track = trackById(state.app, action.trackId)
+  if (!track) return trackNotFound(state, action.trackId)
+  const name: unknown = action.name
+  if (typeof name !== 'string') return reject(state, 'DND-306', `music/renameTrack: ad geçersiz: ${show(name)}`)
+  // Boş ad yok sayılır: listede adsız satır kalmasın.
+  const cleaned = truncate(name.trim(), TEXT_LIMITS.trackName).trimEnd()
+  if (cleaned === '' || cleaned === track.originalName) return { state }
+  return { state: withTrack(state, track, { ...track, originalName: cleaned }) }
+}
+
+function moveTrack(state: FullState, action: ActionOf<'music/moveTrack'>): ReduceResult {
+  const to: unknown = action.to
+  if (to !== 'up' && to !== 'down') return reject(state, 'DND-306', `music/moveTrack: yön geçersiz: ${show(to)}`)
+  const music = state.app.music
+  const index = music.tracks.findIndex((track) => track.id === action.trackId)
+  if (index === -1) return trackNotFound(state, action.trackId)
+  const target = to === 'up' ? index - 1 : index + 1
+  if (target < 0 || target >= music.tracks.length) return { state }
+  const tracks = music.tracks.slice()
+  const [moved] = tracks.splice(index, 1)
+  tracks.splice(target, 0, moved)
+  return { state: withMusic(state, { ...music, tracks }) }
+}
+
+function setTrackLoop(state: FullState, action: ActionOf<'music/setLoop'>): ReduceResult {
+  const track = trackById(state.app, action.trackId)
+  if (!track) return trackNotFound(state, action.trackId)
+  if (!track.hasVideo) return reject(state, 'DND-306', `music/setLoop: parçada görüntü yok: ${show(track.id)}`)
+
+  const raw: unknown = action.loop
+  const loop = raw === null ? null : parseLoop(raw)
+  if (raw !== null && loop === null) {
+    return reject(state, 'DND-306', `music/setLoop: aralık geçersiz (en az ${MIN_VIDEO_LOOP} saniye olmalı).`)
+  }
+  if (loop?.start === track.loop?.start && loop?.end === track.loop?.end) return { state }
+
+  const next = withTrack(state, track, { ...track, loop })
+  if (loop !== null) return { state: next }
+  // Görüntüsü kapatılan parça arka plan olarak kalamaz.
+  const scenes = mapChanged(next.app.scenes, (scene) => (scene.videoTrackId === track.id ? { ...scene, videoTrackId: null } : scene))
+  return { state: scenes === next.app.scenes ? next : withApp(next, { ...next.app, scenes }) }
+}
+
+function setMusicLevel(state: FullState, key: 'musicVolume' | 'ambientVolume', value: unknown): ReduceResult {
+  if (!isFiniteNumber(value)) return reject(state, 'DND-306', `Ses düzeyi sayı değil: ${show(value)}`)
+  const volume = roundVolume(value)
+  const music = state.app.music
+  return volume === music[key] ? { state } : { state: withMusic(state, { ...music, [key]: volume }) }
+}
+
+function setRepeat(state: FullState, action: ActionOf<'music/setRepeat'>): ReduceResult {
+  const repeat = action.repeat
+  if (!REPEAT_MODES.includes(repeat)) return reject(state, 'DND-306', `music/setRepeat: tekrar geçersiz: ${show(repeat)}`)
+  const music = state.app.music
+  return repeat === music.repeat ? { state } : { state: withMusic(state, { ...music, repeat }) }
+}
+
+function addAmbient(state: FullState, action: ActionOf<'ambient/add'>): ReduceResult {
+  const raw: unknown = action.ambient
+  const music = state.app.music
+  if (
+    !isRecord(raw) ||
+    !isId(raw.id) ||
+    !isId(raw.fileName) ||
+    typeof raw.name !== 'string' ||
+    typeof raw.addedAt !== 'string' ||
+    !isFiniteNumber(raw.volume)
+  ) {
+    return reject(state, 'DND-306', 'ambient/add: ortam sesi kaydı eksik ya da hatalı alanlı.')
+  }
+  if (music.ambients.some((ambient) => ambient.id === raw.id)) return { state }
+  if (music.ambients.length >= MAX_AMBIENTS) return reject(state, 'DND-306', `ambient/add: en fazla ${MAX_AMBIENTS} ortam sesi olabilir.`)
+
+  const ambient: AmbientSound = {
+    id: raw.id,
+    name: cleanAmbientName(raw.name) || 'Ortam sesi',
+    fileName: raw.fileName,
+    volume: roundVolume(raw.volume),
+    addedAt: raw.addedAt
+  }
+  return { state: withMusic(state, { ...music, ambients: [...music.ambients, ambient] }) }
+}
+
+function updateAmbient(state: FullState, action: ActionOf<'ambient/update'>): ReduceResult {
+  const music = state.app.music
+  const ambient = ambientById(state.app, action.ambientId)
+  if (!ambient) return ambientNotFound(state, action.ambientId)
+  const patch: unknown = action.patch
+  if (!isRecord(patch)) return reject(state, 'DND-306', 'ambient/update: patch bir nesne değil.')
+
+  const next: AmbientSound = {
+    ...ambient,
+    // Boş ad yok sayılır: adsız düğme kalmasın.
+    name: (typeof patch.name === 'string' && cleanAmbientName(patch.name)) || ambient.name,
+    volume: isFiniteNumber(patch.volume) ? roundVolume(patch.volume) : ambient.volume
+  }
+  if (shallowEqual(ambient, next)) return { state }
+  return { state: withMusic(state, { ...music, ambients: music.ambients.map((other) => (other === ambient ? next : other)) }) }
+}
+
+function removeAmbient(state: FullState, action: ActionOf<'ambient/remove'>): ReduceResult {
+  const music = state.app.music
+  const ambient = ambientById(state.app, action.ambientId)
+  if (!ambient) return ambientNotFound(state, action.ambientId)
+  const app = { ...state.app, music: { ...music, ambients: music.ambients.filter((other) => other !== ambient) } }
+  const playback = state.session.playback
+  const session = playback.ambientIds.includes(ambient.id)
+    ? { ...state.session, playback: { ...playback, ambientIds: playback.ambientIds.filter((id) => id !== ambient.id) } }
+    : state.session
+  return { state: { app, session } }
+}
+
+function playTrack(state: FullState, action: ActionOf<'playback/play'>): ReduceResult {
+  const track = trackById(state.app, action.trackId)
+  if (!track) return trackNotFound(state, action.trackId)
+  return { state: startTrack(state, track.id) }
+}
+
+/** Parçayı baştan başlatır; aynı parça çalıyor olsa da seekNonce artar ki oyun ekranı başa sarsın. */
+function startTrack(state: FullState, trackId: ID): FullState {
+  const playback = state.session.playback
+  return withPlayback(state, { ...playback, trackId, playing: true, seekTo: 0, seekNonce: playback.seekNonce + 1 })
+}
+
+function setPlaying(state: FullState, playing: boolean): ReduceResult {
+  const playback = state.session.playback
+  if (playback.trackId === null || playback.playing === playing) return { state }
+  return { state: withPlayback(state, { ...playback, playing }) }
+}
+
+function seek(state: FullState, action: ActionOf<'playback/seek'>): ReduceResult {
+  const position: unknown = action.position
+  if (!isFiniteNumber(position)) return reject(state, 'DND-306', `playback/seek: konum sayı değil: ${show(position)}`)
+  const playback = state.session.playback
+  if (playback.trackId === null) return { state }
+  return { state: withPlayback(state, { ...playback, seekTo: Math.max(0, position), seekNonce: playback.seekNonce + 1 }) }
+}
+
+/**
+ * Listede bir ileri ya da geri. Başta / sonda: "tümünü tekrarla" açıksa öbür uca döner; değilse
+ * geri düğmesi ilk parçayı baştan başlatır, ileri düğmesi bir şey yapmaz, biten son parça başa
+ * sarılıp duraklar.
+ */
+function stepTrack(state: FullState, direction: 1 | -1, fromEnded: boolean): ReduceResult {
+  const { tracks, repeat } = state.app.music
+  const playback = state.session.playback
+  if (tracks.length === 0) return playback.trackId === null ? { state } : stopPlayback(state)
+
+  const index = tracks.findIndex((track) => track.id === playback.trackId)
+  if (index === -1) return { state: startTrack(state, tracks[direction === 1 ? 0 : tracks.length - 1].id) }
+
+  let target = index + direction
+  if (target < 0 || target >= tracks.length) {
+    if (repeat === 'all') target = (target + tracks.length) % tracks.length
+    else if (direction === -1) target = 0
+    else if (!fromEnded) return { state }
+    else return { state: withPlayback(state, { ...playback, playing: false, seekTo: 0, seekNonce: playback.seekNonce + 1 }) }
+  }
+  return { state: startTrack(state, tracks[target].id) }
+}
+
+function stopPlayback(state: FullState): ReduceResult {
+  const playback = state.session.playback
+  if (playback.trackId === null && !playback.playing) return { state }
+  return { state: withPlayback(state, { ...playback, trackId: null, playing: false, seekTo: 0 }) }
+}
+
+function trackEnded(state: FullState, action: ActionOf<'playback/ended'>): ReduceResult {
+  const playback = state.session.playback
+  // Geç gelen bildirim: bu arada başka bir parçaya geçilmiş ya da durdurulmuştur.
+  if (playback.trackId === null || playback.trackId !== action.trackId || !playback.playing) return { state }
+  if (state.app.music.repeat === 'one') return { state: startTrack(state, playback.trackId) }
+  return stepTrack(state, 1, true)
+}
+
+function toggleAmbient(state: FullState, action: ActionOf<'ambient/toggle'>): ReduceResult {
+  const ambient = ambientById(state.app, action.ambientId)
+  if (!ambient) return ambientNotFound(state, action.ambientId)
+  const playback = state.session.playback
+  const ambientIds = playback.ambientIds.includes(ambient.id)
+    ? playback.ambientIds.filter((id) => id !== ambient.id)
+    : [...playback.ambientIds, ambient.id]
+  return { state: withPlayback(state, { ...playback, ambientIds }) }
+}
+
+function cleanAmbientName(name: string): string {
+  return truncate(name.trim(), TEXT_LIMITS.ambientName).trimEnd()
+}
+
+function roundVolume(value: number): number {
+  return Math.round(clamp(value, 0, 1) * 100) / 100
+}
+
+function trackById(app: AppState, trackId: unknown): MusicTrack | undefined {
+  return typeof trackId === 'string' ? app.music.tracks.find((track) => track.id === trackId) : undefined
+}
+
+function ambientById(app: AppState, ambientId: unknown): AmbientSound | undefined {
+  return typeof ambientId === 'string' ? app.music.ambients.find((ambient) => ambient.id === ambientId) : undefined
+}
+
+function trackNotFound(state: FullState, trackId: unknown): ReduceResult {
+  return reject(state, 'DND-302', `Parça bulunamadı: ${show(trackId)}`)
+}
+
+function ambientNotFound(state: FullState, ambientId: unknown): ReduceResult {
+  return reject(state, 'DND-302', `Ortam sesi bulunamadı: ${show(ambientId)}`)
+}
+
+function withMusic(state: FullState, music: MusicLibrary): FullState {
+  return withApp(state, { ...state.app, music })
+}
+
+function withTrack(state: FullState, track: MusicTrack, next: MusicTrack): FullState {
+  const music = state.app.music
+  return withMusic(state, { ...music, tracks: music.tracks.map((other) => (other === track ? next : other)) })
+}
+
+function withPlayback(state: FullState, playback: Playback): FullState {
+  return withSession(state, { ...state.session, playback })
 }
 
 // --- Diğer -------------------------------------------------------------------

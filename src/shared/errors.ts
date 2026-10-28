@@ -2,7 +2,7 @@
  * Sabit hata kodları. Her bilinen durumun bir kodu ve açıklaması vardır; log dosyasına
  * ve ekrandaki bildirime bu kodla yazılır. Liste `HATA_KODLARI.md` ile aynı tutulur.
  *
- * Aralıklar: 1xx kayıt/dosya · 2xx kütüphane/görsel · 3xx pencere/oyun ekranı · 4xx zar · 9xx beklenmeyen
+ * Aralıklar: 1xx kayıt/dosya · 2xx kütüphane/görsel · 3xx pencere/oyun ekranı · 4xx zar · 5xx müzik/ses · 9xx beklenmeyen
  */
 
 export type LogLevel = 'BILGI' | 'UYARI' | 'HATA'
@@ -149,6 +149,36 @@ export const ERROR_CODES = {
     level: 'BILGI',
     title: 'Zar atılamadı',
     description: 'Oyun açık değilken zar atılmak istendi; yok sayıldı.'
+  },
+  'DND-501': {
+    level: 'UYARI',
+    title: 'Desteklenmeyen ses dosyası',
+    description: 'Yalnızca MP3, OGG, WAV, M4A ve MP4 yüklenebilir. Dosya atlandı.'
+  },
+  'DND-502': {
+    level: 'HATA',
+    title: 'Ses dosyası kopyalanamadı',
+    description: 'Seçilen dosya kayıt klasörüne (muzik) kopyalanamadı (dosya taşınmış, kilitli ya da disk dolu olabilir).'
+  },
+  'DND-503': {
+    level: 'UYARI',
+    title: 'Ses dosyası çalınamadı',
+    description: 'Parçanın dosyası muzik klasöründe yok (elle silinmiş olabilir) ya da bozuk / çözülemeyen bir biçimde. Müzik durdu; listeden başka bir parça seçilebilir.'
+  },
+  'DND-504': {
+    level: 'UYARI',
+    title: 'Ses dosyası çok büyük',
+    description: 'Dosya 2 GB sınırını aşıyor. Dosya atlandı.'
+  },
+  'DND-505': {
+    level: 'UYARI',
+    title: 'Ses dosyası silinemedi',
+    description: 'Parça ya da ortam sesi listeden kaldırıldı ama dosyası diskten silinemedi. Dosya muzik klasöründe kalır.'
+  },
+  'DND-506': {
+    level: 'UYARI',
+    title: 'Videoda görüntü yok',
+    description: 'Seçilen MP4 dosyasında oynatılabilen bir görüntü bulunamadı. Parça yalnızca ses olarak eklendi.'
   },
   'DND-901': {
     level: 'HATA',

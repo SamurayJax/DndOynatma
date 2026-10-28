@@ -29,7 +29,8 @@ function openStore(): Store {
     },
     trashImage: (image) => {
       trashed.push(image)
-    }
+    },
+    trashSound: () => undefined
   })
 }
 

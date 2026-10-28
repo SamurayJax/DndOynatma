@@ -2,7 +2,9 @@
  * Diskten okunan kaydı doğrular ve onarır. Elle düzenlenmiş ya da yarım kalmış bir
  * kayıt uygulamayı çökertmesin diye her alan tek tek denetlenir.
  */
+import { MAX_AMBIENTS, MIN_VIDEO_LOOP } from '@shared/reducer'
 import {
+  AmbientSound,
   AppSettings,
   AppState,
   ID,
@@ -16,6 +18,11 @@ import {
   SCHEMA_VERSION,
   SceneWindow,
   StageItem,
+  DEFAULT_AMBIENT_VOLUME,
+  MusicLibrary,
+  MusicTrack,
+  VideoLoop,
+  createEmptyMusic,
   createEmptyPlayer,
   createInitialAppState
 } from '@shared/types'
@@ -68,7 +75,9 @@ export function normalizeAppState(raw: unknown): AppState | null {
 
   const library = normalizeLibrary(raw.library)
   const imageIds = new Set(library.map((image) => image.id))
-  const scenes = normalizeScenes(raw.scenes, imageIds)
+  const music = normalizeMusic(raw.music)
+  const videoIds = new Set(music.tracks.filter((track) => track.loop !== null).map((track) => track.id))
+  const scenes = normalizeScenes(raw.scenes, imageIds, videoIds)
   const activeSceneId = scenes.some((scene) => scene.id === raw.activeSceneId) ? (raw.activeSceneId as ID) : null
 
   return {
@@ -78,7 +87,8 @@ export function normalizeAppState(raw: unknown): AppState | null {
     scenes,
     activeSceneId,
     generalNote: text(raw.generalNote),
-    settings: normalizeSettings(raw.settings)
+    settings: normalizeSettings(raw.settings),
+    music
   }
 }
 
@@ -127,7 +137,7 @@ function normalizeImage(raw: unknown): LibraryImage | null {
   }
 }
 
-function normalizeScenes(raw: unknown, imageIds: ReadonlySet<ID>): SceneWindow[] {
+function normalizeScenes(raw: unknown, imageIds: ReadonlySet<ID>, videoIds: ReadonlySet<ID>): SceneWindow[] {
   if (!Array.isArray(raw)) return []
   const seenIds = new Set<ID>()
   const usedHotkeys = new Set<number>()
@@ -153,7 +163,10 @@ function normalizeScenes(raw: unknown, imageIds: ReadonlySet<ID>): SceneWindow[]
       if (item) items.push(item)
     }
 
-    result.push({ id: entry.id, name: text(entry.name), hotkey, background, items })
+    // Hareketli arka plan sonradan eklendi; eski kayıtlarda bu alan yoktur. Görsel arka planla birlikte olamaz.
+    const videoTrackId = background === null && isId(entry.videoTrackId) && videoIds.has(entry.videoTrackId) ? entry.videoTrackId : null
+
+    result.push({ id: entry.id, name: text(entry.name), hotkey, background, videoTrackId, items })
   }
   return result
 }
@@ -176,6 +189,60 @@ function normalizeStageItem(raw: unknown, imageIds: ReadonlySet<ID>, usedIds: Se
     rotation: isFiniteNumber(raw.rotation) ? (Math.round((((raw.rotation % 360) + 360) % 360) * 100) / 100) % 360 : 0,
     label: text(raw.label)
   }
+}
+
+/** Müzik sonradan eklendi; eski kayıtlarda bu alan yoktur. */
+function normalizeMusic(raw: unknown): MusicLibrary {
+  const defaults = createEmptyMusic()
+  if (!isRecord(raw)) return defaults
+
+  const usedIds = new Set<ID>()
+  const tracks: MusicTrack[] = []
+  for (const entry of Array.isArray(raw.tracks) ? raw.tracks : []) {
+    if (!isRecord(entry) || !isId(entry.id) || usedIds.has(entry.id) || !isSafeFileName(entry.fileName)) continue
+    usedIds.add(entry.id)
+    const hasVideo = entry.hasVideo === true
+    tracks.push({
+      id: entry.id,
+      fileName: entry.fileName,
+      originalName: text(entry.originalName),
+      hasVideo,
+      loop: hasVideo ? normalizeLoop(entry.loop) : null,
+      addedAt: text(entry.addedAt, UNKNOWN_DATE)
+    })
+  }
+
+  const ambients: AmbientSound[] = []
+  for (const entry of Array.isArray(raw.ambients) ? raw.ambients : []) {
+    if (!isRecord(entry) || !isId(entry.id) || usedIds.has(entry.id) || !isSafeFileName(entry.fileName)) continue
+    if (ambients.length >= MAX_AMBIENTS) break
+    usedIds.add(entry.id)
+    ambients.push({
+      id: entry.id,
+      name: text(entry.name).trim() || 'Ortam sesi',
+      fileName: entry.fileName,
+      volume: volume(entry.volume, DEFAULT_AMBIENT_VOLUME),
+      addedAt: text(entry.addedAt, UNKNOWN_DATE)
+    })
+  }
+
+  return {
+    tracks,
+    ambients,
+    musicVolume: volume(raw.musicVolume, defaults.musicVolume),
+    ambientVolume: volume(raw.ambientVolume, defaults.ambientVolume),
+    repeat: raw.repeat === 'off' || raw.repeat === 'all' || raw.repeat === 'one' ? raw.repeat : defaults.repeat
+  }
+}
+
+function normalizeLoop(raw: unknown): VideoLoop | null {
+  if (!isRecord(raw) || !isFiniteNumber(raw.start) || !isFiniteNumber(raw.end)) return null
+  const start = Math.max(0, raw.start)
+  return raw.end - start >= MIN_VIDEO_LOOP ? { start, end: raw.end } : null
+}
+
+function volume(value: unknown, fallback: number): number {
+  return isFiniteNumber(value) ? Math.min(1, Math.max(0, value)) : fallback
 }
 
 function normalizeSettings(raw: unknown): AppSettings {

@@ -61,6 +61,17 @@ Kodların kaynağı `src/shared/errors.ts` dosyasıdır; bu liste onunla aynı t
 |-----|--------|-------|----------|
 | DND-401 | BILGI | Zar atılamadı | Oyun açık değilken zar atılmak istendi; yok sayıldı. |
 
+## 5xx — Müzik ve sesler
+
+| Kod | Seviye | Durum | Açıklama |
+|-----|--------|-------|----------|
+| DND-501 | UYARI | Desteklenmeyen ses dosyası | Yalnızca MP3, OGG, WAV, M4A ve MP4 yüklenebilir. Dosya atlandı. |
+| DND-502 | HATA | Ses dosyası kopyalanamadı | Seçilen dosya kayıt klasörüne (muzik) kopyalanamadı (dosya taşınmış, kilitli ya da disk dolu olabilir). |
+| DND-503 | UYARI | Ses dosyası çalınamadı | Parçanın dosyası muzik klasöründe yok (elle silinmiş olabilir) ya da bozuk / çözülemeyen bir biçimde. Müzik durdu; listeden başka bir parça seçilebilir. |
+| DND-504 | UYARI | Ses dosyası çok büyük | Dosya 2 GB sınırını aşıyor. Dosya atlandı. |
+| DND-505 | UYARI | Ses dosyası silinemedi | Parça ya da ortam sesi listeden kaldırıldı ama dosyası diskten silinemedi. Dosya muzik klasöründe kalır. |
+| DND-506 | UYARI | Videoda görüntü yok | Seçilen MP4 dosyasında oynatılabilen bir görüntü bulunamadı. Parça yalnızca ses olarak eklendi. |
+
 ## 9xx — Beklenmeyen
 
 | Kod | Seviye | Durum | Açıklama |

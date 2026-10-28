@@ -31,6 +31,7 @@ interface Harness {
   broadcast: Mock<(channel: string, payload: unknown) => void>
   report: Mock<(code: ErrorCode, detail?: string) => void>
   trashImage: Mock<(image: LibraryImage) => void>
+  trashSound: Mock<(fileName: string) => void>
 }
 
 function createHarness(options: { saveEnabled?: boolean } = {}): Harness {
@@ -39,6 +40,7 @@ function createHarness(options: { saveEnabled?: boolean } = {}): Harness {
   const broadcast = vi.fn<(channel: string, payload: unknown) => void>()
   const report = vi.fn<(code: ErrorCode, detail?: string) => void>()
   const trashImage = vi.fn<(image: LibraryImage) => void>()
+  const trashSound = vi.fn<(fileName: string) => void>()
   const store = new Store({
     initial,
     saveEnabled: options.saveEnabled ?? true,
@@ -46,9 +48,10 @@ function createHarness(options: { saveEnabled?: boolean } = {}): Harness {
     broadcast,
     report,
     trashImage,
+    trashSound,
     saveDelayMs: 300
   })
-  return { store, initial, writeSave, broadcast, report, trashImage }
+  return { store, initial, writeSave, broadcast, report, trashImage, trashSound }
 }
 
 /** reducer'ın bir sonraki çağrıda döndüreceği sonucu ayarlar. */

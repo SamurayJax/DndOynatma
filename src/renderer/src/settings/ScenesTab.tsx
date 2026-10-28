@@ -63,6 +63,7 @@ export function ScenesTab(): JSX.Element {
                 scenes={app.scenes}
                 active={scene.id === app.activeSceneId}
                 background={findImage(app, scene.background?.imageId ?? null)}
+                video={app.music.tracks.find((track) => track.id === scene.videoTrackId)}
                 focusName={scene.id === focusSceneId}
                 onNameFocused={clearFocus}
                 onPickBackground={setPickerSceneId}
@@ -73,7 +74,7 @@ export function ScenesTab(): JSX.Element {
       </div>
 
       {pickerScene !== undefined && (
-        <BackgroundPicker scene={pickerScene} library={app.library} onClose={() => setPickerSceneId(null)} />
+        <BackgroundPicker scene={pickerScene} library={app.library} tracks={app.music.tracks} onClose={() => setPickerSceneId(null)} />
       )}
     </>
   )

@@ -73,7 +73,8 @@ function loadSavedState(dataPaths: DataPaths, storageUsable: boolean): LoadResul
   for (const file of loaded.quarantined) log.info(`Bozuk dosya saklandı: ${path.basename(file)}`)
   const { state } = loaded
   log.info(
-    `Kayıt yüklendi (${loaded.source}): ${state.library.length} görsel, ${state.scenes.length} pencere` +
+    `Kayıt yüklendi (${loaded.source}): ${state.library.length} görsel, ${state.scenes.length} pencere, ` +
+      `${state.music.tracks.length} parça, ${state.music.ambients.length} ortam sesi` +
       (loaded.saveDisabled ? ' — kayıt yazma kapalı' : '')
   )
   return loaded
@@ -95,6 +96,23 @@ function trashImageFile(imagesDir: string, image: LibraryImage): void {
     .trashItem(file)
     .then(() => log.info(`Görsel silindi: ${image.fileName} (geri dönüşüm kutusuna taşındı)`))
     .catch((error: unknown) => report('DND-205', `${image.fileName}: ${error instanceof Error ? error.message : String(error)}`))
+}
+
+/** Listeden çıkan sesin dosyasını geri dönüşüm kutusuna taşır (geri alınabilir). */
+function trashSoundFile(soundsDir: string, fileName: string): void {
+  if (!isSafeFileName(fileName)) {
+    report('DND-505', 'geçersiz dosya adı')
+    return
+  }
+  const file = path.join(soundsDir, fileName)
+  if (!fs.existsSync(file)) {
+    log.info(`Ses silindi: ${fileName} (dosyası zaten yoktu)`)
+    return
+  }
+  shell
+    .trashItem(file)
+    .then(() => log.info(`Ses silindi: ${fileName} (geri dönüşüm kutusuna taşındı)`))
+    .catch((error: unknown) => report('DND-505', `${fileName}: ${error instanceof Error ? error.message : String(error)}`))
 }
 
 /** Açılış: kayıt klasörü belli değilse önce kullanıcıya sorulur, sonra uygulama o klasörle başlar. */
@@ -226,14 +244,15 @@ function startWithDataDir(dataDir: string, fixed: boolean, configFile: string): 
     writeSave,
     broadcast,
     report,
-    trashImage: (image) => trashImageFile(dataPaths.imagesDir, image)
+    trashImage: (image) => trashImageFile(dataPaths.imagesDir, image),
+    trashSound: (fileName) => trashSoundFile(dataPaths.soundsDir, fileName)
   })
   store = activeStore
 
   const activeWindows = new WindowManager({ store: activeStore, clearDice: () => clearDiceFile(dataPaths.diceFile) })
   windows = activeWindows
 
-  handleMediaProtocol(dataPaths.imagesDir)
+  handleMediaProtocol(dataPaths.imagesDir, dataPaths.soundsDir)
   registerIpc({
     store: activeStore,
     windows: activeWindows,

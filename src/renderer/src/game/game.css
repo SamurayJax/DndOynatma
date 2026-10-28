@@ -33,6 +33,14 @@
     radial-gradient(ellipse 80% 80% at 50% 50%, var(--bg-3) 0%, var(--bg-1) 55%, var(--bg-0) 100%);
 }
 
+/* Hareketli arka plan: oyun alanını kaplar (görsel arka plan gibi oranı korunur, taşan kısım kesilir). */
+.game-video {
+  position: absolute;
+  display: block;
+  object-fit: cover;
+  pointer-events: none;
+}
+
 .game-stage {
   position: absolute;
   inset: 0;

@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.9.4 (Windows)
+**Sürüm:** 0.9.6 (Windows)
 
 ## Ne yapar
 
@@ -20,6 +20,13 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
   yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
 - **Zarlar:** d20, d10 ve d4 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
   sonucu gösterir. Geçmişte hangi zarın atıldığı yazar.
+- **Müzik:** kontrol panelinin "Müzik" sekmesinden kendi dosyalarını (MP3, OGG, WAV, M4A, MP4) yükle,
+  çal, ileri-geri sar; tekrar ve ses düzeyi ayarlanır. Ses oyun ekranından çıkar, yani Discord'da
+  paylaşılan pencereden oyunculara gider.
+- **Ortam sesleri:** kuş sesi, yağmur gibi kendi eklediğin düğmeler; müzikle birlikte, döngüde çalar.
+  Her birinin kendi ses düzeyi var.
+- **Hareketli arka plan:** MP4 yüklerken "Ses + hareketli görüntü" seçilirse videonun seçilen bölümü
+  GIF gibi sessiz döner ve Ayarlar › Pencereler'den bir pencereye arka plan yapılır.
 - **Karakter aktarma:** dört oyuncu kartı (isim, seviye, can, not, portre) tek dosyaya aktarılır ve
   başka bir bilgisayarda geri alınır. Kütüphane ve pencereler taşınmaz.
 - **Otomatik kayıt:** her değişiklik kaydedilir; bilgisayar kapanıp açılsa da kaldığı yerden devam eder.
@@ -45,7 +52,8 @@ Kurulum dosyasının nasıl üretildiği: [docs/PAKETLEME.md](docs/PAKETLEME.md)
 4. **Ayarlar › Genel:** oyun ekranının ve kontrol panelinin açılacağı monitörü seç
    ("Otomatik": oyun ekranı en büyük monitörde).
 5. **Oyna:** oyun ekranı ve kontrol paneli açılır. Discord / Teams'te yalnızca
-   "DndOynatma — Oyun Ekranı" penceresini paylaş.
+   "DndOynatma — Oyun Ekranı" penceresini paylaş. Müzik de bu pencereden çalar; Discord'da
+   paylaşırken sesi açık bırak.
 
 Oyun ekranında:
 
@@ -74,6 +82,7 @@ klasörünü açar. Klasör Ayarlar › Genel'den açılır ("Kayıt klasörün�
 | `kayit.json` | profiller, pencereler, görsel yerleşimleri, notlar |
 | `kayit.yedek.json` | bir önceki sağlam kayıt |
 | `gorseller\` | yüklenen görseller |
+| `muzik\` | yüklenen müzikler, ortam sesleri ve MP4'ler |
 | `zar.json` | aktif oyunun zar atışları |
 | `log\` | günlük log dosyaları (son 30 gün) |
 

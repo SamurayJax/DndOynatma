@@ -114,6 +114,80 @@
   margin-left: auto;
 }
 
+/* ---------- Üst sekmeler (sayfalar) ---------- */
+
+/*
+ * Üst şeridin içinde, başlığın yanında duran sekmeler. Ayrı bir satır açmaz: oyun sırasında dikey
+ * yer oyuncu kartlarına ve sağ sütuna kalır (1920x1001'de dört kart kaydırmadan sığmalı).
+ */
+.ctl-pages.ui-tabs {
+  flex: none;
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+  align-self: stretch;
+  align-items: stretch;
+  margin: calc(-1 * var(--space-2)) 0;
+  padding-left: var(--space-4);
+  border-bottom: 0;
+  border-left: 1px solid var(--border-strong);
+}
+
+.ctl-pages .ui-tab {
+  height: auto;
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  border-radius: 0;
+  font-size: var(--text-md);
+}
+
+.ctl-pages .ui-tab[aria-selected='true'] {
+  background: var(--accent-soft);
+}
+
+/* Seçili sekmenin altın çizgisi şeridin alt kenarına oturur. */
+.ctl-pages .ui-tab::after {
+  right: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 0;
+}
+
+/* Müzik ya da ortam sesi çalarken nota hafifçe nabız atar. */
+.ctl-pages__playing {
+  color: var(--accent);
+  animation: ctl-playing 1.6s ease-in-out infinite;
+}
+
+@keyframes ctl-playing {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ctl-pages__playing {
+    animation: none;
+  }
+}
+
+.ctl-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ctl-page[hidden] {
+  display: none;
+}
+
+.ctl-control {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 /* ---------- Ortak küçük parçalar ---------- */
 
 /* Atama tuşu rozeti: klavye tuşu görünümü. */
@@ -997,6 +1071,12 @@
  * Sekme şeridi görünür, seçili sütun tek başına gösterilir.
  */
 @media (max-width: 1099px) {
+  /* Sekmeler üst şeritte yer aldığı için başlık yazısı gizlenir; "Kontrol Paneli" sekmede de yazar. */
+  .ctl-topbar__title,
+  .ctl-topbar__scene-label {
+    display: none;
+  }
+
   .ctl-views.ui-tabs {
     display: flex;
     flex: none;
@@ -1008,9 +1088,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .ctl-root:not([data-view='players']) .ctl-col--players,
-  .ctl-root:not([data-view='library']) .ctl-col--library,
-  .ctl-root:not([data-view='tools']) .ctl-col--side {
+  .ctl-control:not([data-view='players']) .ctl-col--players,
+  .ctl-control:not([data-view='library']) .ctl-col--library,
+  .ctl-control:not([data-view='tools']) .ctl-col--side {
     display: none;
   }
 

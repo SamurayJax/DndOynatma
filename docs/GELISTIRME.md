@@ -38,6 +38,21 @@ Yerleşim hesapları `src/shared/layout.ts` içindedir.
 Yüklenen dosyalar kayıt klasöründeki `gorseller/` altına kopyalanır. Arayüz bunları
 `window.dnd.mediaUrl(fileName)` ile aldığı `dnd-media://gorsel/<dosya>` adresinden okur.
 
+### Müzik
+
+Ses dosyaları (müzik, ortam sesleri, MP4) kayıt klasöründeki `muzik/` altına kopyalanır ve
+`window.dnd.soundUrl(fileName)` ile alınan `dnd-media://ses/<dosya>` adresinden okunur. Bu adres
+parça parça (Range isteği, 206 yanıtı) sunulur; ileri-geri sarma ve büyük MP4'ler bununla çalışır.
+
+- Liste, ortam sesleri, döngü aralıkları ve ses düzeyleri `app.music` içindedir (kayda girer).
+- Çalan parça ve açık ortam sesleri `session.playback` içindedir (kayda girmez, oyun bitince sıfırlanır).
+- Ses **oyun ekranında** çalar (`game/MusicPlayer.tsx`), çünkü Discord'da paylaşılan pencere odur.
+  Kontrol paneli yalnızca `playback/…` işlemleri gönderir. Anlık konum duruma yazılmaz; oyun ekranı
+  `window.dnd.music.sendStatus` ile gönderir, ana süreç yalnızca kontrol paneline iletir.
+- Hareketli arka plan (`SceneWindow.videoTrackId`) oyun alanını kaplayan sessiz bir `<video>`dır
+  (`game/SceneVideo.tsx`); Konva tuvali saydam olduğu için altında durur. Seçilen aralık her karede
+  denetlenerek döndürülür; video kesilmez, dönüştürülmez.
+
 ### Kayıt klasörü
 
 Kullanıcının seçtiği yerdeki `DndOynatma-Kayit` klasörü. Yeri, uygulamanın ayar klasöründeki
@@ -60,6 +75,7 @@ Testler ve denemeler için ortam değişkenleri:
 | `kayit.json` | kalıcı durum |
 | `kayit.yedek.json` | bir önceki sağlam kayıt |
 | `gorseller/` | yüklenen görseller |
+| `muzik/` | yüklenen müzikler, ortam sesleri ve MP4'ler |
 | `zar.json` | aktif oyunun zar atışları |
 | `log/` | günlük log dosyaları |
 
@@ -77,13 +93,14 @@ src/renderer/   arayüz
   src/library/    kütüphane paneli (ayarlarda ve kontrol panelinde kullanılır)
   src/game/       oyun ekranı: portre sütunu, oyun alanı, çizim, zar animasyonu
     dice/           zarlar: biçim (geometry), fizik, atış planı, çizim; üç zar aynı kodu kullanır
-  src/control/    kontrol paneli
+  src/control/    kontrol paneli (üst sekmeler: Kontrol Paneli, Müzik)
+  src/music/      kontrol panelinin Müzik sayfası: oynatıcı, parça listesi, ortam sesleri, MP4 döngü seçimi
 tests/          birim testleri (vitest)
   shared/ main/   ortak kod ve ana süreç
   renderer/       zarın tuvale dokunmayan kısmı: biçim, fizik, atış planı
 e2e/            uçtan uca testler (playwright + electron)
   main/           ana süreç: kayıt, çökme, bozuk dosya, pencereler, görsel protokolü, karakter aktarma
-  oyun/           oyun ekranı: tam ekran, büyük görseller, iki pencere arası, zar
+  oyun/           oyun ekranı: tam ekran, büyük görseller, iki pencere arası, zar, müzik ve hareketli arka plan
   kontrol/        kontrol paneli, kütüphane, ayarlar
   paket/          paketlenmiş uygulama
 build/          uygulama simgesi (svg + ico)

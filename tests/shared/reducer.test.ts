@@ -4,7 +4,12 @@ import { ErrorCode } from '@shared/errors'
 import { containRect, coverRect, Rect } from '@shared/layout'
 import { reduce, TEXT_LIMITS } from '@shared/reducer'
 import {
+  AmbientSound,
+  createEmptyMusic,
   createEmptyPlayer,
+  createStoppedPlayback,
+  MusicLibrary,
+  MusicTrack,
   createInitialState,
   FullState,
   ImageKind,
@@ -58,6 +63,15 @@ const PORTRAIT_SHARED = image('por-shared', 'portrait', 512, 512)
 /** Yüklenmiş ama henüz kimseye bağlanmamış. */
 const PORTRAIT_SPARE = image('por-spare', 'portrait', 512, 512)
 
+const TRACK_A: MusicTrack = { id: 'ta', fileName: 'ta.mp3', originalName: 'Taverna', hasVideo: false, loop: null, addedAt: '2026-10-28T10:00:00.000Z' }
+const TRACK_B: MusicTrack = { id: 'tb', fileName: 'tb.ogg', originalName: 'Savaş', hasVideo: false, loop: null, addedAt: '2026-10-28T10:00:00.000Z' }
+const TRACK_V: MusicTrack = { id: 'tv', fileName: 'tv.mp4', originalName: 'Şömine', hasVideo: true, loop: { start: 2, end: 8 }, addedAt: '2026-10-28T10:00:00.000Z' }
+const AMBIENT: AmbientSound = { id: 'am1', name: 'Kuş sesi', fileName: 'am1.mp3', volume: 0.8, addedAt: '2026-10-28T10:00:00.000Z' }
+
+function sampleMusic(): MusicLibrary {
+  return { ...createEmptyMusic(), tracks: [TRACK_A, TRACK_B, TRACK_V].map((track) => ({ ...track })), ambients: [{ ...AMBIENT }] }
+}
+
 /**
  * Her işlemin dokunabileceği bir şey olan dolu durum. Dondurulmuş döner; reducer girdiyi
  * değiştirmeye kalkarsa (ES modülleri strict olduğu için) test TypeError ile düşer.
@@ -75,10 +89,11 @@ function makeState(): FullState {
       name: 'Kraliyet İçi',
       hotkey: 1,
       background: covering('b1', PLACE),
+      videoTrackId: null,
       items: [contained('a1', NPC, '7 LVL'), contained('a2', ITEM), contained('a3', NPC)]
     },
-    { id: 's2', name: 'Orman Yolu', hotkey: 2, background: null, items: [contained('c1', ITEM)] },
-    { id: 's3', name: 'Köy', hotkey: null, background: covering('b3', SCENE), items: [] }
+    { id: 's2', name: 'Orman Yolu', hotkey: 2, background: null, videoTrackId: null, items: [contained('c1', ITEM)] },
+    { id: 's3', name: 'Köy', hotkey: null, background: covering('b3', SCENE), videoTrackId: null, items: [] }
   ]
   return deepFreeze({
     app: {
@@ -88,9 +103,17 @@ function makeState(): FullState {
       scenes,
       activeSceneId: 's1',
       generalNote: 'genel not',
-      settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true }
+      settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true },
+      music: sampleMusic()
     },
-    session: { phase: 'playing', tool: 'pen-red', penWidth: 'medium', drawingNonce: 3, diceHistory: [] }
+    session: {
+      phase: 'playing',
+      tool: 'pen-red',
+      penWidth: 'medium',
+      drawingNonce: 3,
+      diceHistory: [],
+      playback: { ...createStoppedPlayback(), trackId: 'ta', playing: true, seekNonce: 2, ambientIds: ['am1'] }
+    }
   })
 }
 
@@ -187,7 +210,29 @@ const ALL_ACTION_TYPES: Record<Action['type'], true> = {
   'settings/update': true,
   'session/setTool': true,
   'session/setPenWidth': true,
-  'session/clearDrawing': true
+  'session/clearDrawing': true,
+  'scene/setVideo': true,
+  'music/addTracks': true,
+  'music/removeTrack': true,
+  'music/renameTrack': true,
+  'music/moveTrack': true,
+  'music/setLoop': true,
+  'music/setVolume': true,
+  'music/setAmbientVolume': true,
+  'music/setRepeat': true,
+  'ambient/add': true,
+  'ambient/update': true,
+  'ambient/remove': true,
+  'playback/play': true,
+  'playback/pause': true,
+  'playback/resume': true,
+  'playback/seek': true,
+  'playback/next': true,
+  'playback/previous': true,
+  'playback/stop': true,
+  'playback/ended': true,
+  'ambient/toggle': true,
+  'ambient/stopAll': true
 }
 
 /** Her tür için değiştiren, değiştirmeyen ve reddedilen örnekler. */
@@ -291,6 +336,60 @@ function everyAction(): Action[] {
     { type: 'session/setPenWidth', width: 'medium' },
     bad({ type: 'session/setPenWidth', width: 'dev' }),
     { type: 'session/clearDrawing' },
+    { type: 'scene/setVideo', sceneId: 's2', trackId: 'tv' },
+    { type: 'scene/setVideo', sceneId: 's1', trackId: 'tv' },
+    { type: 'scene/setVideo', sceneId: 's2', trackId: null },
+    { type: 'scene/setVideo', sceneId: 's2', trackId: 'ta' },
+    { type: 'scene/setVideo', sceneId: 's2', trackId: 'yok' },
+    { type: 'scene/setVideo', sceneId: 'yok', trackId: 'tv' },
+    { type: 'music/addTracks', tracks: [{ ...TRACK_A, id: 'yeni', fileName: 'yeni.mp3' }] },
+    { type: 'music/addTracks', tracks: [{ ...TRACK_A }] },
+    bad({ type: 'music/addTracks', tracks: 'x' }),
+    bad({ type: 'music/addTracks', tracks: [{ id: 'eksik' }] }),
+    { type: 'music/removeTrack', trackId: 'ta' },
+    { type: 'music/removeTrack', trackId: 'tv' },
+    { type: 'music/removeTrack', trackId: 'yok' },
+    { type: 'music/renameTrack', trackId: 'tb', name: 'Ejderha' },
+    { type: 'music/renameTrack', trackId: 'tb', name: '  ' },
+    bad({ type: 'music/renameTrack', trackId: 'tb', name: 3 }),
+    { type: 'music/moveTrack', trackId: 'tb', to: 'up' },
+    { type: 'music/moveTrack', trackId: 'ta', to: 'up' },
+    { type: 'music/moveTrack', trackId: 'tv', to: 'down' },
+    bad({ type: 'music/moveTrack', trackId: 'tb', to: 'yana' }),
+    { type: 'music/setLoop', trackId: 'tv', loop: { start: 1, end: 3 } },
+    { type: 'music/setLoop', trackId: 'tv', loop: { start: 2, end: 8 } },
+    { type: 'music/setLoop', trackId: 'tv', loop: null },
+    { type: 'music/setLoop', trackId: 'tv', loop: { start: 5, end: 5.1 } },
+    { type: 'music/setLoop', trackId: 'ta', loop: { start: 1, end: 3 } },
+    { type: 'music/setVolume', volume: 0.3 },
+    { type: 'music/setVolume', volume: 7 },
+    bad({ type: 'music/setVolume', volume: 'yüksek' }),
+    { type: 'music/setAmbientVolume', volume: 0.25 },
+    { type: 'music/setRepeat', repeat: 'one' },
+    { type: 'music/setRepeat', repeat: 'all' },
+    bad({ type: 'music/setRepeat', repeat: 'hep' }),
+    { type: 'ambient/add', ambient: { ...AMBIENT, id: 'am2', fileName: 'am2.mp3', name: 'Yağmur' } },
+    { type: 'ambient/add', ambient: { ...AMBIENT } },
+    bad({ type: 'ambient/add', ambient: { id: 'eksik' } }),
+    { type: 'ambient/update', ambientId: 'am1', patch: { name: 'Baykuş', volume: 0.5 } },
+    { type: 'ambient/update', ambientId: 'am1', patch: { name: '' } },
+    { type: 'ambient/update', ambientId: 'yok', patch: { volume: 1 } },
+    { type: 'ambient/remove', ambientId: 'am1' },
+    { type: 'ambient/remove', ambientId: 'yok' },
+    { type: 'playback/play', trackId: 'tb' },
+    { type: 'playback/play', trackId: 'yok' },
+    { type: 'playback/pause' },
+    { type: 'playback/resume' },
+    { type: 'playback/seek', position: 42 },
+    bad({ type: 'playback/seek', position: 'orta' }),
+    { type: 'playback/next' },
+    { type: 'playback/previous' },
+    { type: 'playback/stop' },
+    { type: 'playback/ended', trackId: 'ta' },
+    { type: 'playback/ended', trackId: 'tb' },
+    { type: 'ambient/toggle', ambientId: 'am1' },
+    { type: 'ambient/toggle', ambientId: 'yok' },
+    { type: 'ambient/stopAll' },
     bad({ type: 'bilinmeyen/islem' }),
     bad({}),
     bad(null),
@@ -796,7 +895,7 @@ describe('scene/add', () => {
     const state = makeState()
     const next = apply(state, { type: 'scene/add', sceneId: 's4', name: '  Zindan  ' })
     expect(next.app.scenes).toHaveLength(4)
-    expect(next.app.scenes[3]).toEqual({ id: 's4', name: 'Zindan', hotkey: null, background: null, items: [] })
+    expect(next.app.scenes[3]).toEqual({ id: 's4', name: 'Zindan', hotkey: null, background: null, videoTrackId: null, items: [] })
     expect(next.app.scenes[0]).toBe(state.app.scenes[0])
   })
 
@@ -1144,6 +1243,7 @@ describe('hiç pencere yokken yerleştirme', () => {
         name: 'Pencere 1',
         hotkey: null,
         background: null,
+        videoTrackId: null,
         items: [{ id: 'n1', imageId: 'npc', ...containRect(400, 800, FULL_STAGE), rotation: 0, label: '' }]
       }
     ])
@@ -1159,6 +1259,7 @@ describe('hiç pencere yokken yerleştirme', () => {
         name: 'Pencere 1',
         hotkey: null,
         background: { id: 'nb', imageId: 'place', x: 0, y: 0, width: 1920, height: 1080, rotation: 0, label: '' },
+        videoTrackId: null,
         items: []
       }
     ])
@@ -1461,6 +1562,7 @@ describe('oyun alanı değişince (portre sütunu belirir / kalkar)', () => {
         name: 'Bir',
         hotkey: 1,
         background: { id: 'b1', imageId: 'place', ...coverRect(PLACE.width, PLACE.height, FULL_STAGE), rotation: 0, label: '' },
+        videoTrackId: null,
         items: [
           { id: 'sol', imageId: 'item', x: 20, y: 500, width: 200, height: 100, rotation: 0, label: 'solda' },
           { id: 'sinir', imageId: 'item', x: 200, y: 100, width: 200, height: 100, rotation: 0, label: '' },
@@ -1473,9 +1575,10 @@ describe('oyun alanı değişince (portre sütunu belirir / kalkar)', () => {
         hotkey: 2,
         // Elle sola çekilmiş arka plan: merkezi sütunun altında kalacak.
         background: { id: 'b2', imageId: 'scene', x: -400, y: 0, width: 600, height: 600, rotation: 0, label: '' },
+        videoTrackId: null,
         items: [{ id: 'sol2', imageId: 'item', x: -100, y: -50, width: 200, height: 100, rotation: 0, label: '' }]
       },
-      { id: 's3', name: 'Üç', hotkey: null, background: null, items: [{ id: 'sag', imageId: 'item', x: 1500, y: 900, width: 200, height: 100, rotation: 0, label: '' }] }
+      { id: 's3', name: 'Üç', hotkey: null, background: null, videoTrackId: null, items: [{ id: 'sag', imageId: 'item', x: 1500, y: 900, width: 200, height: 100, rotation: 0, label: '' }] }
     ]
     return deepFreeze({
       ...base,

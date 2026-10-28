@@ -1,5 +1,32 @@
 # Sürüm Geçmişi
 
+## 0.9.6 — 2026-10-28
+
+### Eklenenler
+
+- Kontrol panelinin üstünde tarayıcıdaki gibi sekmeler: **Kontrol Paneli** (eski ekran) ve **Müzik**.
+  Sekme değişince hiçbir şey durmaz; müzik çalmaya, 1–9 tuşları pencere değiştirmeye devam eder.
+- **Müzik:** MP3, OGG, WAV, M4A ve MP4 yüklenir (düğmeyle ya da sürükleyerek). Çal / duraklat, ilerleme
+  çubuğuyla ileri-geri sarma, önceki / sonraki parça, durdur, tekrar (kapalı / listeyi tekrarla / bu
+  parçayı tekrarla) ve ses düzeyi. Parçalar yeniden adlandırılır, sıralanır, silinir.
+- Ses oyun ekranı penceresinden çalar: Discord'da o pencere paylaşılınca müzik de oyunculara gider.
+- **Ortam sesleri:** kuş sesi, yağmur gibi kendi eklenen düğmeler. Basınca döngüde çalar, yeniden
+  basınca durur; birkaçı müzikle birlikte aynı anda çalabilir. Her birinin kendi ses düzeyi ve ortam
+  seslerinin genel ses düzeyi var. "Hepsini durdur" düğmesi.
+- **Hareketli arka plan:** MP4 yükleyince "Yalnızca ses" ya da "Ses + hareketli görüntü" diye sorulur.
+  İkincisinde videonun bir bölümü (başlangıç-bitiş) seçilir; o bölüm GIF gibi sessiz döner. Ayarlar ›
+  Pencereler'deki arka plan seçicide "Hareketli arka planlar" bölümünden bir pencereye verilir. Videonun
+  sesi kendiliğinden başlamaz, müzik listesinden elle çalınır.
+- Dosyalar kayıt klasöründeki `muzik\` altında durur. Liste, ortam sesleri ve ses düzeyleri kayda girer;
+  çalan parça kayda girmez, oyun bitince müzik susar.
+- Yeni hata kodları: DND-501 (desteklenmeyen ses dosyası), DND-502 (kopyalanamadı), DND-503
+  (çalınamadı), DND-504 (2 GB sınırı), DND-505 (dosyası silinemedi), DND-506 (videoda görüntü yok).
+
+### Bilinen sınır
+
+- Discord'da yalnızca oyun penceresini sesle paylaşınca müziğin karşıya gittiği henüz gerçek bir
+  oturumda denenmedi. Gitmezse yedek yol, Discord'da ekranın tamamını sesle paylaşmaktır.
+
 ## 0.9.5 — 2026-10-26
 
 ### Değişenler

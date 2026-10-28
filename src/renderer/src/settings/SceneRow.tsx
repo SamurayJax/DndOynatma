@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import { MAX_HOTKEY, MIN_HOTKEY, TEXT_LIMITS } from '@shared/reducer'
-import type { ID, LibraryImage, SceneWindow } from '@shared/types'
+import type { ID, LibraryImage, MusicTrack, SceneWindow } from '@shared/types'
 import { dispatch } from '@renderer/lib/useAppState'
+import { VideoThumb } from '@renderer/music/VideoThumb'
 import {
   Button,
   CheckIcon,
@@ -26,6 +27,8 @@ export interface SceneRowProps {
   active: boolean
   /** Arka planın kütüphanedeki görseli; arka plan yoksa `undefined`. */
   background: LibraryImage | undefined
+  /** Hareketli arka plan olan parça; yoksa `undefined`. */
+  video: MusicTrack | undefined
   /** Yeni eklenen pencere: ad alanı odaklanır ki hemen adlandırılabilsin. */
   focusName: boolean
   onNameFocused: () => void
@@ -40,7 +43,7 @@ function hotkeyOwner(scenes: readonly SceneWindow[], scene: SceneWindow, hotkey:
 }
 
 /** Pencere listesinin bir satırı: ad, atama tuşu, arka plan, etkinleştirme ve silme. */
-export function SceneRow({ scene, scenes, active, background, focusName, onNameFocused, onPickBackground }: SceneRowProps): JSX.Element {
+export function SceneRow({ scene, scenes, active, background, video, focusName, onNameFocused, onPickBackground }: SceneRowProps): JSX.Element {
   const rowRef = useRef<HTMLLIElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
   // Boş ad reddedilince giriş yeniden kurulur; böylece yazılan boşluk yerine eski ad hemen görünür.
@@ -100,10 +103,14 @@ export function SceneRow({ scene, scenes, active, background, focusName, onNameF
         type="button"
         className="set-scene__thumb"
         title="Arka plan seç"
-        aria-label={background ? `Arka plan: ${background.originalName}` : 'Arka plan yok'}
+        aria-label={video ? `Hareketli arka plan: ${video.originalName}` : background ? `Arka plan: ${background.originalName}` : 'Arka plan yok'}
         onClick={pickBackground}
       >
-        <ImageThumb image={background} fit="cover" alt="" emptyLabel="Arka plan yok" className="set-scene__thumb-img" />
+        {video ? (
+          <VideoThumb track={video} className="set-scene__thumb-img" />
+        ) : (
+          <ImageThumb image={background} fit="cover" alt="" emptyLabel="Arka plan yok" className="set-scene__thumb-img" />
+        )}
       </button>
 
       <div className="set-scene__fields">
@@ -146,7 +153,7 @@ export function SceneRow({ scene, scenes, active, background, focusName, onNameF
         <Button size="sm" onClick={pickBackground}>
           Arka plan seç
         </Button>
-        {scene.background !== null && (
+        {(scene.background !== null || scene.videoTrackId !== null) && (
           <Button size="sm" variant="ghost" onClick={() => dispatch({ type: 'stage/clearBackground', sceneId: scene.id })}>
             Arka planı kaldır
           </Button>

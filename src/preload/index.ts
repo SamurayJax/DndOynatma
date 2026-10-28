@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import { DndApi, IPC, MEDIA_HOST, MEDIA_SCHEME, Notice, WindowRole } from '@shared/ipc'
+import { DndApi, IPC, MEDIA_HOST, MEDIA_SCHEME, Notice, PlaybackStatus, SOUND_HOST, WindowRole } from '@shared/ipc'
 import { DiceRoll, FullState } from '@shared/types'
 
 // Preload pencere bağlamında çalışır ama ana süreçle aynı tsconfig'i (DOM'suz) kullanır.
@@ -34,6 +34,17 @@ const api: DndApi = {
   },
 
   mediaUrl: (fileName) => `${MEDIA_SCHEME}://${MEDIA_HOST}/${encodeURIComponent(fileName)}`,
+  soundUrl: (fileName) => `${MEDIA_SCHEME}://${SOUND_HOST}/${encodeURIComponent(fileName)}`,
+
+  music: {
+    import: () => ipcRenderer.invoke(IPC.musicImport),
+    importFiles: (paths) => ipcRenderer.invoke(IPC.musicImportFiles, paths),
+    addAmbient: () => ipcRenderer.invoke(IPC.ambientAdd),
+    addAmbientFile: (path) => ipcRenderer.invoke(IPC.ambientAddFile, path),
+    sendStatus: (status) => ipcRenderer.send(IPC.playbackStatus, status),
+    onStatus: (listener) => subscribe<PlaybackStatus>(IPC.playbackStatus, listener),
+    reportUnplayable: (kind, id, detail) => ipcRenderer.send(IPC.playbackUnplayable, kind, id, detail)
+  },
 
   game: {
     start: () => ipcRenderer.invoke(IPC.gameStart),

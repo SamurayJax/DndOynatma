@@ -7,7 +7,7 @@ import { Action, ReduceResult } from '@shared/actions'
 import { ErrorCode } from '@shared/errors'
 import { IPC } from '@shared/ipc'
 import { reduce } from '@shared/reducer'
-import { AppState, FullState, LibraryImage, SessionState } from '@shared/types'
+import { AppState, FullState, LibraryImage, MusicLibrary, SessionState } from '@shared/types'
 import { describeAction } from './actionLog'
 import { describeError, log } from './logger'
 import { DebouncedSaver, createDebouncedSaver } from './storage'
@@ -23,15 +23,20 @@ export interface StoreDeps {
   report: (code: ErrorCode, detail?: string) => void
   /** Kütüphaneden çıkan görselin dosyasını geri dönüşüm kutusuna taşır. */
   trashImage: (image: LibraryImage) => void
+  /** Müzik listesinden ya da ortam seslerinden çıkan dosyayı (`muzik/` altında) geri dönüşüm kutusuna taşır. */
+  trashSound: (fileName: string) => void
   saveDelayMs?: number
 }
 
 export type StateListener = (previous: FullState, next: FullState) => void
 
 export interface DispatchOptions {
-  /** Ana sürecin kendi gönderdiği işlem. `library/add` yalnızca böyle kabul edilir. */
+  /** Ana sürecin kendi gönderdiği işlem. Dosya adı taşıyan işlemler (TRUSTED_ONLY) yalnızca böyle kabul edilir. */
   trusted?: boolean
 }
+
+/** Dosya adı taşıyan işlemler; arayüzden gelirse klasör dışındaki bir dosyayı gösterebilir. */
+const TRUSTED_ONLY: ReadonlySet<string> = new Set(['library/add', 'music/addTracks', 'ambient/add'])
 
 export class Store {
   private state: FullState
@@ -74,9 +79,8 @@ export class Store {
       return false
     }
     const typed = action as Action
-    // Dosya adı taşıyan tek işlem; arayüzden gelirse klasör dışındaki bir dosyayı gösterebilir.
-    if (typed.type === 'library/add' && !options.trusted) {
-      this.deps.report('DND-306', 'library/add yalnızca ana süreçten gönderilebilir')
+    if (TRUSTED_ONLY.has(typed.type) && !options.trusted) {
+      this.deps.report('DND-306', `${typed.type} yalnızca ana süreçten gönderilebilir`)
       return false
     }
 
@@ -121,6 +125,7 @@ export class Store {
     if (next.app !== previous.app && this.deps.saveEnabled) {
       this.saver.schedule()
       this.trashRemovedImages(previous.app.library, next.app.library)
+      if (next.app.music !== previous.app.music) this.trashRemovedSounds(previous.app.music, next.app.music)
     }
     for (const listener of [...this.listeners]) {
       try {
@@ -128,6 +133,15 @@ export class Store {
       } catch (error) {
         log.error('DND-901', error, 'durum dinleyicisi')
       }
+    }
+  }
+
+  private trashRemovedSounds(before: MusicLibrary, after: MusicLibrary): void {
+    const remaining = new Set([...after.tracks, ...after.ambients].map((entry) => entry.fileName))
+    for (const { fileName } of [...before.tracks, ...before.ambients]) {
+      if (remaining.has(fileName)) continue
+      remaining.add(fileName)
+      this.deps.trashSound(fileName)
     }
   }
 

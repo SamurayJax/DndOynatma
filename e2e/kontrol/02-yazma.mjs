@@ -48,7 +48,8 @@ await run(async () => {
   const controlLimits = await control.evaluate(() => {
     const max = (selector) => document.querySelector(selector)?.maxLength ?? null
     const unlimited = Array.from(document.querySelectorAll('.ctl-root input, .ctl-root textarea'))
-      .filter((field) => field.maxLength < 0 && field.type !== 'search')
+      // Kaydırıcılar (ses düzeyi, ilerleme) yazı alanı değildir.
+      .filter((field) => field.maxLength < 0 && field.type !== 'search' && field.type !== 'range')
       .map((field) => field.getAttribute('aria-label') ?? field.className)
     return { playerNote: max('.ctl-player__note'), generalNote: max('.ctl-note__input'), itemLabel: max('.ctl-stage__label'), unlimited }
   })

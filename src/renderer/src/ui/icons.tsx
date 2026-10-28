@@ -377,3 +377,94 @@ export function MonitorIcon(props: IconProps): JSX.Element {
     </Svg>
   )
 }
+
+/** Müzik notası. */
+export function MusicIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M9 18V5l11-2v13" />
+      <circle cx="6.5" cy="18" r="2.5" />
+      <circle cx="17.5" cy="16" r="2.5" />
+    </Svg>
+  )
+}
+
+export function PauseIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <rect x="6.5" y="5" width="3.5" height="14" rx="1" fill="currentColor" fillOpacity="0.25" />
+      <rect x="14" y="5" width="3.5" height="14" rx="1" fill="currentColor" fillOpacity="0.25" />
+    </Svg>
+  )
+}
+
+export function StopIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" fillOpacity="0.25" />
+    </Svg>
+  )
+}
+
+/** Önceki parça. */
+export function SkipBackIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M18 5.5v13L8.5 12 18 5.5z" fill="currentColor" fillOpacity="0.25" />
+      <path d="M6 5v14" />
+    </Svg>
+  )
+}
+
+/** Sonraki parça. */
+export function SkipForwardIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M6 5.5v13l9.5-6.5L6 5.5z" fill="currentColor" fillOpacity="0.25" />
+      <path d="M18 5v14" />
+    </Svg>
+  )
+}
+
+/** Tekrar. `one` ise ortasında 1 yazar (aynı parçayı tekrarla). */
+export function RepeatIcon({ one = false, ...props }: IconProps & { one?: boolean }): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M17 2l3 3-3 3" />
+      <path d="M4 11V9a4 4 0 0 1 4-4h12" />
+      <path d="M7 22l-3-3 3-3" />
+      <path d="M20 13v2a4 4 0 0 1-4 4H4" />
+      {one && <path d="M11.5 10.5l1.5-1v5" />}
+    </Svg>
+  )
+}
+
+export function VolumeIcon({ muted = false, ...props }: IconProps & { muted?: boolean }): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fillOpacity="0.2" />
+      {muted ? <path d="M16 9.5l5 5M21 9.5l-5 5" /> : <path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" />}
+    </Svg>
+  )
+}
+
+/** Video / hareketli görüntü. */
+export function FilmIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M7 4v16M17 4v16M3 8h4M3 12h4M3 16h4M17 8h4M17 12h4M17 16h4" />
+    </Svg>
+  )
+}
+
+/** Ortam sesi (dalga). */
+export function WavesIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M2 8c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0" />
+      <path d="M2 13c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0" />
+      <path d="M2 18c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0" />
+    </Svg>
+  )
+}

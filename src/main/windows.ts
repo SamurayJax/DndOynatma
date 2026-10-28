@@ -5,6 +5,7 @@
 import { BrowserWindow, BrowserWindowConstructorOptions, RenderProcessGoneDetails, WebContents, app, screen } from 'electron'
 import path from 'node:path'
 import { WindowRole } from '@shared/ipc'
+import { createStoppedPlayback } from '@shared/types'
 import { planGameWindows } from './displays'
 import { log } from './logger'
 import { report } from './notify'
@@ -95,6 +96,17 @@ export class WindowManager {
   /** İletiyi gönderen pencerenin rolü; uygulamanın açmadığı bir içerikse null. */
   roleOf(contents: WebContents): WindowRole | null {
     return this.roles.get(contents) ?? null
+  }
+
+  /** Yalnızca kontrol paneline gönderir (müziğin ilerlemesi gibi sık gelen, durumda tutulmayan bilgiler). */
+  sendToControl(channel: string, payload: unknown): void {
+    const control = this.control
+    if (!control || control.isDestroyed() || control.webContents.isDestroyed()) return
+    try {
+      control.webContents.send(channel, payload)
+    } catch {
+      // Pencere tam bu sırada kapanmış olabilir.
+    }
   }
 
   /** Uygulama kapanırken pencerelerin kapanması "oyunu bitir" sayılmasın. */
@@ -196,12 +208,14 @@ export class WindowManager {
     this.control = null
     for (const win of windows) closeWindow(win)
 
+    // Müzik oyun ekranıyla birlikte susar; yeni oyun sessiz başlar.
     store.updateSession((session) => ({
       ...session,
       phase: 'menu',
       tool: 'mouse',
       drawingNonce: session.drawingNonce + 1,
-      diceHistory: []
+      diceHistory: [],
+      playback: { ...createStoppedPlayback(), seekNonce: session.playback.seekNonce }
     }))
     this.deps.clearDice()
     log.info(`Oyun bitti (${reason})`)
@@ -264,8 +278,9 @@ export class WindowManager {
         nodeIntegration: false,
         sandbox: true,
         // Oyun ekranı Discord/Teams'te paylaşılır; başka bir pencerenin altında kalınca Chromium
-        // çizimi yavaşlatırsa zar animasyonu ve kalem izleyicide donar.
-        ...(role === 'game' ? { backgroundThrottling: false } : {})
+        // çizimi yavaşlatırsa zar animasyonu ve kalem izleyicide donar. Müzik de bu pencerede çalar;
+        // DM kontrol panelinden başlattığı için oyun ekranında tıklama beklenmeden çalabilmeli.
+        ...(role === 'game' ? { backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required' as const } : {})
       }
     })
     const contents = win.webContents

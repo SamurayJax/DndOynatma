@@ -49,7 +49,8 @@ function makeFixture(name: string): Fixture {
     trashImage: (image) => {
       trashed.push(image)
       fs.rmSync(path.join(paths.imagesDir, image.fileName), { force: true })
-    }
+    },
+    trashSound: vi.fn()
   })
   return { paths, store, trashed, deps: { store, imagesDir: paths.imagesDir, appVersion: () => '0.9.3' } }
 }

@@ -80,8 +80,68 @@ export interface SceneWindow {
   /** 1..9 ya da atanmamış. Aynı tuş yalnızca bir pencerede olabilir. */
   hotkey: number | null
   background: StageItem | null
+  /**
+   * Hareketli arka plan: döngü aralığı seçilmiş bir videolu parça. Varsa görsel arka planın yerine
+   * oyun alanını kaplar; ikisi aynı anda olmaz.
+   */
+  videoTrackId: ID | null
   /** Dizinin sonu en üstte çizilir. */
   items: StageItem[]
+}
+
+/** Videonun GIF gibi sessiz döndürülen bölümü (saniye). */
+export interface VideoLoop {
+  start: number
+  end: number
+}
+
+/** Müzik listesindeki bir parça. Dosyası kayıt klasöründeki `muzik/` altındadır. */
+export interface MusicTrack {
+  id: ID
+  fileName: string
+  /** Yüklenen dosyanın uzantısız adı; listede gösterilir. */
+  originalName: string
+  /** Dosyada görüntü de var (MP4). */
+  hasVideo: boolean
+  /** Hareketli arka plan olarak kullanılacak aralık; null ise parça yalnızca ses olarak kullanılır. */
+  loop: VideoLoop | null
+  /** ISO tarih. */
+  addedAt: string
+}
+
+/** DM'in kendi eklediği ortam sesi düğmesi (kuş sesi, yağmur…). Döngüde çalar. */
+export interface AmbientSound {
+  id: ID
+  name: string
+  fileName: string
+  /** 0..1 */
+  volume: number
+  addedAt: string
+}
+
+export type RepeatMode = 'off' | 'all' | 'one'
+
+/** Kayda giren müzik bilgileri: listeler ve ses düzeyleri. Çalma durumu oturumdadır. */
+export interface MusicLibrary {
+  tracks: MusicTrack[]
+  ambients: AmbientSound[]
+  /** 0..1 */
+  musicVolume: number
+  /** Bütün ortam seslerinin genel düzeyi, 0..1. */
+  ambientVolume: number
+  repeat: RepeatMode
+}
+
+/** O an çalan müzik. Ses oyun ekranında çalar; kontrol paneli yalnızca bunu değiştirir. */
+export interface Playback {
+  trackId: ID | null
+  playing: boolean
+  /** Her "baştan başlat" ya da sarma isteğinde artar; oyun ekranı bu değişince `seekTo`'ya gider. */
+  seekNonce: number
+  /** Saniye. */
+  seekTo: number
+  /** Çalan ortam sesleri. */
+  ambientIds: ID[]
 }
 
 export interface AppSettings {
@@ -102,6 +162,7 @@ export interface AppState {
   activeSceneId: ID | null
   generalNote: string
   settings: AppSettings
+  music: MusicLibrary
 }
 
 export type Tool = 'mouse' | 'pen-red' | 'pen-black' | 'eraser'
@@ -139,6 +200,7 @@ export interface SessionState {
   drawingNonce: number
   /** En yeni atış başta. */
   diceHistory: DiceRoll[]
+  playback: Playback
 }
 
 export interface FullState {
@@ -158,12 +220,24 @@ export function createInitialAppState(): AppState {
     scenes: [],
     activeSceneId: null,
     generalNote: '',
-    settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true }
+    settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true },
+    music: createEmptyMusic()
   }
 }
 
+export const DEFAULT_MUSIC_VOLUME = 0.6
+export const DEFAULT_AMBIENT_VOLUME = 0.8
+
+export function createEmptyMusic(): MusicLibrary {
+  return { tracks: [], ambients: [], musicVolume: DEFAULT_MUSIC_VOLUME, ambientVolume: DEFAULT_AMBIENT_VOLUME, repeat: 'all' }
+}
+
+export function createStoppedPlayback(): Playback {
+  return { trackId: null, playing: false, seekNonce: 0, seekTo: 0, ambientIds: [] }
+}
+
 export function createInitialSession(): SessionState {
-  return { phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: 0, diceHistory: [] }
+  return { phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: 0, diceHistory: [], playback: createStoppedPlayback() }
 }
 
 export function createInitialState(): FullState {

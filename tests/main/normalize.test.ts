@@ -154,7 +154,7 @@ describe('normalizeAppState', () => {
 
     it('eksik alanları tamamlar', () => {
       expect(repaired({ scenes: [{ id: 'yalın' }] }).scenes).toEqual([
-        { id: 'yalın', name: '', hotkey: null, background: null, items: [] }
+        { id: 'yalın', name: '', hotkey: null, background: null, videoTrackId: null, items: [] }
       ])
     })
 

@@ -3,7 +3,7 @@
  */
 import { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, app, ipcMain, screen, shell } from 'electron'
 import { ERROR_CODES, ErrorCode, LogLevel } from '@shared/errors'
-import { AppInfo, CharacterExportResult, CharacterImportPreview, CharacterImportResult, IPC, ImportResult, StorageCheck, StorageResult, WindowRole } from '@shared/ipc'
+import { AmbientImportResult, AppInfo, CharacterExportResult, CharacterImportPreview, CharacterImportResult, IPC, ImportResult, MusicImportResult, PlaybackStatus, StorageCheck, StorageResult, WindowRole } from '@shared/ipc'
 import { CATEGORIES } from '@shared/layout'
 import { LibraryCategory, MAX_PLAYERS, isDiceSides } from '@shared/types'
 import { CharacterDeps, applyCharacterImport, cancelCharacterImport, exportCharacters, pickCharacterImport } from './characters'
@@ -11,7 +11,8 @@ import { rollDice } from './dice'
 import { describeDisplays } from './displays'
 import { LibraryDeps, importFiles, importPortrait, importPortraitFile, importWithDialog } from './library'
 import { log } from './logger'
-import { deliverStartupNotices, report } from './notify'
+import { MusicDeps, addAmbientFile, addAmbientWithDialog, importTracks, importTracksWithDialog } from './music'
+import { deliverStartupNotices, notify, report } from './notify'
 import { DataPaths } from './paths'
 import { Store } from './store'
 import { WindowManager } from './windows'
@@ -31,6 +32,20 @@ export interface IpcDeps {
 
 const LOG_LEVELS: readonly LogLevel[] = ['BILGI', 'UYARI', 'HATA']
 const EMPTY_IMPORT: ImportResult = { added: [], skipped: [], canceled: false }
+const EMPTY_MUSIC_IMPORT: MusicImportResult = { added: [], skipped: [], canceled: false }
+const EMPTY_AMBIENT_IMPORT: AmbientImportResult = { ambient: null, skipped: [], canceled: false }
+
+function isNonNegative(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
+
+/** Oyun ekranından gelen durum; yalnızca beklenen alanlar kontrol paneline geçer. */
+function parsePlaybackStatus(raw: unknown): PlaybackStatus | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const { trackId, position, duration, playing } = raw as Record<string, unknown>
+  if (!(trackId === null || typeof trackId === 'string') || !isNonNegative(position) || !isNonNegative(duration)) return null
+  return { trackId, position, duration, playing: playing === true }
+}
 
 function isLibraryCategory(value: unknown): value is LibraryCategory {
   return CATEGORIES.some((category) => category.id === value)
@@ -48,6 +63,7 @@ function openFolder(folder: string): void {
 export function registerIpc(deps: IpcDeps): void {
   const { store, windows, paths } = deps
   const library: LibraryDeps = { store, imagesDir: paths.imagesDir }
+  const music: MusicDeps = { store, soundsDir: paths.soundsDir }
   const characters: CharacterDeps = { store, imagesDir: paths.imagesDir, appVersion: () => deps.getInfo().version }
 
   /** Tek yönlü ileti. Uygulamanın açmadığı içerikten gelen iletiler yok sayılır; hata ana süreci düşürmez. */
@@ -124,6 +140,53 @@ export function registerIpc(deps: IpcDeps): void {
       return EMPTY_IMPORT
     }
     return importPortraitFile(library, slot, filePath)
+  })
+
+  handle(IPC.musicImport, (_role, event) => importTracksWithDialog(music, BrowserWindow.fromWebContents(event.sender)))
+
+  handle(IPC.musicImportFiles, (_role, _event, filePaths) => {
+    if (!Array.isArray(filePaths)) {
+      report('DND-306', 'müzik yükleme: geçersiz dosya listesi')
+      return EMPTY_MUSIC_IMPORT
+    }
+    const files = filePaths.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+    return importTracks(music, files)
+  })
+
+  handle(IPC.ambientAdd, (_role, event) => addAmbientWithDialog(music, BrowserWindow.fromWebContents(event.sender)))
+
+  handle(IPC.ambientAddFile, (_role, _event, filePath) => {
+    if (typeof filePath !== 'string' || filePath.length === 0) {
+      report('DND-306', 'ortam sesi ekleme: geçersiz dosya yolu')
+      return EMPTY_AMBIENT_IMPORT
+    }
+    return addAmbientFile(music, filePath)
+  })
+
+  // Müzik oyun ekranında çalar; ilerleme çubuğu için durumu yalnızca kontrol paneli dinler.
+  on(IPC.playbackStatus, (role, _event, raw) => {
+    if (role !== 'game') return
+    const status = parsePlaybackStatus(raw)
+    if (status !== null) windows.sendToControl(IPC.playbackStatus, status)
+  })
+
+  on(IPC.playbackUnplayable, (role, _event, kind, id, detail) => {
+    if (role !== 'game' || typeof id !== 'string') return
+    const { app: appState, session } = store.getState()
+    const text = typeof detail === 'string' ? detail.slice(0, 200) : ''
+    if (kind === 'track') {
+      const track = appState.music.tracks.find((entry) => entry.id === id)
+      if (!track || session.playback.trackId !== id) return
+      log.code('DND-503', `${track.fileName}: ${text}`)
+      notify('DND-503', track.originalName)
+      store.dispatch({ type: 'playback/stop' }, { trusted: true })
+    } else if (kind === 'ambient') {
+      const ambient = appState.music.ambients.find((entry) => entry.id === id)
+      if (!ambient || !session.playback.ambientIds.includes(id)) return
+      log.code('DND-503', `${ambient.fileName}: ${text}`)
+      notify('DND-503', ambient.name)
+      store.dispatch({ type: 'ambient/toggle', ambientId: id }, { trusted: true })
+    }
   })
 
   handle(IPC.gameStart, () => {

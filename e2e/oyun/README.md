@@ -23,6 +23,7 @@ Başka bir derlemeyi denemek için: `DND_E2E_OYUN=out/main/index.js node e2e/oyu
 | `03-diger-pencere.mjs` | Görsel seçiliyken, sürüklenirken ve boyutlanırken kontrol panelinden silinmesi / sırasının, etiketinin, yerinin değişmesi; sürüklerken pencere değişimi; oyuncu canı, ismi, seviyesi, portresi; portre sütununun belirip kaybolması (sol kenardaki görseller, arka plan) | ~35 sn |
 | `04-etkilesim.mjs` | Seçim ve kalem etkinken zar; görsellerin üstüne çizim; kalemde tutamaçların gizlenmesi; pencere boyutu değişince tutamaçlar; seçim varken 1–9; 24 karakterlik isimler, 99. seviye, kenarlarda 40 karakterlik etiket | ~45 sn |
 | `05-zar.mjs` | d20, d10 ve d4 için 30'ar atışta duran zarda okunan rakam ve büyük sayı = atış (d4'te üstteki köşenin sayısı, görünen üç yüzde); zarın biçimi; rakamın dikliği; zarın oyun alanında kalması; kontrol panelindeki üç düğme ve geçmişte zarın adı; animasyon sonrası DOM'da kalıntı; art arda hızlı atış; simge durumundaki pencere; tanınmayan zar. Zar başına atış sayısı: `node e2e/oyun/05-zar.mjs 60` | ~6 dk |
+| `08-muzik.mjs` | Kontrol panelinin üst sekmeleri (Kontrol Paneli / Müzik; gizlenen sayfa kapanmaz); parça yükleme, oyun ekranında çalma, kontrol panelindeki süre, 40. saniyeye ve ilerleme çubuğuyla sarma (206 yanıtı), duraklat / devam, ses düzeyi, Müzik sekmesindeyken 1–9; sonraki parça ve üç tekrar kipi; ortam sesinin döngüde çalması, iki katman, ses düzeyi çarpımı; bozuk dosyada DND-503; MP4 yükleyince sorulan soru, döngü seçicisi, hareketli arka planın oyun ekranında yalnızca seçilen aralıkta (renkle) dönmesi; silme; oyun bitince susma; kapatıp açınca listenin yerinde durması | ~1 dk |
 
 ## Nasıl çalışır
 
@@ -33,7 +34,8 @@ Başka bir derlemeyi denemek için: `DND_E2E_OYUN=out/main/index.js node e2e/oyu
   akıcılık ölçümünü bozar).
 - Zarın üst yüzü, zar tuvaline yazılan rakamlar izlenerek bulunur: son karede izleyiciye en düz bakan
   yüzün rakamı atışla aynı olmalıdır.
-- `gorseller.mjs` deneme görsellerini üretir; ağdan ya da diskten hazır dosya gerekmez.
+- `gorseller.mjs` deneme görsellerini, `sesler.mjs` deneme seslerini (WAV) ve renkli MP4'ü üretir; ağdan ya da
+  diskten hazır dosya, makinede ffmpeg gerekmez (MP4 uygulamanın kendi Chromium'unda kaydedilir).
 - Ekran görüntüleri `e2e/.cikti/oyun/` altına yazılır.
 
 ## Bilinmesi gerekenler

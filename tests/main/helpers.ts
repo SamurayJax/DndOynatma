@@ -26,9 +26,10 @@ export function sampleAppState(): AppState {
       name: 'Kraliyet İçi',
       hotkey: 1,
       background: { id: 'item-bg', imageId: 'img-bg', x: 300, y: 0, width: 1920, height: 1080, rotation: 0, label: '' },
+      videoTrackId: null,
       items: [{ id: 'item-1', imageId: 'img-npc', x: 800, y: 200, width: 200, height: 300, rotation: 0, label: '7 LVL' }]
     },
-    { id: 'scene-2', name: 'Orman Yolu', hotkey: 2, background: null, items: [] }
+    { id: 'scene-2', name: 'Orman Yolu', hotkey: 2, background: null, videoTrackId: null, items: [] }
   ]
   state.activeSceneId = 'scene-1'
   state.generalNote = 'Genel not'

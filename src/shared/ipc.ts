@@ -3,7 +3,7 @@
  */
 import { Action } from './actions'
 import { ErrorCode, LogLevel } from './errors'
-import { DiceRoll, DiceSides, FullState, LibraryCategory, LibraryImage } from './types'
+import { AmbientSound, DiceRoll, DiceSides, FullState, ID, LibraryCategory, LibraryImage, MusicTrack } from './types'
 
 /**
  * menu: ana menü ve ayarlar · game: oyuncuların gördüğü oyun ekranı · control: DM'in kontrol paneli ·
@@ -24,6 +24,12 @@ export const IPC = {
   gameStart: 'dnd:game:start',
   gameEnd: 'dnd:game:end',
   diceRollRequest: 'dnd:dice:roll',
+  musicImport: 'dnd:music:import',
+  musicImportFiles: 'dnd:music:importFiles',
+  ambientAdd: 'dnd:ambient:add',
+  ambientAddFile: 'dnd:ambient:addFile',
+  playbackStatus: 'dnd:playback:status',
+  playbackUnplayable: 'dnd:playback:unplayable',
   charactersExport: 'dnd:characters:export',
   charactersPickImport: 'dnd:characters:pickImport',
   charactersApplyImport: 'dnd:characters:applyImport',
@@ -43,9 +49,13 @@ export const IPC = {
   log: 'dnd:log'
 } as const
 
-/** Görsellerin arayüze sunulduğu özel protokol: `dnd-media://gorsel/<fileName>` */
+/**
+ * Görsellerin ve seslerin arayüze sunulduğu özel protokol:
+ * `dnd-media://gorsel/<fileName>` (gorseller/) · `dnd-media://ses/<fileName>` (muzik/)
+ */
 export const MEDIA_SCHEME = 'dnd-media'
 export const MEDIA_HOST = 'gorsel'
+export const SOUND_HOST = 'ses'
 
 /** Ekranda kısa süre gösterilen bildirim. Kodlu olanlar loga da yazılmıştır. */
 export interface Notice {
@@ -61,6 +71,30 @@ export interface ImportResult {
   skipped: { name: string; code: ErrorCode }[]
   /** Kullanıcı dosya seçme penceresini iptal etti. */
   canceled: boolean
+}
+
+export interface MusicImportResult {
+  added: MusicTrack[]
+  skipped: { name: string; code: ErrorCode }[]
+  canceled: boolean
+}
+
+export interface AmbientImportResult {
+  /** Eklenen ortam sesi; eklenemediyse null. */
+  ambient: AmbientSound | null
+  skipped: { name: string; code: ErrorCode }[]
+  canceled: boolean
+}
+
+/** Oyun ekranındaki müziğin anlık durumu; kontrol panelinin ilerleme çubuğu bununla çizilir. */
+export interface PlaybackStatus {
+  trackId: ID | null
+  /** Saniye. */
+  position: number
+  /** Saniye; bilinmiyorsa 0. */
+  duration: number
+  /** Ses gerçekten akıyor (yükleniyor ya da duraklatılmışsa false). */
+  playing: boolean
 }
 
 export interface CharacterExportResult {
@@ -197,6 +231,25 @@ export interface DndApi {
 
   /** Görsel dosya adından <img> ve Konva'da kullanılabilecek adres üretir. */
   mediaUrl(fileName: string): string
+  /** `muzik/` altındaki dosyanın <audio> ve <video> adresi. */
+  soundUrl(fileName: string): string
+
+  /** Müzik listesi ve ortam sesleri. Çalma işlemleri `dispatch` ile yapılır (playback/…). */
+  music: {
+    /** Dosya seçme penceresi açar (çoklu seçim), dosyaları kopyalar ve listenin sonuna ekler. */
+    import(): Promise<MusicImportResult>
+    /** Sürükle-bırak için: verilen yollardaki dosyaları ekler. */
+    importFiles(paths: string[]): Promise<MusicImportResult>
+    /** Tek dosya seçtirir ve dosyanın adıyla bir ortam sesi düğmesi ekler. */
+    addAmbient(): Promise<AmbientImportResult>
+    addAmbientFile(path: string): Promise<AmbientImportResult>
+    /** Oyun ekranı gönderir; kontrol paneline iletilir. */
+    sendStatus(status: PlaybackStatus): void
+    /** Kontrol paneli dinler. Dönen fonksiyon aboneliği kaldırır. */
+    onStatus(listener: (status: PlaybackStatus) => void): () => void
+    /** Oyun ekranı gönderir: parça ya da ortam sesi çalınamadı (DND-503). Çalma durdurulur. */
+    reportUnplayable(kind: 'track' | 'ambient', id: ID, detail: string): void
+  }
 
   game: {
     /** Oyun ekranını ve kontrol panelini açar, ana menüyü gizler. */

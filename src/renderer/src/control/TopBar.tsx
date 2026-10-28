@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import type { JSX, ReactNode } from 'react'
 import { activeScene } from '@shared/layout'
 import { reportError } from '@renderer/lib/reportError'
 import { useApp } from '@renderer/lib/useAppState'
@@ -21,8 +21,11 @@ async function endGame(): Promise<void> {
   }
 }
 
-/** Üst şerit: başlık, ekrandaki pencerenin adı, tam ekran ve oyunu bitirme. */
-export function TopBar(): JSX.Element {
+/**
+ * Üst şerit: başlık, sayfa sekmeleri, ekrandaki pencerenin adı, tam ekran ve oyunu bitirme.
+ * Sekmeler ayrı bir satır açmaz: oyun sırasında dikey yer oyuncu kartlarına ve sağ sütuna kalır.
+ */
+export function TopBar({ pages }: { pages?: ReactNode }): JSX.Element {
   const app = useApp()
   const scene = activeScene(app)
   const fullscreen = app.settings.gameFullscreen
@@ -35,6 +38,8 @@ export function TopBar(): JSX.Element {
         </span>
         <h1 className="ctl-topbar__title">Kontrol Paneli</h1>
       </div>
+
+      {pages}
 
       <div className="ctl-topbar__scene">
         <span className="ctl-topbar__scene-label">Pencere</span>

@@ -265,9 +265,10 @@ function roleOf(page) {
  * Uygulamayı açar (yalnızca ana menü). `args`: Electron'a ek anahtarlar (ör. --force-device-scale-factor=1.5).
  * Kullanıcının gerçek kayıt klasörüne dokunulmasın diye her açılış yeni bir geçici klasör kullanır.
  */
-export async function open(label, { args = [] } = {}) {
+/** `dataDir`: var olan bir kayıt klasörüyle açar (uygulamayı kapatıp yeniden açma denemeleri için). */
+export async function open(label, { args = [], dataDir: existingDataDir = null } = {}) {
   const base = mkdtempSync(join(tmpdir(), `dnd-oyun-${label}-`))
-  const dataDir = join(base, 'kayit')
+  const dataDir = existingDataDir ?? join(base, 'kayit')
   const sampleDir = join(base, 'ornek')
   mkdirSync(sampleDir, { recursive: true })
   const env = { ...process.env, DND_DATA_DIR: dataDir }

@@ -5,7 +5,20 @@
  * Yeni kimlikler (id) işlemi gönderen tarafça üretilir; böylece `reduce` saf kalır.
  */
 import { ErrorCode } from './errors'
-import { AppSettings, FullState, ID, LibraryImage, PenWidth, PlayerProfile, StageItem, Tool } from './types'
+import {
+  AmbientSound,
+  AppSettings,
+  FullState,
+  ID,
+  LibraryImage,
+  MusicTrack,
+  PenWidth,
+  PlayerProfile,
+  RepeatMode,
+  StageItem,
+  Tool,
+  VideoLoop
+} from './types'
 
 export type AppAction =
   // --- Oyuncular ---
@@ -45,6 +58,25 @@ export type AppAction =
   | { type: 'stage/reorderItem'; sceneId: ID; itemId: ID; to: 'front' | 'back' | 'forward' | 'backward' }
   /** Arka plan dışındaki tüm görselleri kaldırır. */
   | { type: 'stage/clearItems'; sceneId: ID }
+  /** Pencerenin hareketli arka planı; null kaldırır. Konunca görsel arka plan kalkar. */
+  | { type: 'scene/setVideo'; sceneId: ID; trackId: ID | null }
+  // --- Müzik ---
+  /** Yalnızca ana süreç gönderir (dosya kopyalandıktan sonra). Liste sonuna eklenir. */
+  | { type: 'music/addTracks'; tracks: MusicTrack[] }
+  /** Parçayı listeden, çalıyorsa çalmadan ve hareketli arka plan olduğu pencerelerden kaldırır. Dosyayı ana süreç siler. */
+  | { type: 'music/removeTrack'; trackId: ID }
+  | { type: 'music/renameTrack'; trackId: ID; name: string }
+  | { type: 'music/moveTrack'; trackId: ID; to: 'up' | 'down' }
+  /** Videolu parçanın döngü aralığı; null ise parça yalnızca ses olur ve arka plan olduğu pencerelerden kalkar. */
+  | { type: 'music/setLoop'; trackId: ID; loop: VideoLoop | null }
+  | { type: 'music/setVolume'; volume: number }
+  | { type: 'music/setAmbientVolume'; volume: number }
+  | { type: 'music/setRepeat'; repeat: RepeatMode }
+  /** Yalnızca ana süreç gönderir (dosya kopyalandıktan sonra). */
+  | { type: 'ambient/add'; ambient: AmbientSound }
+  | { type: 'ambient/update'; ambientId: ID; patch: { name?: string; volume?: number } }
+  /** Dosyayı ana süreç siler. */
+  | { type: 'ambient/remove'; ambientId: ID }
   // --- Diğer ---
   | { type: 'note/setGeneral'; text: string }
   | { type: 'settings/update'; patch: Partial<AppSettings> }
@@ -57,6 +89,20 @@ export type SessionAction =
   | { type: 'session/setPenWidth'; width: PenWidth }
   /** O an açık olan pencerenin çizimlerini siler (drawingNonce artar). Çizimleri silen tek işlem budur. */
   | { type: 'session/clearDrawing' }
+  // --- Çalma (oyun ekranı çalar, kontrol paneli yönetir) ---
+  /** Parçayı baştan çalar. */
+  | { type: 'playback/play'; trackId: ID }
+  | { type: 'playback/pause' }
+  | { type: 'playback/resume' }
+  /** Saniye. */
+  | { type: 'playback/seek'; position: number }
+  | { type: 'playback/next' }
+  | { type: 'playback/previous' }
+  | { type: 'playback/stop' }
+  /** Oyun ekranı gönderir: parça bitti. Tekrar ayarına göre sonraki parçaya geçer ya da durur. */
+  | { type: 'playback/ended'; trackId: ID }
+  | { type: 'ambient/toggle'; ambientId: ID }
+  | { type: 'ambient/stopAll' }
 
 export type Action = AppAction | SessionAction
 

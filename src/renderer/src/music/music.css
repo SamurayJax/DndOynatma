@@ -1,0 +1,630 @@
+/*
+ * Kontrol panelinin "Müzik" sayfası. Sınıf öneki: mus-
+ *
+ * Oyun sırasında aceleyle kullanılır: çal / duraklat ve ortam sesi düğmeleri büyük, çalan şey belirgin.
+ */
+
+.mus-page {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) clamp(360px, 32vw, 520px);
+  gap: var(--ctl-gutter);
+  min-height: 0;
+  padding: var(--ctl-gutter);
+}
+
+.mus-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ctl-stack-gap);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ---------- Kaydırıcı ---------- */
+
+.mus-range {
+  flex: 1;
+  min-width: 60px;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+
+.mus-range:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.mus-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-4);
+}
+
+.mus-range::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border: 2px solid var(--accent-ink);
+  border-radius: 50%;
+  background: var(--accent);
+  appearance: none;
+}
+
+.mus-range:not(:disabled):hover::-webkit-slider-thumb {
+  background: var(--accent-hover);
+}
+
+.mus-range:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.mus-range--progress::-webkit-slider-runnable-track {
+  height: 8px;
+}
+
+.mus-range--progress::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -5px;
+}
+
+.mus-volume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--text-muted);
+}
+
+.mus-volume__value {
+  min-width: 26px;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.mus-volume--compact {
+  flex: 1;
+  gap: 6px;
+}
+
+.mus-danger.ui-btn:not(:disabled):hover {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+/* ---------- Oynatıcı ---------- */
+
+.mus-player {
+  flex: none;
+}
+
+.mus-player__now {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.mus-player__disc {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--bg-3) 30%, var(--bg-0) 75%);
+  color: var(--accent);
+}
+
+/* Çalarken çevresi hafifçe nabız atar. */
+.mus-player__disc.is-playing {
+  border-color: var(--accent-ring);
+  animation: mus-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes mus-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+  50% {
+    box-shadow: 0 0 0 6px var(--accent-soft), 0 0 22px var(--accent-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mus-player__disc.is-playing {
+    animation: none;
+  }
+}
+
+.mus-player__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mus-player__title {
+  overflow: hidden;
+  color: var(--accent-hover);
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mus-player__title.is-empty {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.mus-player__state {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+.mus-player__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.mus-player__time {
+  min-width: 44px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.mus-player__time:last-child {
+  text-align: right;
+}
+
+.mus-player__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.mus-player__play {
+  min-width: 140px;
+}
+
+.mus-player__volume {
+  flex: 1 1 180px;
+  max-width: 280px;
+  margin-left: auto;
+}
+
+/* ---------- Parça listesi ---------- */
+
+.mus-tracks {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mus-tracks > .ui-panel__body {
+  flex: 1;
+  min-height: 0;
+}
+
+.mus-tracks__body,
+.mus-ambients__body {
+  position: relative;
+  height: 100%;
+  min-height: 160px;
+  overflow-y: auto;
+}
+
+.mus-tracks.is-drop-target,
+.mus-ambients.is-drop-target {
+  border-color: var(--accent);
+}
+
+.mus-tracks__drop {
+  position: absolute;
+  inset: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  background: rgba(12, 10, 8, 0.82);
+  color: var(--accent-hover);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.mus-tracks__list {
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+}
+
+.mus-track {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 46px;
+  padding: 0 var(--space-2) 0 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.mus-track:hover {
+  background: var(--bg-3);
+}
+
+.mus-track.is-current {
+  background: var(--accent-soft);
+}
+
+.mus-track__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  height: 46px;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mus-track__index {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.mus-track.is-current .mus-track__index {
+  color: var(--accent);
+}
+
+.mus-track__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mus-track.is-current .mus-track__name {
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+.mus-track__rename.ui-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.mus-track__badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+.mus-track__badge.is-on {
+  border-color: var(--accent-ring);
+  color: var(--accent-hover);
+}
+
+.mus-track__actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+/* ---------- Ortam sesleri ---------- */
+
+.mus-ambients {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mus-ambients > .ui-panel__body {
+  flex: 1;
+  min-height: 0;
+}
+
+.mus-ambients__master {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.mus-ambients__master .mus-volume {
+  flex: 1;
+}
+
+.mus-ambients__master-label {
+  flex: none;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mus-ambients__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-2);
+}
+
+.mus-ambient {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  transition: border-color var(--ease), box-shadow var(--ease);
+}
+
+.mus-ambient.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 0 18px var(--accent-soft);
+}
+
+.mus-ambient__toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 86px;
+  padding: var(--space-3) var(--space-2) var(--space-2);
+  border: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.mus-ambient__toggle:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+
+.mus-ambient.is-active .mus-ambient__toggle {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.mus-ambient__name {
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mus-ambient__state {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+.mus-ambient.is-active .mus-ambient__state {
+  color: var(--accent);
+}
+
+.mus-ambient__rename.ui-input {
+  margin: var(--space-3) var(--space-2) var(--space-2);
+}
+
+.mus-ambient__footer {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 4px 4px var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- MP4: kullanım sorusu ve döngü seçimi ---------- */
+
+.mus-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.mus-choice__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  color: var(--accent);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.mus-choice__option:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mus-choice__title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.mus-choice__hint {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+}
+
+.mus-loop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mus-loop__video {
+  width: 100%;
+  max-height: 46vh;
+  border-radius: var(--radius);
+  background: #000;
+}
+
+.mus-loop__hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.mus-loop__edges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.mus-loop__edge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.mus-loop__edge .mus-range {
+  width: 100%;
+}
+
+.mus-loop__edge-head {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.mus-loop__edge-label {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mus-loop__edge-value {
+  color: var(--accent-hover);
+  font-family: var(--font-mono);
+}
+
+.mus-loop__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.mus-loop__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--danger-text);
+}
+
+.mus-loop__warning p {
+  margin: 0;
+}
+
+/* Dar pencerede (tek monitörde oyun ekranının yanında) sütunlar alt alta. */
+@media (max-width: 1099px) {
+  .mus-page {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+
+  .mus-col {
+    min-height: auto;
+  }
+
+  .mus-tracks,
+  .mus-ambients {
+    flex: none;
+  }
+
+  .mus-tracks__body {
+    max-height: 50vh;
+  }
+
+  .mus-ambients__body {
+    height: auto;
+  }
+}
+
+/* ---------- Hareketli arka planın küçük resmi (Ayarlar › Pencereler'de de kullanılır) ---------- */
+
+.mus-thumb {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-0);
+}
+
+.mus-thumb__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.mus-thumb__badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  background: rgba(12, 10, 8, 0.78);
+  color: var(--accent-hover);
+}

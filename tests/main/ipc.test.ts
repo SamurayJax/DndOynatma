@@ -149,7 +149,8 @@ beforeEach(() => {
     writeSave: vi.fn(),
     broadcast,
     report,
-    trashImage: vi.fn()
+    trashImage: vi.fn(),
+    trashSound: vi.fn()
   })
   windows = { roleOf: vi.fn(() => 'control'), startGame: vi.fn(), endGame: vi.fn(), toggleGameFullscreen: vi.fn() }
   registerIpc({ store, windows: windows as unknown as WindowManager, paths, storage, getInfo: () => info })

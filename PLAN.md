@@ -261,8 +261,10 @@ Her iş ayrı dalda yapılır; kullanıcı deneyip onaylayınca `main`'e birleş
 | 3 | Zarlar: d3 ve d10 | 0.9.2 |
 | 4 | Karakterleri dışa / içe aktarma | 0.9.3 |
 | 4b | d3 yerine d4 (sonradan eklendi) | 0.9.4 |
-| 5 | Müzik | 0.9.5 |
-| 6 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
+| 4c | Kütüphane: mekan/sahne tıklaması arka plan yapmaz (sonradan eklendi) | 0.9.5 |
+| 5 | Müzik, ortam sesleri ve hareketli arka plan | 0.9.6 |
+| 6 | Sınıflar, beceriler ve karakter ekranı | 0.9.7 |
+| 7 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
 
 ### 1. Kayıt yeri (0.9.0) — yapıldı
 
@@ -353,17 +355,60 @@ ve d4.
 **Bilinen sınır:** Oyun ekranı masaya tam tepeden bakar. Duran piramidin yüzleri bu açıdan dik
 göründüğü için üzerindeki sayılar basık durur; sonuç her zaman zarın üstündeki büyük sayıdan okunur.
 
-### 5. Müzik (0.9.5)
+### 5. Müzik, ortam sesleri ve hareketli arka plan (0.9.6) — yapıldı, Discord denemesi bekliyor
 
-Kontrol panelinde bir müzik oynatıcısı: kullanıcı kendi ses dosyalarını (mp3, ogg, wav) yükler,
-oradan seçip çalar. Müzik oyunculara uygulama üzerinden gider.
+Kontrol panelinde iki katmanlı bir ses bölümü: arkada çalan **müzik** ve DM'in kendi eklediği
+**ortam sesleri** (kuş sesi, yağmur, taverna uğultusu gibi). Kullanıcı kendi dosyalarını (mp3, ogg,
+wav, m4a, mp4) yükler. Ses oyunculara uygulama üzerinden gider. Müzik pencereye bağlı değildir; ne
+zaman ne çalacağını DM elle seçer (karar, 2026-10-28).
 
-- Kontrol panelinde ayrı bir "Müzik" sekmesi: parça listesi, yükleme ve silme.
-- Oynatma: parça seç, çal / duraklat, ileri / geri sar (ilerleme çubuğu), önceki / sonraki parça,
-  ses düzeyi, tekrar.
-- Ses dosyaları kayıt klasöründe (`muzik/`) durur; liste ve ses düzeyi kayda girer.
-- Ses oyun ekranı penceresinden çalınır (karar, 2026-10-05): Discord'da paylaşılan pencere odur,
-  müzik ayrıca bir deneme gerekmeden karşıya gider. Denetimler kontrol panelindedir.
+Kontrol paneli üst sekmeleri (karar, 2026-10-28):
+
+- Müzik ve beceriler kendi ayarlarıyla bir panele sığmayacağı için kontrol panelinin en üstünde,
+  tarayıcı sekmelerine benzeyen sabit bir sekme şeridi olur: **Kontrol Paneli** (bugünkü ekran),
+  **Müzik**, **Karakterler** (6. işte eklenir).
+- Sekmeler uygulamanın içindedir; yeni pencere açılmaz, sekme kapatılmaz ya da eklenmez. Sekmeye
+  tıklayınca o bölüm gösterilir.
+- Sekme değişince hiçbir şey durmaz: müzik çalmaya, 1–9 tuşları pencere değiştirmeye devam eder.
+- Dar pencerede bugün de bir sekme şeridi var (Oyuncular / Kütüphane / Araçlar); o, yalnızca
+  "Kontrol Paneli" sekmesinin içinde kalır.
+
+Müzik:
+
+- "Müzik" sekmesi: parça listesi, yükleme, silme.
+- Aynı anda tek parça. Çal / duraklat, ileri / geri sar (ilerleme çubuğu), önceki / sonraki
+  parça, tekrar, ses düzeyi.
+
+Ortam sesleri:
+
+- Aynı sekmede DM'in kendi oluşturduğu düğmeler: ad + ses dosyası. Düğmeye basınca ses döngüde
+  çalar, tekrar basınca durur. Birden çok ortam sesi aynı anda çalabilir.
+- Her düğmenin kendi ses düzeyi var; ayrıca müziğin ve ortam seslerinin genel ses düzeyi.
+- Düğmeler eklenir, yeniden adlandırılır, silinir; kayda girer.
+
+MP4 ve hareketli arka plan:
+
+- MP4 yüklenirken sorulur: "Yalnızca ses" ya da "Ses + hareketli görüntü".
+- "Yalnızca ses": dosya müzik listesine girer, görüntüsü kullanılmaz.
+- "Ses + hareketli görüntü": DM videonun bir bölümünü (başlangıç-bitiş saniyesi) seçer; o bölüm
+  GIF gibi sessiz ve sürekli döner. Video kesilmez, dönüştürülmez; oynatma sırasında yalnızca o
+  aralık tekrarlanır. Bu görüntü Ayarlar › Pencereler'de pencereye arka plan olarak verilebilir.
+- Hareketli arka planlı pencere açılınca yalnızca görüntü döner; videonun sesi kendiliğinden
+  başlamaz, istenirse müzik listesinden elle çalınır (karar, 2026-10-28).
+
+Teknik notlar:
+
+- Ses ve video dosyaları kayıt klasöründe tek bir `muzik/` klasöründe durur (MP4 hem ses hem görüntü
+  olarak aynı dosyadan okunur); listeler, ortam düğmeleri, döngü aralıkları ve ses düzeyleri kayda
+  girer. Çalma durumu (çalan parça, açık ortam sesleri) kayda girmez; oyun bitince sıfırlanır.
+- Kaydırma ve ileri-geri sarma `dnd-media://ses/<dosya>` adresinden, parça parça okunarak (Range
+  isteği, 206 yanıtı) yapılır; büyük MP4 belleğe bütün olarak okunmaz. Görseller eskisi gibi okunur.
+- Ses oyun ekranı penceresinden çalınır (karar, 2026-10-05): Discord'da paylaşılan pencere odur.
+  Denetimler kontrol panelindedir; kontrol paneli yalnızca komut gönderir, çalma durumunu oyun
+  ekranından alır. Oyun ekranının ses çalabilmesi için pencerede otomatik oynatma izni açılır.
+- Electron MP3, AAC ve H.264 (MP4) çalabildiği için ek bir dönüştürücü (ffmpeg) gerekmez.
+- Discord'da pencere paylaşırken sesin karşıya gitmesi denenecek: Electron sesi ayrı bir yardımcı
+  süreçten çalar. Gitmezse yedek yol, Discord'da ekranın tamamını sesle paylaşmaktır.
 
 YouTube / YouTube Music bağlantısı yapılmayacak (kullanıcı kararı, 2026-10-05): YouTube Music'in
 resmi bir oynatma arayüzü yok, Google uygulama içi tarayıcıda hesap girişini engelliyor, gömülü
@@ -372,6 +417,89 @@ oynatıcıda bazı şarkılar kapalı ve reklam çıkabiliyor.
 **Bitti sayılır:** Yüklenen parça kontrol panelinden çalınır, ileri-geri sarılır ve Discord'da
 karşı taraf duyar. Uygulama kapatılıp açılınca liste yerindedir. Çalınamayan dosya açık bir hata
 koduyla bildirilir.
+
+Durum (2026-10-28): Discord dışındaki her madde otomatik denetimle doğrulandı (`e2e/oyun/08-muzik.mjs`).
+Discord'da pencere paylaşımında sesin karşıya gidip gitmediği kullanıcının denemesini bekliyor.
+
+### 6. Sınıflar, beceriler ve karakter ekranı (0.9.7)
+
+Müzikten sonra yapılır. Oyuncuların istatistikleri girilir; DM bir oyuncunun becerisine basınca
+zar kendiliğinden atılır ve istatistiğe göre artı / eksi eklenir. Sınıfları ve becerileri tamamen
+DM tanımlar; uygulama hazır bir D&D listesi dayatmaz.
+
+Karakter ekranı (Ayarlar › Oyuncular, her kartta):
+
+- Altı istatistik: Güç (STR), Çeviklik (DEX), Dayanıklılık (CON), Zeka (INT), Bilgelik (WIS),
+  Karizma (CHA).
+- Oyuncunun sınıfı (DM'in tanımladığı sınıflardan biri).
+- İstatistikten artı / eksi: 10-11 → 0; her 2 puan yukarı +1, her 2 puan aşağı -1
+  (12 → +1, 14 → +2, 8 → -1). D&D'deki `(değer - 10) / 2`, aşağı yuvarlanır.
+
+Sınıflar ve beceriler (Ayarlar'da yeni bölüm):
+
+- DM sınıf oluşturur (Savaşçı, Büyücü...) ve her sınıfa beceri ekler.
+- Beceri: ad + hangi istatistikle atıldığı ("Ac" → STR gibi).
+
+Kontrol panelinde "Karakterler" sekmesi (karar, 2026-10-28):
+
+- Sekme dört eşit sütuna bölünür; her sütun bir oyuncu yuvasıdır (Oyuncu 1–4, soldan sağa).
+  Sütunun başında portre, isim, sınıf ve istatistikler; altında sınıfının beceri düğmeleri.
+- Dolu yuva kadar sütun dolar, boş yuvaların yeri boş kalır (3 oyuncu varsa 4. sütun boş).
+  Böylece bir oyuncunun yeri hiç kaymaz.
+- Yalnızca kontrol panelinde; oyuncular beceri listesini görmez.
+- Son atış bu sekmede de görünür; zar paneline geçmeden sonuç okunur.
+- Atıştan önce Normal / Avantaj / Dezavantaj seçilir. Avantajda iki d20 atılır, yüksek olan alınır;
+  dezavantajda düşük olan.
+- Düğmeye basınca oyun ekranına d20 düşer; sonuç aşağıdaki "Gereksinim ve yeterlilik" kuralıyla
+  hesaplanır. Atış geçmişinde oyuncu, beceri, zar, toplam, gereksinim ve sonuç yazar
+  ("Aras · Ac · 14 + 2 = 16 / 8 · Başarılı").
+
+Kararla ilişkisi: 2026-10-05'te "formül (`2d6+3`) yapılmayacak" denmişti. Burada formül yazılmaz;
+yalnızca beceriye bağlı d20 + istatistik artısı vardır.
+
+Teknik notlar:
+
+- Bugün oyun ekranı tek seferde tek zar atar; avantaj için iki d20'nin birlikte düşmesi gerekir.
+- Kayıt şeması büyür (istatistikler, sınıflar, beceriler); eski kayıt sorunsuz açılmalı.
+
+Oyun ekranında sonuç (karar, 2026-10-28):
+
+- Zar durup sayıyı gösterdikten sonra artı / eksi ekranın kenarından uçarak gelir ("+2" yeşil,
+  "-2" kırmızı), zarın sayısına çarpar ve sayı tek tek sayarak sonuca döner (14 → 15 → 16).
+  Oyunlardaki yükseltme efekti gibi. Artı / eksi 0 ise yalnızca zar görünür.
+- Altında becerinin adı yazar ("Ac"). Avantaj / dezavantajda alınmayan zar soluklaşır.
+
+Gereksinim ve yeterlilik (karar, 2026-10-28):
+
+- Her becerinin bir **gereksinimi** vardır: başarmak için en az kaç gelmesi gerektiği (örneğin 10).
+  DM beceriyi tanımlarken girer.
+- Yeterlilik, D&D'deki gibi seviyeyle büyür ama zara eklenmez; **gereksinimi düşürür**:
+  gereksinimi 10 olan beceri, yeterliliği 2 olan oyuncu için 8'dir.
+- Yeterlilik seviyeye göre kendiliğinden hesaplanır (1-4 → 2, 5-8 → 3, 9-12 → 4, 13-16 → 5,
+  17-20 → 6, sonrası 6), DM her oyuncu için elle değiştirebilir.
+- Sonuç = zar + istatistik artısı + geçici artı / eksiler; sonuç düşürülmüş gereksinime eşit ya
+  da büyükse **başarılı**. Kontrol panelinde ve oyun ekranında "Başarılı" / "Başarısız" yazar.
+
+Geçici artı / eksi (karar, 2026-10-28):
+
+- Ayrı bir yönetim paneli yerine Karakterler sekmesinde, her oyuncunun sütununda: DM bir oyuncuya
+  açıklamalı artı / eksi verir ("İyi rol +2", "Ayağı takıldı -2"). Hazır düğmeler (+1, +2, -1, -2)
+  ve açıklama alanı.
+- Atışta bu artı / eksiler de ayrı ayrı ekranın kenarından uçarak gelir, açıklamalarıyla.
+- Verirken süresi seçilir: **kaç atış** (1, 2, 3 ya da elle girilen sayı) veya **Kalıcı**.
+- Atış sayılı olan, o oyuncunun her beceri atışında bir azalır, sıfıra inince kendiliğinden düşer.
+  Kontrol panelindeki zar düğmeleriyle (d20 / d10 / d4) atılan, oyuncuya bağlı olmayan zarlar
+  saymaz.
+- Kalıcı olan (ağır yaralanma gibi) DM kapatana kadar her atışa eklenir.
+- Oyuncunun sütununda etkin artı / eksiler listelenir: açıklama, değer ve kalan süre
+  ("İyi rol +2 · 2 atış", "Kırık kol -2 · kalıcı"). Her birinin yanında kaldırma düğmesi var.
+- Etkin artı / eksiler kayda girer; uygulama kapanıp açılınca yerinde durur.
+
+Karakter dosyası (karar, 2026-10-28):
+
+- `.dndkarakter` dosyası istatistikleri, yeterlilik bonusunu ve sınıfı (becerileriyle) da taşır.
+  Bunlar yalnızca metin ve sayıdır, birkaç KB etmez; dosyanın boyutunu portreler belirler.
+- Dosya biçiminin sürümü artar; eski sürümle yazılmış dosyalar okunmaya devam eder.
 
 ### Kararlar (2026-10-05)
 

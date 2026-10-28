@@ -2,8 +2,9 @@ import { memo, useMemo } from 'react'
 import type { JSX } from 'react'
 import { activeScene } from '@shared/layout'
 import { TEXT_LIMITS } from '@shared/reducer'
-import type { ID, LibraryImage, SceneWindow, StageItem } from '@shared/types'
+import type { ID, LibraryImage, MusicTrack, SceneWindow, StageItem } from '@shared/types'
 import { dispatch, useApp } from '@renderer/lib/useAppState'
+import { VideoThumb } from '@renderer/music/VideoThumb'
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -49,7 +50,8 @@ export function StagePanel(): JSX.Element {
   const images = useMemo(() => new Map(app.library.map((image) => [image.id, image])), [app.library])
 
   const itemCount = scene?.items.length ?? 0
-  const hasAnything = scene !== undefined && (scene.background !== null || itemCount > 0)
+  const video = scene === undefined || scene.videoTrackId === null ? undefined : app.music.tracks.find((track) => track.id === scene.videoTrackId)
+  const hasAnything = scene !== undefined && (scene.background !== null || video !== undefined || itemCount > 0)
 
   return (
     <Panel
@@ -78,7 +80,7 @@ export function StagePanel(): JSX.Element {
       ) : (
         <ul className="ctl-stage__list">
           {/* Arka plan satırı boşken de durur: arka plan konunca alttaki satırlar yer değiştirmesin. */}
-          <BackgroundRow sceneId={scene.id} background={scene.background} image={images.get(scene.background?.imageId ?? '')} />
+          <BackgroundRow sceneId={scene.id} background={scene.background} image={images.get(scene.background?.imageId ?? '')} video={video} />
           {scene.items
             .map((item, index) => (
               <ItemRow
@@ -102,9 +104,34 @@ interface BackgroundRowProps {
   sceneId: ID
   background: StageItem | null
   image: LibraryImage | undefined
+  /** Hareketli arka plan; varsa görsel arka plan yoktur. */
+  video: MusicTrack | undefined
 }
 
-const BackgroundRow = memo(function BackgroundRow({ sceneId, background, image }: BackgroundRowProps): JSX.Element {
+const BackgroundRow = memo(function BackgroundRow({ sceneId, background, image, video }: BackgroundRowProps): JSX.Element {
+  if (video !== undefined) {
+    return (
+      <li className="ctl-stage__row ctl-stage__row--background">
+        <VideoThumb className="ctl-stage__thumb" track={video} />
+        <div className="ctl-stage__text">
+          <span className="ctl-stage__kind">Hareketli arka plan</span>
+          <span className="ctl-stage__name" title={video.originalName}>
+            {video.originalName}
+          </span>
+        </div>
+        <div className="ctl-stage__actions">
+          <IconButton
+            label="Hareketli arka planı kaldır"
+            size="sm"
+            variant="ghost"
+            className="ctl-stage__remove"
+            icon={<TrashIcon size={16} />}
+            onClick={() => dispatch({ type: 'scene/setVideo', sceneId, trackId: null })}
+          />
+        </div>
+      </li>
+    )
+  }
   return (
     <li className="ctl-stage__row ctl-stage__row--background">
       <ImageThumb className="ctl-stage__thumb ctl-thumb" image={image} fit="cover" emptyLabel="" alt="" />

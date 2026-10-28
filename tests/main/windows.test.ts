@@ -5,7 +5,7 @@ import { Mock, afterAll, afterEach, beforeAll, beforeEach, describe, expect, it,
 import { Action } from '@shared/actions'
 import { IPC, Notice } from '@shared/ipc'
 import { reduce } from '@shared/reducer'
-import { FullState, createInitialState } from '@shared/types'
+import { FullState, createInitialState, createStoppedPlayback } from '@shared/types'
 import { log } from '../../src/main/logger'
 import { broadcast, report } from '../../src/main/notify'
 import { Store } from '../../src/main/store'
@@ -217,7 +217,8 @@ beforeEach(() => {
     writeSave: vi.fn(),
     broadcast,
     report,
-    trashImage: vi.fn()
+    trashImage: vi.fn(),
+    trashSound: vi.fn()
   })
   manager = new WindowManager({ store, clearDice })
 })
@@ -452,7 +453,7 @@ describe('oyunu bitirme', () => {
     expect(control.destroyed).toBe(true)
     expect(menu.visible).toBe(true)
     expect(menu.focused).toBe(true)
-    expect(store.getState().session).toEqual({ phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: nonceBefore + 1, diceHistory: [] })
+    expect(store.getState().session).toEqual({ phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: nonceBefore + 1, diceHistory: [], playback: createStoppedPlayback() })
     expect(clearDice).toHaveBeenCalledTimes(1)
     expect(quit).not.toHaveBeenCalled()
   })

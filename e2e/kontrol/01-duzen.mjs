@@ -140,7 +140,7 @@ await run(async () => {
   await control.keyboard.press('Escape')
   await sleep(300)
   await control.getByRole('tab', { name: 'Kütüphane', exact: true }).click()
-  check('kutu kapanınca sayfa yeniden kullanılabilir', (await control.locator('.ctl-root').getAttribute('data-view')) === 'library' && (await dialogs()).length === 0)
+  check('kutu kapanınca sayfa yeniden kullanılabilir', (await control.locator('.ctl-control').getAttribute('data-view')) === 'library' && (await dialogs()).length === 0)
 
   // --- Dar pencere: tek monitörde %35 genişlik ve en küçük genişlik ---
   for (const [width, height] of [[672, 1001], [420, 650]]) {

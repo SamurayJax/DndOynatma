@@ -44,7 +44,7 @@ function stageItem(id: string, imageId: string): StageItem {
 }
 
 function scene(id: string, background: StageItem | null, items: StageItem[]): SceneWindow {
-  return { id, name: id, hotkey: null, background, items }
+  return { id, name: id, hotkey: null, background, videoTrackId: null, items }
 }
 
 function appWith(patch: Partial<AppState>): AppState {

@@ -1,14 +1,16 @@
 import { useMemo, useRef } from 'react'
 import type { JSX } from 'react'
-import { playArea } from '@shared/layout'
+import { activeScene, playArea } from '@shared/layout'
 import type { Rect } from '@shared/layout'
 import { STAGE_HEIGHT, STAGE_WIDTH } from '@shared/types'
 import { useApp, useFullState } from '@renderer/lib/useAppState'
 import { useSceneHotkeys } from '@renderer/lib/useSceneHotkeys'
 import { ErrorBoundary } from '@renderer/ui'
 import { DiceOverlay } from './DiceOverlay'
+import { MusicPlayer } from './MusicPlayer'
 import { PlayStage } from './PlayStage'
 import { PortraitColumn } from './PortraitColumn'
+import { SceneVideo } from './SceneVideo'
 import { useFitScale } from './useFitScale'
 import type { FitScale } from './useFitScale'
 import './game.css'
@@ -27,6 +29,12 @@ export function GameScreen(): JSX.Element {
   return (
     <div className="game-root" ref={rootRef}>
       {state !== null && fit !== null && <GameFrame fit={fit} />}
+      {/* Ses pencere boyutundan bağımsızdır; durum gelir gelmez çalabilir. */}
+      {state !== null && (
+        <ErrorBoundary scope="müzik" fallback={null}>
+          <MusicPlayer />
+        </ErrorBoundary>
+      )}
     </div>
   )
 }
@@ -40,11 +48,16 @@ function useStableRect(rect: Rect): Rect {
 function GameFrame({ fit }: { fit: FitScale }): JSX.Element {
   const app = useApp()
   const area = useStableRect(playArea(app))
+  const videoTrackId = activeScene(app)?.videoTrackId ?? null
+  const videoTrack = videoTrackId === null ? undefined : app.music.tracks.find((track) => track.id === videoTrackId)
 
   return (
     <div className="game-frame" style={{ width: fit.width, height: fit.height }}>
       {/* Arka planı olmayan (ya da arka planın örtmediği) yerde görünen düz zemin. */}
       <div className="game-backdrop" style={{ left: `${(area.x / STAGE_WIDTH) * 100}%` }} />
+      <ErrorBoundary scope="hareketli arka plan" fallback={null}>
+        <SceneVideo track={videoTrack} area={area} />
+      </ErrorBoundary>
       <PlayStage fit={fit} area={area} />
       <div className="game-virtual" style={{ width: STAGE_WIDTH, height: STAGE_HEIGHT, transform: `scale(${fit.scale})` }}>
         <PortraitColumn />

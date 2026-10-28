@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import type { JSX } from 'react'
 import { LibraryPanel } from '@renderer/library/LibraryPanel'
-import { useFullState } from '@renderer/lib/useAppState'
+import { useFullState, useSession } from '@renderer/lib/useAppState'
+import { MusicPage } from '@renderer/music/MusicPage'
 import { useSceneHotkeys } from '@renderer/lib/useSceneHotkeys'
-import { EmptyState, ErrorBoundary, LoadingScreen, Tabs, ToastHost, WarningIcon } from '@renderer/ui'
+import { DiceIcon, EmptyState, ErrorBoundary, LoadingScreen, MusicIcon, Tabs, ToastHost, WarningIcon } from '@renderer/ui'
 import type { TabItem } from '@renderer/ui'
 import { DicePanel } from './DicePanel'
 import { NotePanel } from './NotePanel'
@@ -15,12 +16,56 @@ import { TopBar } from './TopBar'
 import './control.css'
 
 type ColumnView = 'players' | 'library' | 'tools'
+type Page = 'control' | 'music'
 
 const VIEWS: readonly TabItem<ColumnView>[] = [
   { id: 'players', label: 'Oyuncular' },
   { id: 'library', label: 'Kütüphane' },
   { id: 'tools', label: 'Araçlar' }
 ]
+
+/**
+ * Üst sekmeler: her bölüm kendi sayfasında. Sayfalar gizlenir ama kapanmaz; sekme değişince kütüphanenin
+ * seçili bölmesi ya da yarım kalan bir yazı kaybolmaz. Müzik oyun ekranında çaldığı için sekmeden etkilenmez.
+ */
+function ControlPages(): JSX.Element {
+  const [page, setPage] = useState<Page>('control')
+  const { playback } = useSession()
+  const musicPlaying = playback.playing || playback.ambientIds.length > 0
+
+  const pages: readonly TabItem<Page>[] = [
+    { id: 'control', label: 'Kontrol Paneli', icon: <DiceIcon size={18} /> },
+    {
+      id: 'music',
+      label: 'Müzik',
+      // Başka sekmedeyken de bir şeyin çaldığı görünsün.
+      icon: <MusicIcon size={18} className={musicPlaying ? 'ctl-pages__playing' : undefined} />
+    }
+  ]
+
+  return (
+    <div className="ctl-root">
+      <TopBar pages={<Tabs className="ctl-pages" tabs={pages} value={page} onChange={setPage} label="Kontrol paneli sayfaları" idBase="ctl-page" />} />
+      <div className="ctl-page" role="tabpanel" aria-labelledby="ctl-page-control" hidden={page !== 'control'}>
+        <ControlLayout />
+      </div>
+      <div className="ctl-page" role="tabpanel" aria-labelledby="ctl-page-music" hidden={page !== 'music'}>
+        <ErrorBoundary
+          scope="kontrol paneli müziği"
+          fallback={
+            <EmptyState
+              icon={<WarningIcon size={24} />}
+              title="Müzik gösterilemiyor"
+              hint="Beklenmeyen bir hata oluştu (DND-902). Ayrıntı log dosyasında; diğer kontroller çalışmaya devam eder."
+            />
+          }
+        >
+          <MusicPage />
+        </ErrorBoundary>
+      </div>
+    </div>
+  )
+}
 
 function ControlLayout(): JSX.Element {
   // Yalnızca dar pencerede (tek monitörde oyun ekranının yanında) kullanılır: üç sütun yan yana
@@ -29,8 +74,7 @@ function ControlLayout(): JSX.Element {
   const [editingScenes, setEditingScenes] = useState(false)
 
   return (
-    <div className="ctl-root" data-view={view}>
-      <TopBar />
+    <div className="ctl-control" data-view={view}>
       <Tabs className="ctl-views" tabs={VIEWS} value={view} onChange={setView} label="Kontrol paneli bölümleri" />
       <main className="ctl-columns">
         <PlayersColumn />
@@ -75,7 +119,7 @@ export function ControlPanel(): JSX.Element {
 
   return (
     <>
-      {state === null ? <LoadingScreen /> : <ControlLayout />}
+      {state === null ? <LoadingScreen /> : <ControlPages />}
       <ToastHost />
     </>
   )
