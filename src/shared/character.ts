@@ -78,16 +78,12 @@ export function computeSkillCheck(input: {
 }): SkillCheck {
   const { slot, player, skill, mode, dice } = input
   const keptIndex = keptDieIndex(mode, dice)
-  const modifiers: CheckModifier[] = []
-  const fromAbility = abilityModifier(player.abilities[skill.ability])
-  if (fromAbility !== 0) modifiers.push({ label: ABILITY_INFO[skill.ability].short, value: fromAbility, kind: 'ability' })
-  for (const effect of player.effects) {
-    if (effect.value !== 0) modifiers.push({ label: effect.label, value: effect.value, kind: 'effect' })
-  }
+  const modifiers = checkModifiers(player, skill.ability)
   const total = dice[keptIndex] + modifiers.reduce((sum, modifier) => sum + modifier.value, 0)
   const proficiency = playerProficiency(player)
   const requirement = effectiveRequirement(skill.requirement, proficiency)
   return {
+    kind: 'skill',
     slot,
     playerName: player.name.trim() || `Oyuncu ${slot + 1}`,
     skillName: skill.name,
@@ -101,6 +97,43 @@ export function computeSkillCheck(input: {
     proficiency,
     requirement,
     success: total >= requirement
+  }
+}
+
+/** İstatistik artısı (sıfır değilse) ve oyuncunun geçici artı / eksileri, eklenme sırasıyla. */
+function checkModifiers(player: PlayerProfile, ability: Ability): CheckModifier[] {
+  const modifiers: CheckModifier[] = []
+  const fromAbility = abilityModifier(player.abilities[ability])
+  if (fromAbility !== 0) modifiers.push({ label: ABILITY_INFO[ability].short, value: fromAbility, kind: 'ability' })
+  for (const effect of player.effects) {
+    if (effect.value !== 0) modifiers.push({ label: effect.label, value: effect.value, kind: 'effect' })
+  }
+  return modifiers
+}
+
+/**
+ * Zar panelinden, seçilen istatistikle atış: alınan zar + istatistik artısı + geçici artı / eksiler.
+ * Hedef ve yeterlilik yoktur; yalnızca toplam hesaplanır.
+ */
+export function computeAbilityCheck(input: { slot: number; player: PlayerProfile; ability: Ability; mode: CheckMode; dice: number[] }): SkillCheck {
+  const { slot, player, ability, mode, dice } = input
+  const keptIndex = keptDieIndex(mode, dice)
+  const modifiers = checkModifiers(player, ability)
+  return {
+    kind: 'ability',
+    slot,
+    playerName: player.name.trim() || `Oyuncu ${slot + 1}`,
+    skillName: ABILITY_INFO[ability].name,
+    ability,
+    mode,
+    dice,
+    keptIndex,
+    modifiers,
+    total: dice[keptIndex] + modifiers.reduce((sum, modifier) => sum + modifier.value, 0),
+    baseRequirement: null,
+    proficiency: null,
+    requirement: null,
+    success: null
   }
 }
 

@@ -84,15 +84,14 @@ await run(async () => {
     }
   })
   await sleep(300)
+  // Panelde geçmiş listesi yok (0.9.9); geçmiş yine durumda ve zar.json'da tutulur.
   const dice = await control.evaluate(() => ({
-    rows: document.querySelectorAll('.ctl-dice__roll').length,
     latest: document.querySelector('.ctl-dice__value').textContent,
-    first: document.querySelector('.ctl-dice__roll-value').textContent,
     sideHeight: document.querySelector('.ctl-col--side').scrollHeight
   }))
   state = await getState(control)
-  check(`zar geçmişi ${DICE_CAP} atışta sınırlanır; liste de aynı sayıda satır gösterir`, state.session.diceHistory.length === DICE_CAP && dice.rows === DICE_CAP, `durum ${state.session.diceHistory.length}, satır ${dice.rows}`)
-  check('"Son atış" ve listenin başı en yeni atışı gösterir', dice.latest === String(state.session.diceHistory[0].value) && dice.first === dice.latest, `${dice.latest} / ${state.session.diceHistory[0].value}`)
+  check(`zar geçmişi ${DICE_CAP} atışta sınırlanır`, state.session.diceHistory.length === DICE_CAP, `durum ${state.session.diceHistory.length}`)
+  check('"Son atış" en yeni atışı gösterir', dice.latest === String(state.session.diceHistory[0].value), `${dice.latest} / ${state.session.diceHistory[0].value}`)
   check('geçmiş büyürken alttaki paneller yer değiştirmez', dice.sideHeight === sideBefore, `${sideBefore}px → ${dice.sideHeight}px`)
   check('geçmiş büyürken kareler akıcı', smooth(frames), frameText(frames))
 

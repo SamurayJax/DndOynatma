@@ -144,8 +144,10 @@ await run(async () => {
 
   // --- Zar geçmişi ---
   await control.getByRole('tab', { name: 'Kontrol Paneli' }).click()
-  const history = await control.locator('.ctl-dice__roll').first().textContent()
-  check('kontrol panelindeki zar geçmişinde oyuncu ve beceri yazar', history.includes('Aras') && history.includes('İmkânsız'), history)
+  const panelCaption = (await control.locator('.ctl-dice__caption').textContent()) ?? ''
+  const panelValue = await control.locator('.ctl-dice__value').textContent()
+  const lastCheck = (await session.state()).session.diceHistory[0].check
+  check('kontrol panelindeki "Son atış" zarı ve beceri atışının toplamını gösterir', panelCaption === 'Son atış · d20' && panelValue === String(lastCheck?.total), `${panelCaption} ${panelValue}`)
 
   // --- Etkiyi kaldırma ve kalıcılık ---
   await control.getByRole('tab', { name: 'Karakterler' }).click()

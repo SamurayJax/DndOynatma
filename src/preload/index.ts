@@ -62,7 +62,8 @@ const api: DndApi = {
 
   dice: {
     roll: (sides) => ipcRenderer.invoke(IPC.diceRollRequest, sides),
-    rollSkill: (slot, skillId, mode) => ipcRenderer.invoke(IPC.diceRollSkill, slot, skillId, mode)
+    rollSkill: (slot, skillId, mode) => ipcRenderer.invoke(IPC.diceRollSkill, slot, skillId, mode),
+    rollAbility: (slot, ability, sides, mode) => ipcRenderer.invoke(IPC.diceRollAbility, slot, ability, sides, mode)
   },
 
   characters: {

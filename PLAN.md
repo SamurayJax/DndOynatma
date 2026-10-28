@@ -514,32 +514,27 @@ Karakter dosyası (karar, 2026-10-28):
   Bunlar yalnızca metin ve sayıdır, birkaç KB etmez; dosyanın boyutunu portreler belirler.
 - Dosya biçiminin sürümü artar; eski sürümle yazılmış dosyalar okunmaya devam eder.
 
-### 6c. Beceri dışında istatistikle zar atma (0.9.9) — sırada
+### 6c. Beceri dışında istatistikle zar atma (0.9.9) — yapıldı
 
 Kullanıcı isteği (2026-10-29): beceri dışında bir atış yapılınca ("Güç ile kapıyı it" gibi) artı /
-eksiler elle toplanıyor. Oyuncunun istatistiği üzerinden doğrudan zar atılabilmeli; uygulama
-istatistik artısını ve geçici artı / eksileri kendisi eklemeli.
+eksiler elle toplanıyordu. Artık oyuncunun istatistiği üzerinden doğrudan zar atılır; uygulama
+istatistik artısını ve geçici artı / eksileri kendisi ekler.
 
-Akış: karakter girilir → istatistikleri girilir → o istatistik üzerine zar atılır, toplam
-uygulamada hesaplanır.
+Kararlar (2026-10-29):
 
-Şimdilik bilinenler:
-
-- Atış: d20 + istatistik artısı (+ oyuncunun geçici artı / eksileri). Avantaj / dezavantaj
-  becerilerdeki gibi çalışır. Oyun ekranında aynı gösterim: artı / eksiler uçarak eklenir.
-- Becerideki hesap (`computeSkillCheck`) ve gösterim yeniden kullanılır; "beceri" yerine istatistiğin
-  adı yazar ("Aras · Güç").
-
-Açık sorular (konuşulacak):
-
-- Yeri: Karakterler sekmesinde her oyuncunun altı istatistik kutusuna basınca mı atılsın, yoksa
-  ayrı bir "zar paneli" mi olsun (oyuncu seç → istatistik seç → at)? Kullanıcı yerini henüz
-  belirlemedi.
-- Gereksinim: atarken DM bir hedef sayı ("en az 12") girecek mi, yoksa yalnızca toplam mı gösterilecek
-  (Başarılı / Başarısız olmadan)?
-- Yeterlilik bu atışlarda gereksinimi düşürsün mü (becerilerde düşürüyor)?
-- Geçici artı / eksiler bu atışlarda da sayılsın ve süreleri azalsın mı?
-- Kontrol panelindeki düz d20 / d10 / d4 düğmeleri olduğu gibi kalsın mı?
+- Yeri: kontrol panelinin Zar paneli. d20 / d10 / d4 düğmeleri ve "Son atış" yerinde kalır; altındaki
+  atış geçmişi listesi kalktı, yerine **karakter** ve **istatistik** seçimi ile Normal / Avantaj /
+  Dezavantaj geldi. Karakter seçiliyken basılan zara (hangisi olursa) istatistiğin artısı eklenir.
+  Karakter seçilmezse zar eskisi gibi düz atılır.
+- Hedef yok: Başarılı / Başarısız yazmaz, yalnızca toplam.
+- Yeterlilik uygulanmaz. Oyuncunun geçici artı / eksileri eklenir, sayılı olanlar bir azalır.
+  Avantaj / dezavantaj tek atış içindir, atıştan sonra Normal'e döner.
+- "Son atış" kimin attığını yazmaz, yalnızca zarı ("Son atış · d20"); büyük sayı toplamdır, altında
+  zarın kendisi ve eklenen artı ("6 +3").
+- Oyun ekranında becerilerdeki gösterim: artı / eksiler uçarak eklenir, altta "Aras · Güç" (d20
+  değilse zarın adı da). Avantajda iki zar (d10 / d4 de olabilir) düşer.
+- Atış geçmişi yine durumda ve `zar.json`'da tutulur; Karakterler sekmesindeki "Son atış"ta
+  istatistik atışı "Toplam" diye görünür.
 
 ### Kararlar (2026-10-05)
 

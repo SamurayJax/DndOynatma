@@ -1,5 +1,22 @@
 # Sürüm Geçmişi
 
+## 0.9.9 — 2026-10-29
+
+### Eklenenler
+
+- **İstatistikle zar:** kontrol panelinin Zar panelinde karakter ve istatistik seçilir; zar düğmesine
+  (d20, d10 ya da d4) basınca istatistiğin artısı ve o oyuncunun geçici artı / eksileri kendiliğinden
+  eklenir. Hedef ve yeterlilik yoktur, yalnızca toplam. Avantaj / dezavantaj seçilebilir (her zarla;
+  atıştan sonra Normal'e döner). Sayılı artı / eksiler bu atışta da bir azalır.
+- Oyun ekranında bu atışlar da beceriler gibi gösterilir: artı / eksiler uçarak eklenir, altta oyuncu
+  ve istatistiğin adı yazar.
+
+### Değişenler
+
+- Zar panelindeki atış geçmişi listesi kalktı; yerinde karakter / istatistik seçimi var. "Son atış"
+  yalnızca zarı yazar, büyük sayı toplamdır, altında zar ve eklenen artı ("6 +3").
+- Karakter seçilmezse zarlar eskisi gibi düz atılır.
+
 ## 0.9.8 — 2026-10-29
 
 ### Düzeltilenler

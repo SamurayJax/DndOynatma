@@ -104,7 +104,8 @@ await run(async () => {
   await sleep(1300)
   await control.getByRole('button', { name: 'd20 at' }).click()
   const rolls = await waitFor(async () => (await getState(control)).session.diceHistory.length, (count) => count === 1)
-  check('hatadan sonra zar düğmesi yeniden çalışır', rolls === 1 && (await control.locator('.ctl-dice__roll').count()) === 1)
+  const shownValue = await control.locator('.ctl-dice__value').textContent()
+  check('hatadan sonra zar düğmesi yeniden çalışır', rolls === 1 && shownValue === String((await getState(control)).session.diceHistory[0].value), `${shownValue}`)
   await control.getByRole('button', { name: 'Bildirimi kapat' }).first().click()
 
   // --- Oyunu bitirme çağrısı reddedilir ---

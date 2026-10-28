@@ -37,7 +37,7 @@ function isPlayable(roll: DiceRoll): boolean {
   if (!isDiceSides(roll.sides) || !Number.isInteger(roll.value) || roll.value < 1 || roll.value > roll.sides) return false
   if (roll.check === undefined) return true
   const { dice, keptIndex } = roll.check
-  return roll.sides === 20 && dice.length >= 1 && dice.length <= 2 && dice[keptIndex] === roll.value
+  return dice.length >= 1 && dice.length <= 2 && dice.every((die) => die >= 1 && die <= roll.sides) && dice[keptIndex] === roll.value
 }
 
 function countStepMs(value: number): number {
@@ -163,7 +163,7 @@ export function DiceOverlay(): JSX.Element | null {
             />
           )
         })}
-      {roll !== null && check !== null && <CheckHeader key={roll.id} check={check} />}
+      {roll !== null && check !== null && <CheckHeader key={roll.id} check={check} sides={roll.sides} />}
     </div>
   )
 }
@@ -229,7 +229,7 @@ function ResultBadge({ spot, value, tone, dropped, check }: ResultBadgeProps): J
           tone === 'crit' && 'is-crit',
           tone === 'fumble' && 'is-fumble',
           dropped && 'is-dropped',
-          done && check !== null && (check.success ? 'is-success' : 'is-fail')
+          done && check !== null && check.success !== null && (check.success ? 'is-success' : 'is-fail')
         )}
         style={style}
       >
@@ -256,7 +256,8 @@ function ResultBadge({ spot, value, tone, dropped, check }: ResultBadgeProps): J
           ))}
         </ul>
       )}
-      {check !== null && done && (
+      {/* İstatistik atışında hedef yoktur; toplam madalyondaki sayıdır. */}
+      {check !== null && done && check.success !== null && (
         <div className={cx('dice-verdict', check.success ? 'is-success' : 'is-fail')} style={style}>
           <span className="dice-verdict__word">{check.success ? 'Başarılı' : 'Başarısız'}</span>
           <span className="dice-verdict__need">en az {check.requirement}</span>
@@ -266,12 +267,13 @@ function ResultBadge({ spot, value, tone, dropped, check }: ResultBadgeProps): J
   )
 }
 
-/** Beceri atışının üst yazısı: kim, hangi beceri, avantaj / dezavantaj. */
-function CheckHeader({ check }: { check: SkillCheck }): JSX.Element {
+/** Atışın alt yazısı: kim, hangi beceri ya da istatistik, avantaj / dezavantaj. */
+function CheckHeader({ check, sides }: { check: SkillCheck; sides: DiceSides }): JSX.Element {
   return (
     <div className="dice-check">
       <span className="dice-check__who">{check.playerName}</span>
       <span className="dice-check__skill">{check.skillName}</span>
+      {sides !== 20 && <span className="dice-check__who">d{sides}</span>}
       {check.mode !== 'normal' && <span className={cx('dice-check__mode', `is-${check.mode}`)}>{CHECK_MODE_LABEL[check.mode]}</span>}
     </div>
   )

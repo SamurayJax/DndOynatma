@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Action } from '@shared/actions'
 import {
   abilityModifier,
+  computeAbilityCheck,
   computeSkillCheck,
   consumeEffects,
   effectiveRequirement,
@@ -196,5 +197,34 @@ describe('sınıflar ve beceriler (reducer)', () => {
     expect(state.app.classes[0].skills.map((skill) => skill.id)).toEqual(['kos', 'ac'])
     const two = apply(state, { type: 'class/add', classId: 'buy', name: 'Büyücü' }, { type: 'class/move', classId: 'buy', to: 'up' })
     expect(two.app.classes.map((entry) => entry.id)).toEqual(['buy', 'sav'])
+  })
+})
+
+describe('istatistik atışı (zar paneli)', () => {
+  it('zar + istatistik artısı + etkiler; hedef ve yeterlilik yok', () => {
+    const player = hero({
+      level: 17,
+      abilities: { ...createEmptyPlayer().abilities, dex: 8 },
+      effects: [{ id: 'e', label: 'İyi rol', value: 2, rolls: 1 }]
+    })
+    const check = computeAbilityCheck({ slot: 1, player, ability: 'dex', mode: 'normal', dice: [7] })
+    expect(check).toMatchObject({
+      kind: 'ability',
+      skillName: 'Çeviklik',
+      total: 8,
+      requirement: null,
+      baseRequirement: null,
+      proficiency: null,
+      success: null
+    })
+    expect(check.modifiers).toEqual([
+      { label: 'DEX', value: -1, kind: 'ability' },
+      { label: 'İyi rol', value: 2, kind: 'effect' }
+    ])
+  })
+
+  it('avantaj ve dezavantaj d10 ile de çalışır', () => {
+    expect(computeAbilityCheck({ slot: 0, player: hero(), ability: 'str', mode: 'advantage', dice: [3, 9] }).total).toBe(9)
+    expect(computeAbilityCheck({ slot: 0, player: hero(), ability: 'str', mode: 'disadvantage', dice: [3, 9] }).total).toBe(3)
   })
 })

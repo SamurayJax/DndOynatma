@@ -2,11 +2,11 @@
  * Zarlar (d4, d10, d20). Sonuç ana süreçte üretilir; geçmiş hem oturum durumunda hem `zar.json`'da tutulur.
  */
 import { randomInt } from 'node:crypto'
-import { computeSkillCheck, findClass } from '@shared/character'
+import { computeAbilityCheck, computeSkillCheck, findClass } from '@shared/character'
 import { isPlayerFilled } from '@shared/layout'
 import { newId } from '@shared/id'
 import { IPC } from '@shared/ipc'
-import { CheckMode, DiceRoll, DiceSides, MAX_PLAYERS } from '@shared/types'
+import { Ability, CheckMode, DiceRoll, DiceSides, MAX_PLAYERS } from '@shared/types'
 import { log } from './logger'
 import { broadcast, notify, report } from './notify'
 import { DICE_HISTORY_LIMIT, clearDiceHistory, writeDiceHistory } from './storage'
@@ -58,8 +58,41 @@ export function rollSkill(store: Store, diceFile: string, slot: number, skillId:
   store.dispatch({ type: 'player/consumeEffects', slot }, { trusted: true })
   record(store, diceFile, roll)
   log.info(
-    `Beceri atışı: yuva ${slot}, ${mode}, zar ${dice.join('/')} → ${check.total} / ${check.requirement} ${check.success ? 'başarılı' : 'başarısız'}`
+    `Beceri atışı: yuva ${slot}, ${mode}, zar ${dice.join('/')} → ${check.total} / ${check.requirement ?? '-'} ${check.success ? 'başarılı' : 'başarısız'}`
   )
+  return roll
+}
+
+/**
+ * Zar panelinden, seçilen oyuncunun istatistiğiyle atış: seçilen zar (avantaj / dezavantajda iki) +
+ * istatistik artısı + geçici artı / eksiler. Hedef ve yeterlilik yoktur. Sayılı etkiler bir azalır.
+ */
+export function rollAbility(
+  store: Store,
+  diceFile: string,
+  slot: number,
+  ability: Ability,
+  sides: DiceSides,
+  mode: CheckMode
+): DiceRoll | SkillRollFailure {
+  const { app, session } = store.getState()
+  if (session.phase !== 'playing') {
+    log.code('DND-401')
+    return 'not-playing'
+  }
+  const player = Number.isInteger(slot) && slot >= 0 && slot < MAX_PLAYERS ? app.players[slot] : undefined
+  if (!player || !isPlayerFilled(player)) {
+    report('DND-402', `istatistik atışı: yuva ${slot} boş`)
+    return 'invalid'
+  }
+
+  const throwOne = (): number => randomInt(1, sides + 1)
+  const dice = mode === 'normal' ? [throwOne()] : [throwOne(), throwOne()]
+  const check = computeAbilityCheck({ slot, player, ability, mode, dice })
+  const roll: DiceRoll = { id: newId(), sides, value: dice[check.keptIndex], at: new Date().toISOString(), check }
+  store.dispatch({ type: 'player/consumeEffects', slot }, { trusted: true })
+  record(store, diceFile, roll)
+  log.info(`İstatistik atışı: yuva ${slot}, ${ability}, d${sides}, ${mode}, zar ${dice.join('/')} → ${check.total}`)
   return roll
 }
 

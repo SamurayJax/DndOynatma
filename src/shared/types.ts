@@ -113,26 +113,34 @@ export interface CheckModifier {
   kind: 'ability' | 'effect'
 }
 
-/** Beceri atışının hesabı; zar atışıyla birlikte saklanır ve oyun ekranında gösterilir. */
+/**
+ * Oyuncuya bağlı atışın hesabı; zar atışıyla birlikte saklanır ve oyun ekranında gösterilir.
+ * skill: becerinin düğmesiyle (d20, gereksinim ve yeterlilikle) · ability: zar panelinde seçilen
+ * istatistikle (her zar olabilir; gereksinim, yeterlilik ve sonuç yoktur, yalnızca toplam).
+ */
 export interface SkillCheck {
+  kind: 'skill' | 'ability'
   slot: number
   playerName: string
+  /** Becerinin adı ya da istatistik atışında istatistiğin adı ("Güç"). */
   skillName: string
   ability: Ability
   mode: CheckMode
-  /** Atılan d20'ler (avantaj / dezavantajda iki). */
+  /** Atılan zarlar (avantaj / dezavantajda iki). */
   dice: number[]
   /** `dice` içinde alınan zarın sırası. */
   keptIndex: number
   /** Sıfır olmayan artı / eksiler, eklenme sırasıyla. */
   modifiers: CheckModifier[]
   total: number
-  /** Becerinin gereksinimi (yeterlilik düşülmeden). */
-  baseRequirement: number
-  proficiency: number
-  /** Yeterlilik düşüldükten sonraki gereksinim (en az 1). */
-  requirement: number
-  success: boolean
+  /** Becerinin gereksinimi (yeterlilik düşülmeden); istatistik atışında null. */
+  baseRequirement: number | null
+  /** İstatistik atışında null (yeterlilik uygulanmaz). */
+  proficiency: number | null
+  /** Yeterlilik düşüldükten sonraki gereksinim (en az 1); istatistik atışında null. */
+  requirement: number | null
+  /** İstatistik atışında null: hedef yoktur, yalnızca toplam gösterilir. */
+  success: boolean | null
 }
 
 /**

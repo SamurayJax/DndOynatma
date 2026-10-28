@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.9.8 (Windows)
+**Sürüm:** 0.9.9 (Windows)
 
 ## Ne yapar
 
@@ -35,6 +35,8 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
   atılır (avantaj / dezavantajda iki zar); istatistik artısı ve verdiğin geçici artı / eksiler
   oyun ekranında uçarak sayıya eklenir, sonunda "Başarılı" ya da "Başarısız" yazar. Artı / eksiler
   açıklamalıdır ("İyi rol +2") ve birkaç atış ya da kalıcı sürer.
+- **İstatistikle zar:** Zar panelinde karakter ve istatistik seçince zar düğmesi o istatistiğin artısını
+  ve oyuncunun geçici artı / eksilerini kendisi ekler; avantaj / dezavantaj seçilebilir.
 - **Karakter aktarma:** dört oyuncu kartı (isim, seviye, can, not, portre, istatistikler, sınıf) tek dosyaya aktarılır ve
   başka bir bilgisayarda geri alınır. Kütüphane ve pencereler taşınmaz.
 - **Otomatik kayıt:** her değişiklik kaydedilir; bilgisayar kapanıp açılsa da kaldığı yerden devam eder.

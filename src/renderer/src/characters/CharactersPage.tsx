@@ -240,16 +240,17 @@ function LastCheck({ entry }: { entry: { id: string; check: SkillCheck } | null 
   const sum = check.modifiers.reduce((total, modifier) => total + modifier.value, 0)
   return (
     // Aynı sonuç art arda gelse de canlanma yeniden oynasın diye atışın kimliği anahtar olur.
-    <div key={entry.id} className={cx('chr-last', check.success ? 'is-success' : 'is-fail')} aria-live="polite">
+    <div key={entry.id} className={cx('chr-last', check.success !== null && (check.success ? 'is-success' : 'is-fail'))} aria-live="polite">
       <span className="chr-last__title">
         Son atış · {check.skillName}
         {check.mode !== 'normal' && ` · ${CHECK_MODE_LABEL[check.mode]} (${check.dice.join(' / ')})`}
       </span>
       <span className="chr-last__math">
         {check.dice[check.keptIndex]} {sum !== 0 && `${sum > 0 ? '+' : '−'} ${Math.abs(sum)} `}= <strong>{check.total}</strong>
-        <span className="chr-last__req"> / en az {check.requirement}</span>
+        {check.requirement !== null && <span className="chr-last__req"> / en az {check.requirement}</span>}
       </span>
-      <span className="chr-last__result">{check.success ? 'Başarılı' : 'Başarısız'}</span>
+      {/* Zar panelinden istatistikle atılanın hedefi yoktur. */}
+      <span className="chr-last__result">{check.success === null ? 'Toplam' : check.success ? 'Başarılı' : 'Başarısız'}</span>
     </div>
   )
 }

@@ -3,7 +3,7 @@
  */
 import { Action } from './actions'
 import { ErrorCode, LogLevel } from './errors'
-import { AmbientSound, CheckMode, DiceRoll, DiceSides, FullState, ID, LibraryCategory, LibraryImage, MusicTrack } from './types'
+import { Ability, AmbientSound, CheckMode, DiceRoll, DiceSides, FullState, ID, LibraryCategory, LibraryImage, MusicTrack } from './types'
 
 /**
  * menu: ana menü ve ayarlar · game: oyuncuların gördüğü oyun ekranı · control: DM'in kontrol paneli ·
@@ -25,6 +25,7 @@ export const IPC = {
   gameEnd: 'dnd:game:end',
   diceRollRequest: 'dnd:dice:roll',
   diceRollSkill: 'dnd:dice:rollSkill',
+  diceRollAbility: 'dnd:dice:rollAbility',
   musicImport: 'dnd:music:import',
   musicImportFiles: 'dnd:music:importFiles',
   ambientAdd: 'dnd:ambient:add',
@@ -283,6 +284,11 @@ export interface DndApi {
      * karşı). Oyun açık değilse 'not-playing', beceri ya da oyuncu geçersizse 'invalid' (DND-402).
      */
     rollSkill(slot: number, skillId: ID, mode: CheckMode): Promise<DiceRoll | 'not-playing' | 'invalid'>
+    /**
+     * Seçilen zarı oyuncunun istatistiğiyle atar: zar + istatistik artısı + geçici artı / eksiler;
+     * hedef ve yeterlilik yoktur. Oyuncu boşsa 'invalid' (DND-402).
+     */
+    rollAbility(slot: number, ability: Ability, sides: DiceSides, mode: CheckMode): Promise<DiceRoll | 'not-playing' | 'invalid'>
   }
 
   /** Oyuncu kartlarını (bilgiler + portreler) tek dosyaya aktarma. Yalnızca ana menüden çalışır. */

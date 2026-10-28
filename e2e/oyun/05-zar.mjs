@@ -150,17 +150,15 @@ await run(async () => {
       const panel = await control.evaluate(() => ({
         caption: document.querySelector('.ctl-dice__caption').textContent,
         value: document.querySelector('.ctl-dice__value').textContent,
-        rowDie: document.querySelector('.ctl-dice__roll-die').textContent,
-        rowValue: document.querySelector('.ctl-dice__roll-value').textContent,
-        rowTone: document.querySelector('.ctl-dice__roll').className
+        tone: document.querySelector('.ctl-dice__value').className
       }))
-      const toned = panel.rowTone.includes('is-crit') || panel.rowTone.includes('is-fumble')
+      const toned = panel.tone.includes('is-crit') || panel.tone.includes('is-fumble')
       check(
-        `"d${die.sides} at" düğmesi d${die.sides} atar; son atış ve geçmiş zarın adını gösterir`,
-        latest.sides === die.sides && panel.caption === `Son atış · d${die.sides}` && panel.value === String(latest.value) && panel.rowDie === `d${die.sides}` && panel.rowValue === String(latest.value),
+        `"d${die.sides} at" düğmesi d${die.sides} atar; son atış zarın adını gösterir`,
+        latest.sides === die.sides && panel.caption === `Son atış · d${die.sides}` && panel.value === String(latest.value),
         show({ latest, panel })
       )
-      check(`d${die.sides}: geçmişte vurgu yalnızca d20'nin 20 ve 1'inde`, toned === (latest.sides === 20 && (latest.value === 20 || latest.value === 1)), panel.rowTone)
+      check(`d${die.sides}: son atışta vurgu yalnızca d20'nin 20 ve 1'inde`, toned === (latest.sides === 20 && (latest.value === 20 || latest.value === 1)), panel.tone)
       await waitShown(latest.value)
       const top = await session.probe('diceTop')
       check(`d${die.sides}: düğmeyle atılan zar oyun ekranında aynı sayıyla duruyor`, top?.text === String(latest.value), `${latest.value} / ${top?.text}`)

@@ -5,9 +5,9 @@ import { BrowserWindow, IpcMainEvent, IpcMainInvokeEvent, app, ipcMain, screen, 
 import { ERROR_CODES, ErrorCode, LogLevel } from '@shared/errors'
 import { AmbientImportResult, AppInfo, CharacterExportResult, CharacterImportPreview, CharacterImportResult, IPC, ImportResult, MusicImportResult, PlaybackStatus, StorageCheck, StorageResult, WindowRole } from '@shared/ipc'
 import { CATEGORIES } from '@shared/layout'
-import { LibraryCategory, MAX_PLAYERS, isDiceSides } from '@shared/types'
+import { CheckMode, LibraryCategory, MAX_PLAYERS, isAbility, isDiceSides } from '@shared/types'
 import { CharacterDeps, applyCharacterImport, cancelCharacterImport, exportCharacters, pickCharacterImport } from './characters'
-import { rollDice, rollSkill } from './dice'
+import { rollAbility, rollDice, rollSkill } from './dice'
 import { describeDisplays } from './displays'
 import { LibraryDeps, importFiles, importPortrait, importPortraitFile, importWithDialog } from './library'
 import { log } from './logger'
@@ -45,6 +45,10 @@ function parsePlaybackStatus(raw: unknown): PlaybackStatus | null {
   const { trackId, position, duration, playing } = raw as Record<string, unknown>
   if (!(trackId === null || typeof trackId === 'string') || !isNonNegative(position) || !isNonNegative(duration)) return null
   return { trackId, position, duration, playing: playing === true }
+}
+
+function isCheckMode(value: unknown): value is CheckMode {
+  return value === 'normal' || value === 'advantage' || value === 'disadvantage'
 }
 
 function isLibraryCategory(value: unknown): value is LibraryCategory {
@@ -211,6 +215,14 @@ export function registerIpc(deps: IpcDeps): void {
       return 'invalid'
     }
     return rollSkill(store, paths.diceFile, slot, skillId, mode)
+  })
+
+  handle(IPC.diceRollAbility, (_role, _event, slot, ability, sides, mode) => {
+    if (typeof slot !== 'number' || !isAbility(ability) || !isDiceSides(sides) || !isCheckMode(mode)) {
+      report('DND-306', 'istatistik atışı: geçersiz yuva, istatistik, zar ya da kip')
+      return 'invalid'
+    }
+    return rollAbility(store, paths.diceFile, slot, ability, sides, mode)
   })
 
   // Karakter aktarma yalnızca ayarlardan (ana menü) yapılır; oyun sırasında kartlar topluca değişmez.

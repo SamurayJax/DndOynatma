@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiceRoll, FullState, createEmptyPlayer, createInitialState } from '@shared/types'
 import { decodeCharacterFile, encodeCharacterFile } from '../../src/main/characterFile'
 import { applyCharacterImport, exportCharactersTo, previewCharacterFile } from '../../src/main/characters'
-import { rollSkill } from '../../src/main/dice'
+import { rollAbility, rollSkill } from '../../src/main/dice'
 import { log } from '../../src/main/logger'
 import { buildDataPaths, ensureDataDirs } from '../../src/main/paths'
 import { loadDiceHistory, writeDiceHistory } from '../../src/main/storage'
@@ -162,5 +162,27 @@ describe('karakter dosyası (sürüm 2)', () => {
     expect(wizard).toBeDefined()
     expect(app.players[1].classId).toBe(wizard?.id)
     expect(fs.existsSync(file)).toBe(true)
+  })
+})
+
+describe('rollAbility', () => {
+  it('seçilen zarla atar, istatistik ve etkileri ekler, sayılı etkiyi düşürür', () => {
+    const store = makeStore()
+    const diceFile = path.join(dir, 'zar.json')
+    const roll = rollAbility(store, diceFile, 0, 'str', 10, 'advantage')
+    if (typeof roll !== 'object') throw new Error(`atış yapılmadı: ${roll}`)
+    const check = roll.check!
+    expect(roll.sides).toBe(10)
+    expect(check.dice).toHaveLength(2)
+    expect(check.dice.every((die) => die >= 1 && die <= 10)).toBe(true)
+    expect(check.dice[check.keptIndex]).toBe(Math.max(...check.dice))
+    // STR 16 → +3, İyi rol +2, Kırık kol -2.
+    expect(check).toMatchObject({ kind: 'ability', skillName: 'Güç', total: check.dice[check.keptIndex] + 3, requirement: null, success: null })
+    expect(store.getState().app.players[0].effects.map((effect) => effect.id)).toEqual(['kol'])
+    expect(loadDiceHistory(diceFile).rolls[0]).toEqual(roll)
+  })
+
+  it('boş yuvada atılmaz', () => {
+    expect(rollAbility(makeStore(), path.join(dir, 'zar.json'), 2, 'str', 20, 'normal')).toBe('invalid')
   })
 })
