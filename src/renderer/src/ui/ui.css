@@ -646,7 +646,10 @@
 }
 
 .ui-modal__title {
+  min-width: 0;
   font-size: var(--text-lg);
+  /* İndirilen dosyaların adları boşluksuz ve uzun olabilir; başlık pencereyi taşırmadan bölünür. */
+  overflow-wrap: anywhere;
 }
 
 .ui-modal__body {

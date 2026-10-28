@@ -264,6 +264,8 @@ Her iş ayrı dalda yapılır; kullanıcı deneyip onaylayınca `main`'e birleş
 | 4c | Kütüphane: mekan/sahne tıklaması arka plan yapmaz (sonradan eklendi) | 0.9.5 |
 | 5 | Müzik, ortam sesleri ve hareketli arka plan | 0.9.6 |
 | 6 | Sınıflar, beceriler ve karakter ekranı | 0.9.7 |
+| 6b | Video arka plan düzeltmeleri (sonradan eklendi) | 0.9.8 |
+| 6c | Beceri dışında istatistikle zar atma | 0.9.9 |
 | 7 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
 
 ### 1. Kayıt yeri (0.9.0) — yapıldı
@@ -393,6 +395,8 @@ MP4 ve hareketli arka plan:
 - "Ses + hareketli görüntü": DM videonun bir bölümünü (başlangıç-bitiş saniyesi) seçer; o bölüm
   GIF gibi sessiz ve sürekli döner. Video kesilmez, dönüştürülmez; oynatma sırasında yalnızca o
   aralık tekrarlanır. Bu görüntü Ayarlar › Pencereler'de pencereye arka plan olarak verilebilir.
+- Hareketli arka plan oyun sırasında kontrol panelinden de verilir (0.9.8): döngü kaydedilirken
+  "ekrandaki pencerenin arka planı yap" seçeneği ve müzik listesinde "Arka plan yap" düğmesi.
 - Hareketli arka planlı pencere açılınca yalnızca görüntü döner; videonun sesi kendiliğinden
   başlamaz, istenirse müzik listesinden elle çalınır (karar, 2026-10-28).
 
@@ -509,6 +513,33 @@ Karakter dosyası (karar, 2026-10-28):
 - `.dndkarakter` dosyası istatistikleri, yeterlilik bonusunu ve sınıfı (becerileriyle) da taşır.
   Bunlar yalnızca metin ve sayıdır, birkaç KB etmez; dosyanın boyutunu portreler belirler.
 - Dosya biçiminin sürümü artar; eski sürümle yazılmış dosyalar okunmaya devam eder.
+
+### 6c. Beceri dışında istatistikle zar atma (0.9.9) — sırada
+
+Kullanıcı isteği (2026-10-29): beceri dışında bir atış yapılınca ("Güç ile kapıyı it" gibi) artı /
+eksiler elle toplanıyor. Oyuncunun istatistiği üzerinden doğrudan zar atılabilmeli; uygulama
+istatistik artısını ve geçici artı / eksileri kendisi eklemeli.
+
+Akış: karakter girilir → istatistikleri girilir → o istatistik üzerine zar atılır, toplam
+uygulamada hesaplanır.
+
+Şimdilik bilinenler:
+
+- Atış: d20 + istatistik artısı (+ oyuncunun geçici artı / eksileri). Avantaj / dezavantaj
+  becerilerdeki gibi çalışır. Oyun ekranında aynı gösterim: artı / eksiler uçarak eklenir.
+- Becerideki hesap (`computeSkillCheck`) ve gösterim yeniden kullanılır; "beceri" yerine istatistiğin
+  adı yazar ("Aras · Güç").
+
+Açık sorular (konuşulacak):
+
+- Yeri: Karakterler sekmesinde her oyuncunun altı istatistik kutusuna basınca mı atılsın, yoksa
+  ayrı bir "zar paneli" mi olsun (oyuncu seç → istatistik seç → at)? Kullanıcı yerini henüz
+  belirlemedi.
+- Gereksinim: atarken DM bir hedef sayı ("en az 12") girecek mi, yoksa yalnızca toplam mı gösterilecek
+  (Başarılı / Başarısız olmadan)?
+- Yeterlilik bu atışlarda gereksinimi düşürsün mü (becerilerde düşürüyor)?
+- Geçici artı / eksiler bu atışlarda da sayılsın ve süreleri azalsın mı?
+- Kontrol panelindeki düz d20 / d10 / d4 düğmeleri olduğu gibi kalsın mı?
 
 ### Kararlar (2026-10-05)
 

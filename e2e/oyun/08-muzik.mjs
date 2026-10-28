@@ -4,7 +4,7 @@
 // Çalıştırma: node e2e/oyun/08-muzik.mjs
 import { existsSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { addScene, check, info, open, run, show, sleep } from './harness.mjs'
+import { addScene, check, info, open, run, shotDir, show, sleep } from './harness.mjs'
 import { SEGMENT_COLORS, SEGMENT_SECONDS, writeMp4, writeWav } from './sesler.mjs'
 
 /** Oyun ekranındaki müzik çalarının (ortam sesleri hariç) durumu. */
@@ -59,7 +59,9 @@ await run(async () => {
   writeFileSync(broken, 'bu bir ses dosyası değil')
   const notSound = join(sampleDir, 'not.txt')
   writeFileSync(notSound, 'yazı')
-  const mp4 = await writeMp4(menu, join(sampleDir, 'Şömine.mp4'))
+  // İndirilen dosyalar gibi uzun ve boşluksuz ad: soru penceresini taşırmamalı.
+  const LONG_NAME = '10_Minutes_Tavern_Music_With_Ambience_Sesli_Video [Z5JDtFdVwSY]'
+  const mp4 = await writeMp4(menu, join(sampleDir, `${LONG_NAME}.mp4`))
 
   // --- Yükleme (ana menüden de yapılabilir; ayarlar ve oyun aynı listeyi kullanır) ---
   const imported = await menu.evaluate((paths) => window.dnd.music.importFiles(paths), [longWav, shortWav, notSound])
@@ -209,7 +211,15 @@ await run(async () => {
   const asked = await waitFor(() => control.locator('.mus-choice').count(), (count) => count === 1, 5000)
   check('MP4 yükleyince "nasıl kullanılsın?" diye sorulur', asked !== null)
   const videoTrack = (await session.state()).app.music.tracks.at(-1)
-  check('MP4 videolu parça olarak eklenir', videoTrack?.hasVideo === true && videoTrack.loop === null && videoTrack.originalName === 'Şömine', show(videoTrack))
+  check('MP4 videolu parça olarak eklenir', videoTrack?.hasVideo === true && videoTrack.loop === null && videoTrack.originalName === LONG_NAME, show(videoTrack))
+  const dialogFit = await control.locator('dialog[open]').evaluate((dialog) => {
+    const overflowing = [...dialog.querySelectorAll('*')].filter((el) => el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX !== 'visible')
+    const box = dialog.getBoundingClientRect()
+    const options = [...dialog.querySelectorAll('.mus-choice__option')].map((el) => el.getBoundingClientRect())
+    return { overflowing: overflowing.map((el) => el.className), inside: options.every((rect) => rect.left >= box.left && rect.right <= box.right) }
+  })
+  check('uzun dosya adı soru penceresini taşırmaz, iki seçenek de görünür', dialogFit.overflowing.length === 0 && dialogFit.inside, show(dialogFit))
+  await control.screenshot({ path: join(shotDir, 'muzik-uzun-ad.png') })
   await control.getByRole('button', { name: /Ses \+ hareketli görüntü/ }).click()
   await control.locator('.mus-loop__video').waitFor({ timeout: 5000 })
   const editorReady = await waitFor(
@@ -227,10 +237,24 @@ await run(async () => {
     }, value)
   await setRange('Bitiş', SEGMENT_SECONDS * 2 - 0.3)
   await setRange('Başlangıç', SEGMENT_SECONDS + 0.3)
+  const applyToggle = await control.locator('.mus-loop__apply input').isChecked()
+  check('döngü seçicide "ekrandaki pencerenin arka planı yap" açık gelir', applyToggle)
   await control.getByRole('button', { name: 'Kaydet' }).click()
   await sleep(300)
-  const savedLoop = (await session.state()).app.music.tracks.find((track) => track.id === videoTrack.id)?.loop
+  const afterSave = await session.state()
+  const savedLoop = afterSave.app.music.tracks.find((track) => track.id === videoTrack.id)?.loop
   check('seçilen aralık kaydedilir', savedLoop?.start === 2.3 && savedLoop?.end === 3.7, show(savedLoop))
+  const activeAfterSave = afterSave.app.scenes.find((scene) => scene.id === afterSave.app.activeSceneId)
+  check('kaydedince ekrandaki pencerenin hareketli arka planı olur', activeAfterSave?.videoTrackId === videoTrack.id, show(activeAfterSave?.name))
+  const rowButton = control.locator(`.mus-track[data-track="${videoTrack.id}"] .mus-track__background`)
+  check('listede "Ekranda" görünür', (await rowButton.textContent())?.includes('Ekranda'))
+  await rowButton.click()
+  await sleep(250)
+  const removed = (await session.state()).app.scenes.find((scene) => scene.id === afterSave.app.activeSceneId)?.videoTrackId
+  await rowButton.click()
+  await sleep(250)
+  const restored = (await session.state()).app.scenes.find((scene) => scene.id === afterSave.app.activeSceneId)?.videoTrackId
+  check('listedeki düğme arka planı kaldırır ve yeniden koyar', removed === null && restored === videoTrack.id, show({ removed, restored }))
   const badge = await control.locator(`.mus-track[data-track="${videoTrack.id}"] .mus-track__badge`).textContent()
   check('listede parçanın "Arka plan" olduğu görünür', badge?.includes('Arka plan'), `${badge}`)
   // "Hareketli görüntü ayarla" kaydedilen aralıkla açılır.

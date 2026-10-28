@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { DragEvent, JSX } from 'react'
 import type { AmbientImportResult, MusicImportResult } from '@shared/ipc'
+import { activeScene } from '@shared/layout'
 import { MAX_AMBIENTS, TEXT_LIMITS } from '@shared/reducer'
 import type { AmbientSound, MusicTrack, RepeatMode } from '@shared/types'
 import { dispatch, useApp, useSession } from '@renderer/lib/useAppState'
@@ -8,6 +9,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   Button,
+  ImageIcon,
   EmptyState,
   FilmIcon,
   IconButton,
@@ -316,6 +318,13 @@ interface TrackRowProps {
 
 function TrackRow({ track, index, last, current, playing, onEditVideo }: TrackRowProps): JSX.Element {
   const [renaming, setRenaming] = useState(false)
+  const scene = activeScene(useApp())
+  const isBackground = scene !== undefined && scene.videoTrackId === track.id
+
+  const toggleBackground = (): void => {
+    if (scene === undefined) return
+    dispatch({ type: 'scene/setVideo', sceneId: scene.id, trackId: isBackground ? null : track.id })
+  }
 
   return (
     <li className={cx('mus-track', current && 'is-current', playing && 'is-playing')} data-track={track.id}>
@@ -358,6 +367,25 @@ function TrackRow({ track, index, last, current, playing, onEditVideo }: TrackRo
         </span>
       )}
       <div className="mus-track__actions">
+        {track.loop !== null && (
+          <Button
+            size="sm"
+            className="mus-track__background"
+            icon={<ImageIcon size={16} />}
+            active={isBackground}
+            disabled={scene === undefined}
+            title={
+              scene === undefined
+                ? 'Önce bir pencere oluştur (Kontrol Paneli › Pencereler).'
+                : isBackground
+                  ? `“${scene.name}” penceresinin arka planı; tıklayınca kaldırılır.`
+                  : `“${scene.name}” penceresinin arka planı yap.`
+            }
+            onClick={toggleBackground}
+          >
+            {isBackground ? 'Ekranda' : 'Arka plan yap'}
+          </Button>
+        )}
         {track.hasVideo && <IconButton label="Hareketli görüntü ayarla" icon={<FilmIcon size={16} />} size="sm" onClick={() => onEditVideo(track)} />}
         <IconButton label="Adını değiştir" icon={<PencilIcon size={16} />} size="sm" onClick={() => setRenaming(true)} />
         <IconButton label="Yukarı taşı" icon={<ArrowUpIcon size={16} />} size="sm" disabled={index === 0} onClick={() => dispatch({ type: 'music/moveTrack', trackId: track.id, to: 'up' })} />

@@ -1,5 +1,22 @@
 # Sürüm Geçmişi
 
+## 0.9.8 — 2026-10-29
+
+### Düzeltilenler
+
+- MP4 yükleyince çıkan "nasıl kullanılsın?" penceresi, dosyanın adı uzun ve boşluksuzken (indirilen
+  videolarda olduğu gibi) yana taşıyor, seçenekler kesiliyordu. Başlık kısaldı; dosyanın adı pencerenin
+  içinde alt satırlara bölünerek yazar. Bütün pencerelerin başlıkları artık uzun adlarda bölünür.
+
+### Değişenler
+
+- Hareketli arka plan artık oyun sırasında kontrol panelinden verilir:
+  - Döngü seçicide "Kaydedince … penceresinin arka planı yap" seçeneği (açık gelir): kaydedince video
+    ekrandaki pencerenin arka planı olur.
+  - Müzik listesinde döngüsü seçilmiş videoların yanında "Arka plan yap" düğmesi; ekrandaki pencerenin
+    arka planıysa "Ekranda" yazar, basınca kaldırır.
+- Ayarlar › Pencereler'deki arka plan seçici eskisi gibi çalışır.
+
 ## 0.9.7 — 2026-10-28
 
 ### Eklenenler

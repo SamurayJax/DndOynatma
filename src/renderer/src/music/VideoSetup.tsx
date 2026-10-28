@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from 'react'
 import type { JSX } from 'react'
+import { activeScene } from '@shared/layout'
 import { MIN_VIDEO_LOOP } from '@shared/reducer'
 import type { MusicTrack, VideoLoop } from '@shared/types'
-import { dispatch } from '@renderer/lib/useAppState'
+import { dispatch, useApp } from '@renderer/lib/useAppState'
 import { useVideoLoop } from '@renderer/game/SceneVideo'
-import { Button, FilmIcon, MusicIcon, Modal, WarningIcon, toast } from '@renderer/ui'
+import { Button, FilmIcon, MusicIcon, Modal, Toggle, WarningIcon, toast } from '@renderer/ui'
 
 /** İlk açılışta önerilen döngü uzunluğu (saniye). */
 const DEFAULT_LOOP_SECONDS = 8
@@ -34,13 +35,11 @@ export function VideoSetup({ track, start, onClose }: VideoSetupProps): JSX.Elem
 
   if (step === 'ask') {
     return (
-      <Modal
-        open
-        onClose={onClose}
-        title={`“${track.originalName}” nasıl kullanılsın?`}
-        size="sm"
-        footer={<Button onClick={onClose}>Sonra karar ver</Button>}
-      >
+      <Modal open onClose={onClose} title="Bu MP4 nasıl kullanılsın?" size="md" footer={<Button onClick={onClose}>Sonra karar ver</Button>}>
+        <p className="mus-choice__file" title={track.originalName}>
+          <FilmIcon size={16} />
+          {track.originalName}
+        </p>
         <div className="mus-choice">
           <button type="button" className="mus-choice__option" data-autofocus="" onClick={onClose}>
             <MusicIcon size={28} strokeWidth={1.5} />
@@ -51,7 +50,7 @@ export function VideoSetup({ track, start, onClose }: VideoSetupProps): JSX.Elem
             <FilmIcon size={28} strokeWidth={1.5} />
             <span className="mus-choice__title">Ses + hareketli görüntü</span>
             <span className="mus-choice__hint">
-              Videonun bir bölümü GIF gibi döner; Ayarlar › Pencereler'den arka plan yapılır. Sesi yine listeden çalınır.
+              Videonun seçtiğin bölümü GIF gibi sessiz döner ve ekrandaki pencerenin arka planı olur. Sesi yine listeden çalınır.
             </span>
           </button>
         </div>
@@ -62,6 +61,10 @@ export function VideoSetup({ track, start, onClose }: VideoSetupProps): JSX.Elem
 }
 
 function LoopEditor({ track, onClose }: { track: MusicTrack; onClose: () => void }): JSX.Element {
+  const app = useApp()
+  const scene = activeScene(app)
+  // Kaydedince ekrandaki pencerenin arka planı olur; zaten başka bir pencerenin arka planıysa sorulmadan değişmez.
+  const [useAsBackground, setUseAsBackground] = useState(scene !== undefined && scene.videoTrackId !== track.id)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [duration, setDuration] = useState<number | null>(null)
   const [noVideo, setNoVideo] = useState(false)
@@ -109,7 +112,12 @@ function LoopEditor({ track, onClose }: { track: MusicTrack; onClose: () => void
   const save = (): void => {
     if (!valid) return
     dispatch({ type: 'music/setLoop', trackId: track.id, loop: { start: loop.start, end: loop.end } })
-    toast(`“${track.originalName}” hareketli arka plan olarak hazır. Ayarlar › Pencereler'den bir pencereye verilebilir.`)
+    if (useAsBackground && scene !== undefined) {
+      dispatch({ type: 'scene/setVideo', sceneId: scene.id, trackId: track.id })
+      toast(`“${track.originalName}” artık “${scene.name}” penceresinin hareketli arka planı.`)
+    } else {
+      toast(`“${track.originalName}” hareketli arka plan olarak hazır. Müzik listesindeki “Arka plan yap” ile ekrandaki pencereye verilir.`)
+    }
     onClose()
   }
 
@@ -120,6 +128,14 @@ function LoopEditor({ track, onClose }: { track: MusicTrack; onClose: () => void
 
   const footer = (
     <>
+      {!noVideo && scene !== undefined && (
+        <Toggle
+          className="mus-loop__apply"
+          checked={useAsBackground}
+          onChange={setUseAsBackground}
+          label={`Kaydedince “${scene.name}” penceresinin arka planı yap`}
+        />
+      )}
       {track.loop !== null && (
         <Button variant="danger" onClick={turnOff} title="Parça yalnızca ses olarak kalır; arka plan olduğu pencerelerden kalkar.">
           Görüntüyü kapat

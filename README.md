@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.9.7 (Windows)
+**Sürüm:** 0.9.8 (Windows)
 
 ## Ne yapar
 
@@ -26,7 +26,8 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
 - **Ortam sesleri:** kuş sesi, yağmur gibi kendi eklediğin düğmeler; müzikle birlikte, döngüde çalar.
   Her birinin kendi ses düzeyi var.
 - **Hareketli arka plan:** MP4 yüklerken "Ses + hareketli görüntü" seçilirse videonun seçilen bölümü
-  GIF gibi sessiz döner ve Ayarlar › Pencereler'den bir pencereye arka plan yapılır.
+  GIF gibi sessiz döner. Kaydederken ekrandaki pencerenin arka planı yapılır; sonradan müzik
+  listesindeki "Arka plan yap" ya da Ayarlar › Pencereler ile değiştirilir.
 - **Sınıflar ve beceriler:** sınıfları ve becerilerini sen tanımlarsın (Ayarlar › Sınıflar); her
   beceri bir istatistikle atılır ve bir gereksinimi vardır. Oyuncunun altı istatistiği (STR, DEX,
   CON, INT, WIS, CHA), sınıfı ve yeterliliği oyuncu kartında girilir.
