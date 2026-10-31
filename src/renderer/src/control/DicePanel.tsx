@@ -6,7 +6,7 @@ import { ABILITIES } from '@shared/types'
 import type { Ability, CheckMode, DiceRoll, DiceSides } from '@shared/types'
 import { reportError } from '@renderer/lib/reportError'
 import { useApp, useSession } from '@renderer/lib/useAppState'
-import { Button, D10Icon, D4Icon, DiceIcon, Panel, Select, cx, toast } from '@renderer/ui'
+import { Button, D10Icon, D6Icon, DiceIcon, Panel, Select, cx, toast } from '@renderer/ui'
 import type { SelectOption } from '@renderer/ui'
 
 /** Art arda tıklamayla zar yığılmasın; oyun ekranındaki animasyon da bu sürede oturur. */
@@ -25,7 +25,7 @@ interface DieChoice {
 const DICE: readonly DieChoice[] = [
   { sides: 20, hint: '20 yüzlü zar', icon: <DiceIcon size={24} strokeWidth={1.5} /> },
   { sides: 10, hint: '10 yüzlü zar', icon: <D10Icon size={24} strokeWidth={1.5} /> },
-  { sides: 4, hint: '4 yüzlü zar (piramit; üstte kalan köşedeki sayı okunur)', icon: <D4Icon size={24} strokeWidth={1.5} /> }
+  { sides: 6, hint: '6 yüzlü zar', icon: <D6Icon size={24} strokeWidth={1.5} /> }
 ]
 
 /** Yalnızca d20'de 20 ve 1 hafifçe vurgulanır (alınan zara bakılır). */

@@ -206,8 +206,8 @@ function installProbe() {
       }
     },
     /**
-     * Son karede sonucun okunduğu rakam: izleyiciye en düz bakan (en büyük çizilen) rakam. d4'te sonuç
-     * üstteki köşenin çevresindeki üç yüzde de yazar ve üçü aynı büyüklüktedir; aralarından dik duranı alınır.
+     * Son karede sonucun okunduğu rakam: izleyiciye en düz bakan (en büyük çizilen) rakam; eşit
+     * büyüklükte birden çok rakam varsa aralarından dik duranı alınır.
      * `count`: o sayının son karede kaç kez yazıldığı; `labels`: karedeki bütün rakamların sayısı.
      */
     diceTop() {
@@ -230,7 +230,7 @@ function installProbe() {
           }
         : null
     },
-    /** Son karede boyanan yüzlerin köşe sayıları (ör. duran d4'te [3, 3, 3], d10'da [4, 4, ...]). */
+    /** Son karede boyanan yüzlerin köşe sayıları (ör. duran d6'da [4], d10'da [4, 4, ...]). */
     diceFaces() {
       return [...dice.faces]
     },

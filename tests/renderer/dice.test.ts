@@ -7,8 +7,7 @@ import { DICE_SIDES } from '@shared/types'
 import {
   D10,
   D20,
-  D4,
-  D4_EDGE,
+  D6,
   type DieLabel,
   type DieModel,
   modelFor,
@@ -53,13 +52,13 @@ const name = (model: DieModel): string => `d${model.sides}`
 const cornersOf = (model: DieModel, face: number): Vec3[] => model.faces[face].map((index) => model.vertices[index])
 const allLabels = (model: DieModel): DieLabel[] => model.faceLabels.flat()
 const valuesOf = (model: DieModel): number[] => model.outcomes.map((outcome) => outcome.value).sort((a, b) => a - b)
-/** Yüz başına tek rakam yazan zarlarda (d20, d10) yüzlerin sayıları, yüz sırasıyla. */
+/** Yüzlerin sayıları, yüz sırasıyla. */
 const faceValues = (model: DieModel): number[] => model.faceLabels.map((labels) => labels[0].value)
 const expectVec = (actual: Vec3, expected: Vec3, digits = 9): void => {
   for (let i = 0; i < 3; i++) expect(actual[i]).toBeCloseTo(expected[i], digits)
 }
 
-/** Verilen yönelimde zarın durduğu duruş: yukarı (izleyiciye) bakan yüz ya da köşe. */
+/** Verilen yönelimde zarın durduğu duruş: yukarı (izleyiciye) bakan yüz. */
 function topOutcome(model: DieModel, q: Quat): number {
   let best = 0
   for (let outcome = 1; outcome < model.outcomes.length; outcome++) {
@@ -328,86 +327,30 @@ describe('d10', () => {
   })
 })
 
-describe('d4', () => {
-  it('düzgün dört yüzlüdür: dört eşkenar üçgen, dört köşe, bütün kenarlar eşit', () => {
-    expect(D4.faces).toHaveLength(4)
-    expect(D4.vertices).toHaveLength(4)
-    expect(D4.faces.every((face) => face.length === 3)).toBe(true)
-    expect(D4.turns).toBe(3)
-    for (let a = 0; a < 4; a++) {
-      for (let b = a + 1; b < 4; b++) expect(length(sub(D4.vertices[a], D4.vertices[b]))).toBeCloseTo(D4_EDGE, 12)
+describe('d6', () => {
+  it('küptür: altı kare yüz, sekiz köşe, karşılıklı yüzlerin toplamı 7', () => {
+    expect(D6.faces).toHaveLength(6)
+    expect(D6.vertices).toHaveLength(8)
+    expect(D6.turns).toBe(4)
+    const values = faceValues(D6)
+    expect([...values].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6])
+    const edge = length(sub(D6.vertices[0], D6.vertices[1]))
+    for (let face = 0; face < 6; face++) {
+      const corners = cornersOf(D6, face)
+      expect(corners).toHaveLength(4)
+      for (let i = 0; i < 4; i++) expect(length(sub(corners[(i + 1) % 4], corners[i]))).toBeCloseTo(edge, 12)
+      const opposite = D6.faceNormals.findIndex((normal) => dot(normal, D6.faceNormals[face]) < -0.999999)
+      expect(values[opposite] + values[face]).toBe(7)
     }
+    expect(D6.inradius).toBeCloseTo(edge / 2, 12)
+    expect(D6.inertia).toBeCloseTo((edge * edge) / 6, 12)
   })
 
-  it('ölçüler düzgün dört yüzlünün bilinen değerleridir', () => {
-    expect(D4.circumradius).toBeCloseTo((D4_EDGE * Math.sqrt(6)) / 4, 12)
-    expect(D4.inradius).toBeCloseTo((D4_EDGE * Math.sqrt(6)) / 12, 12)
-    expect(D4.silhouetteRadius).toBeCloseTo(D4_EDGE / Math.sqrt(3), 12)
-    expect(D4.inertia).toBeCloseTo((D4_EDGE * D4_EDGE) / 20, 12)
-  })
-
-  it('sonuç üstte kalan köşeden okunur: dört köşe dört duruştur, karşısındaki yüz masadadır', () => {
-    expect(D4.outcomes).toHaveLength(4)
-    for (let vertex = 0; vertex < 4; vertex++) {
-      const outcome = D4.outcomes[vertex]
-      expect(outcome.value).toBe(vertex + 1)
-      expectVec(outcome.normal, normalize(D4.vertices[vertex]), 12)
-      // Köşenin karşısındaki yüz: o köşeyi içermeyen tek yüz.
-      const opposite = D4.faces.findIndex((face) => !face.includes(vertex))
-      expectVec(D4.faceNormals[opposite], scale(outcome.normal, -1), 12)
-    }
-  })
-
-  it('her yüzde, köşelerinin yanında o köşelerin sayıları yazar; rakamın tepesi kendi köşesine bakar', () => {
-    for (let face = 0; face < 4; face++) {
-      const labels = D4.faceLabels[face]
-      expect(labels).toHaveLength(3)
-      // Yüzün karşısındaki köşenin sayısı bu yüzde yazmaz.
-      const opposite = [0, 1, 2, 3].find((vertex) => !D4.faces[face].includes(vertex)) ?? -1
-      expect(labels.map((label) => label.value).sort()).toEqual([1, 2, 3, 4].filter((value) => value !== opposite + 1))
-      for (const label of labels) {
-        const vertex = D4.vertices[label.value - 1]
-        const toVertex = sub(vertex, D4.faceCenters[face])
-        expectVec(label.up, normalize(toVertex), 12)
-        // Yüzün ortası ile köşe arasında, ortaya biraz daha yakın.
-        expectVec(label.center, add(D4.faceCenters[face], scale(toVertex, 0.42)), 12)
-      }
-      // Aynı yüzdeki rakamlar üst üste binmeyecek kadar ayrıktır.
-      for (let a = 0; a < 3; a++) {
-        for (let b = a + 1; b < 3; b++) expect(length(sub(labels[a].center, labels[b].center))).toBeGreaterThan(0.6)
-      }
-    }
-    // Her sayı, köşesine değen üç yüzde birer kez yazar.
-    for (const value of [1, 2, 3, 4]) expect(allLabels(D4).filter((label) => label.value === value)).toHaveLength(3)
-  })
-
-  it('duran zarda üstteki köşenin sayısı görünen üç yüzde de yazar; biri izleyiciye göre dik durur', () => {
-    for (const value of [1, 2, 3, 4]) {
-      const q = restOrientation(D4, value)
-      // Üstteki köşe merkezin tam üstünde, piramidin yüksekliği kadar yukarıda.
-      const apex = quatRotate(q, D4.vertices[value - 1])
-      expectVec(apex, [0, 0, D4.circumradius])
-      expect(D4.inradius + D4.circumradius).toBeCloseTo(D4_EDGE * Math.sqrt(2 / 3), 12)
-      // Masadaki yüz dışındaki üç yüz yukarıdan görünür ve aynı eğimdedir.
-      const facing = D4.faceNormals.map((normal) => quatRotate(q, normal)[2])
-      expect(facing.filter((z) => z > 0)).toHaveLength(3)
-      for (const z of facing.filter((value) => value > 0)) expect(z).toBeCloseTo(1 / 3, 12)
-
-      const read = allLabels(D4).filter((label) => label.value === value)
-      const tilts = read.map((label) => (screenTilt(q, label.up) * 180) / Math.PI).sort((a, b) => a - b)
-      expect(tilts[0]).toBeCloseTo(-120, 9)
-      expect(tilts[1]).toBeCloseTo(0, 9)
-      expect(tilts[2]).toBeCloseTo(120, 9)
-      // Dik duran rakam, tepenin ekranda altında kalan yüzdedir.
-      const upright = read.find((label) => Math.abs(screenTilt(q, label.up)) < 1e-9)
-      expect(upright && quatRotate(q, upright.center)[1]).toBeLessThan(-0.1)
-      // Görünen öbür rakamların hiçbiri dik değildir (dik duran tek rakam sonuçtur).
-      for (let face = 0; face < 4; face++) {
-        if (facing[face] <= 0) continue
-        for (const label of D4.faceLabels[face]) {
-          if (label.value !== value) expect(Math.abs(screenTilt(q, label.up))).toBeGreaterThan(0.3)
-        }
-      }
+  it('rakam karenin kenarına paralel durur; dururken ekranda yatık görünmez', () => {
+    for (let face = 0; face < 6; face++) {
+      expect(D6.faceLabels[face]).toHaveLength(1)
+      // Küp eksenlere hizalı: rakamın tepesi bir eksene baksın, köşegene değil.
+      expect(Math.max(...D6.faceLabels[face][0].up.map(Math.abs))).toBeCloseTo(1, 12)
     }
   })
 })
@@ -500,7 +443,6 @@ describe.each(MODELS)('atış planı: d$sides', (model) => {
   })
 
   it('atışlar koşulları sağlar: ekran dışından gelir, zarın kendi temposunda durur', () => {
-    // d20 ve d10 yuvarlanır (1,9-2,6 s); d4 çarpıp kalır, atışı daha kısadır.
     expect(pacing.minDuration).toBeGreaterThanOrEqual(1.5)
     expect(pacing.maxDuration).toBeLessThanOrEqual(2.6)
     const clean = plans.filter(({ plan }) => plan.penalty === 0)
@@ -527,10 +469,9 @@ describe.each(MODELS)('atış planı: d$sides', (model) => {
 })
 
 describe('tempo', () => {
-  it('d20 ve d10 aynı tempoda yuvarlanır; d4 daha kısa sürer ve tek sekmeyle yetinir', () => {
+  it('bütün zarlar aynı tempoda yuvarlanır', () => {
     expect(pacingFor(D20)).toEqual({ minDuration: 1.9, maxDuration: 2.6, bigHop: 0.45, hops: 2 })
     expect(pacingFor(D10)).toEqual(pacingFor(D20))
-    expect(pacingFor(D4).minDuration).toBeLessThan(pacingFor(D20).minDuration)
-    expect(pacingFor(D4).hops).toBe(1)
+    expect(pacingFor(D6)).toEqual(pacingFor(D20))
   })
 })

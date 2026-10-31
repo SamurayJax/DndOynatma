@@ -64,7 +64,7 @@ function lanesFor(check: SkillCheck | null): ThrowLane[] {
 }
 
 /**
- * Zar animasyonu (d4, d10, d20). Sonuç ana süreçte belirlenir ve `window.dnd.onDiceRoll` ile gelir; burada yalnızca
+ * Zar animasyonu (d6, d10, d20). Sonuç ana süreçte belirlenir ve `window.dnd.onDiceRoll` ile gelir; burada yalnızca
  * gösterilir: zar ekrana düşer, yuvarlanır, gelen değerle durur, sayı büyük gösterilir ve kaybolur.
  *
  * Beceri atışında: avantaj / dezavantajda iki d20 yan yana düşer, alınmayan soluklaşır. Sonra artı / eksiler

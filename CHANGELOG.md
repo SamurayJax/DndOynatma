@@ -1,5 +1,13 @@
 # Sürüm Geçmişi
 
+## 1.2.0 — hazırlanıyor
+
+### Değişenler
+
+- **d4 yerine d6:** piramit tepeden bakınca basık görünüyordu. Yerine normal küp zar geldi: karşılıklı yüzlerin
+  toplamı 7, sayı üst yüzden net okunur. Zarlar d20, d10 ve d6. Beceri ve istatistik atışları d6 ile de çalışır.
+  Eski oturumdan kalan d4 atışları geçmişe alınmaz.
+
 ## 1.1.0 — 2026-10-31
 
 Oyuncu isteği: düşmanlar oyuncuların yanında sade duruyordu.

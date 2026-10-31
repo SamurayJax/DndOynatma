@@ -103,8 +103,8 @@ await run(async () => {
 
   // --- Karakter yok'a dönünce düz zar ---
   await control.getByRole('combobox', { name: 'Kimin için atılsın' }).selectOption({ label: 'Karakter yok (düz zar)' })
-  const plainAgain = await rollWith('d4 at')
-  check('"Karakter yok" seçilince yine düz zar', plainAgain?.check === undefined && plainAgain?.sides === 4, show(plainAgain))
+  const plainAgain = await rollWith('d6 at')
+  check('"Karakter yok" seçilince yine düz zar', plainAgain?.check === undefined && plainAgain?.sides === 6, show(plainAgain))
 
   // --- Karakterler sekmesinde son atış ---
   await control.getByRole('tab', { name: 'Karakterler' }).click()

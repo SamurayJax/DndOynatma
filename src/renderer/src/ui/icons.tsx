@@ -218,12 +218,12 @@ export function D10Icon(props: IconProps): JSX.Element {
   )
 }
 
-/** d4: yandan görünen piramit; ortadaki çizgi öndeki kenardır. */
-export function D4Icon(props: IconProps): JSX.Element {
+/** d6: köşesinden görünen küp. */
+export function D6Icon(props: IconProps): JSX.Element {
   return (
     <Svg {...props}>
-      <path d="M12 3 2.8 16.6 10.2 21l11-4.4L12 3z" />
-      <path d="M12 3 10.2 21" />
+      <path d="M12 2.5 20.2 7.25v9.5L12 21.5l-8.2-4.75v-9.5L12 2.5z" />
+      <path d="M3.8 7.25 12 12l8.2-4.75M12 12v9.5" />
     </Svg>
   )
 }

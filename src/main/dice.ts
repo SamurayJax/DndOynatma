@@ -1,5 +1,5 @@
 /**
- * Zarlar (d4, d10, d20). Sonuç ana süreçte üretilir; geçmiş hem oturum durumunda hem `zar.json`'da tutulur.
+ * Zarlar (d6, d10, d20). Sonuç ana süreçte üretilir; geçmiş hem oturum durumunda hem `zar.json`'da tutulur.
  */
 import { randomInt } from 'node:crypto'
 import { computeAbilityCheck, computeSkillCheck, findClass } from '@shared/character'

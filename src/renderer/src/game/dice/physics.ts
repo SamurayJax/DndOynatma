@@ -7,7 +7,7 @@
  * geleceği burada belirlenmez; zarlar simetrik olduğu için sayılar sonradan, zarın durduğu
  * duruşa göre yerleştirilir (bkz. throwPlan.ts).
  *
- * Eylemsizlik her eksende aynı sayılır. d20 ve d4 için bu tamdır; d10'da eksenler arasındaki
+ * Eylemsizlik her eksende aynı sayılır. d20 ve küp için bu tamdır; d10'da eksenler arasındaki
  * küçük fark göz ardı edilir (yuvarlanışta seçilmez).
  */
 import type { DiceSides } from '@shared/types'
@@ -35,16 +35,14 @@ export const DEFAULT_TUNING: PhysicsTuning = {
 
 /**
  * Yüzü az olan zar daha zor yuvarlanır: bir kenarının üstünden devrilmesi için merkezinin daha çok
- * yükselmesi gerekir, bu yüzden masaya çarptığı gibi durmaya yatkındır. d10, d20 kadar canlı
- * yuvarlansın diye daha hızlı döndürülerek atılır ve biraz daha çok seker. d4 ne yapılsa yuvarlanmaz;
- * havada takla atıp bir kez seksin diye hızlı döndürülür, ondan beklenen tempo da kısadır
- * (bkz. throwPlan.ts, `PACING`). Değerler, her zar kendi temposunda d20 ile aynı oranda "iyi atış"
- * verecek şekilde denemeyle seçildi.
+ * yükselmesi gerekir, bu yüzden masaya çarptığı gibi durmaya yatkındır. d10 ve küp, d20 kadar canlı
+ * yuvarlansın diye daha hızlı döndürülerek atılır ve biraz daha çok seker. Değerler, d20 ile aynı
+ * oranda "iyi atış" (yeterince uzun, en az iki sekmeli) verecek şekilde denemeyle seçildi.
  */
 const THROW_STYLES: Record<DiceSides, { spin: number; restitution: number }> = {
   20: { spin: 1, restitution: DEFAULT_TUNING.restitution },
   10: { spin: 1.5, restitution: 0.86 },
-  4: { spin: 2.5, restitution: 0.9 }
+  6: { spin: 2, restitution: 0.88 }
 }
 
 export function tuningFor(model: DieModel): PhysicsTuning {

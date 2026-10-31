@@ -20,7 +20,7 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
 - **Pencereler:** "Kraliyet İçi", "Orman Yolu" gibi hazır düzenler; 1–9 tuşlarıyla geçilir.
 - **Kalem:** kırmızı ve siyah, üç kalınlık; silgi çizginin değdiği kısmını siler. Çizimin tamamı
   yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
-- **Zarlar:** d20, d10 ve d4 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
+- **Zarlar:** d20, d10 ve d6 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
   sonucu gösterir. Kontrol panelinde son atış görünür.
 - **Müzik:** kontrol panelinin "Müzik" sekmesinden kendi dosyalarını (MP3, OGG, WAV, M4A, MP4) yükle,
   çal, ileri-geri sar; tekrar ve ses düzeyi ayarlanır. Ses oyun ekranından çıkar, yani Discord'da

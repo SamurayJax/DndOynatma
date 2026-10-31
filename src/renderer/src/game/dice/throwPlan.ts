@@ -7,7 +7,7 @@
  * ve bütün sahne dikey eksende döndürülerek rakam ekranda dik getirilir. Böylece zar baştan sona
  * gerçek bir zar gibi davranır ve sonunda hiçbir sıçrama ya da düzeltme görünmez.
  *
- * Her duruşun, zarın bir dönme simetrisiyle her duruşa taşınabildiği zarlarda geçerlidir (d20, d10, d4).
+ * Her duruşun, zarın bir dönme simetrisiyle her duruşa taşınabildiği zarlarda geçerlidir (d20, d10, d6).
  */
 import type { DiceSides } from '@shared/types'
 import { type DieModel, outcomeUpAt, restOrientation } from './geometry'
@@ -67,14 +67,11 @@ export interface Pacing {
 
 const ROLLING: Pacing = { minDuration: 1.9, maxDuration: 2.6, bigHop: 0.45, hops: 2 }
 
-/**
- * d20 ve d10 masada yuvarlanır. d4 yuvarlanmaz: sivri olduğu için masaya çarpar, bir kez sekip
- * devrilir ve kalır; ondan uzun bir yuvarlanış beklemek, onu gerçek dışı hızla döndürmek demektir.
- */
+/** Bütün zarlar masada yuvarlanır; biçimi yuvarlanmaya elvermeyen bir zar gelirse temposu burada ayrılır. */
 const PACING: Record<DiceSides, Pacing> = {
   20: ROLLING,
   10: ROLLING,
-  4: { minDuration: 1.6, maxDuration: 2.4, bigHop: 0.35, hops: 1 }
+  6: ROLLING
 }
 
 export function pacingFor(model: DieModel): Pacing {
@@ -102,7 +99,7 @@ const VISIBLE_SHIFT = 0.012
 const SETTLE_BLEND = 0.2
 /** Duran zarın rakamı en fazla bu kadar yatık olabilir (radyan). */
 const REST_TILT = (6 * Math.PI) / 180
-/** Rakamı üç yönde dik durabilen zar (d20, d4) için deneme sınırı ve atış başına denenen iniş yeri. */
+/** Rakamı birkaç yönde dik durabilen zar (d20, d6) için deneme sınırı ve atış başına denenen iniş yeri. */
 const MAX_ATTEMPTS = 220
 const LANDING_SPOTS = 2
 

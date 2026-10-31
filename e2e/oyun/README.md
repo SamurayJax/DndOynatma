@@ -2,7 +2,7 @@
 
 Derlenmiş uygulamayı gerçekten açıp oyun ekranını (`src/renderer/src/game`) oyuncuların göreceği
 koşullarda sınar: tam ekran, farklı ekran ölçeği, büyük görseller, kalabalık sahne, kontrol panelinden
-gelen değişiklikler, araçların birbirine etkisi ve zarlar (d20, d10, d4).
+gelen değişiklikler, araçların birbirine etkisi ve zarlar (d20, d10, d6).
 
 ## Çalıştırma
 
@@ -22,7 +22,7 @@ Başka bir derlemeyi denemek için: `DND_E2E_OYUN=out/main/index.js node e2e/oyu
 | `02-gorseller.mjs` | 4000x3000 arka plan, 2000x3000 karakter, saydam PNG, çok geniş / çok uzun / şerit görsel; 36 görselli sahnede sürükleme akıcılığı (kare aralığı); 40 pencere değişiminden sonra düğüm, `<img>` ve `<canvas>` sızıntısı. `--tam-ekran` ile en büyük monitörde tam ekran çalışır | ~40 sn |
 | `03-diger-pencere.mjs` | Görsel seçiliyken, sürüklenirken ve boyutlanırken kontrol panelinden silinmesi / sırasının, etiketinin, yerinin değişmesi; sürüklerken pencere değişimi; oyuncu canı, ismi, seviyesi, portresi; portre sütununun belirip kaybolması (sol kenardaki görseller, arka plan) | ~35 sn |
 | `04-etkilesim.mjs` | Seçim ve kalem etkinken zar; görsellerin üstüne çizim; kalemde tutamaçların gizlenmesi; pencere boyutu değişince tutamaçlar; seçim varken 1–9; 24 karakterlik isimler, 99. seviye, kenarlarda 40 karakterlik etiket | ~45 sn |
-| `05-zar.mjs` | d20, d10 ve d4 için 30'ar atışta duran zarda okunan rakam ve büyük sayı = atış (d4'te üstteki köşenin sayısı, görünen üç yüzde); zarın biçimi; rakamın dikliği; zarın oyun alanında kalması; kontrol panelindeki üç düğme ve geçmişte zarın adı; animasyon sonrası DOM'da kalıntı; art arda hızlı atış; simge durumundaki pencere; tanınmayan zar. Zar başına atış sayısı: `node e2e/oyun/05-zar.mjs 60` | ~6 dk |
+| `05-zar.mjs` | d20, d10 ve d6 için 30'ar atışta duran zarda okunan rakam ve büyük sayı = atış; zarın biçimi; rakamın dikliği; zarın oyun alanında kalması; kontrol panelindeki üç düğme ve geçmişte zarın adı; animasyon sonrası DOM'da kalıntı; art arda hızlı atış; simge durumundaki pencere; tanınmayan zar. Zar başına atış sayısı: `node e2e/oyun/05-zar.mjs 60` | ~6 dk |
 | `11-kartlar.mjs` | Düz görsel ve "Kart olarak koy", numaralanan kopyalar; kartı taşıma ve oranıyla boyutlandırma; can (−1, "-3", en yüksek can), kopyaların ayrı canı; karta / düz görsele çevirme; beş boss çerçevesi ve süslerin kutuyu aşmaması; yeniden açılışta kartlar | ~30 sn |
 | `10-istatistik-zari.mjs` | Zar panelinde karakter / istatistik seçimi (geçmiş listesi yok, seçilmeden kapalı); düz zar; d20 + STR + etkiler, hedef ve yeterlilik yok, 1 atışlık etkinin düşmesi; "Son atış" yalnızca zar ve toplam; oyun ekranında eklenen artılar, sonuç yazısı olmaması; avantajlı d10'da iki zar ve Normal'e dönüş; Karakterler sekmesinde "Toplam" | ~40 sn |
 | `09-karakterler.mjs` | Karakterler sekmesi: dört eşit sütun, boş yuvanın yeri; beceri düğmesinde artı ve yeterlilikle düşen gereksinim; arayüzden süreli ve kalıcı artı / eksi verme; beceri atışında hesap, 1 atışlık etkinin düşmesi, oyun ekranında uçan artı / eksi, toplama giden sayı, Başarılı / Başarısız, uygulanan liste; avantajda iki zar ve soluk zar, Normal'e dönüş; sütundan sınıf ve istatistik değiştirme; zar geçmişi; etkiyi kaldırma; kapatıp açınca kalıcılık | ~1 dk |

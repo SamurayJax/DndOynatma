@@ -1,4 +1,4 @@
-// Zarlar (d20, d10, d4): duran zarda okunan rakam ve büyük sayı, ana süreçten gelen atışla aynı mı
+// Zarlar (d20, d10, d6): duran zarda okunan rakam ve büyük sayı, ana süreçten gelen atışla aynı mı
 // (her zar için 30+ atış); zarın biçimi; kontrol panelindeki üç düğme ve geçmişte zarın adı;
 // animasyon bittikten sonra geride öğe kalıyor mu; art arda atış ve simge durumundaki pencere.
 // Çalıştırma: node e2e/oyun/05-zar.mjs [zar başına atış sayısı]   (varsayılan 30, yaklaşık 6 dakika)
@@ -17,8 +17,8 @@ const COOLDOWN_MS = 1350
 const DICE = [
   { sides: 20, corners: 3, minFaces: 4, maxFaces: 10 },
   { sides: 10, corners: 4, minFaces: 2, maxFaces: 6 },
-  // Duran piramidin masadaki yüzü dışındaki üç yüzü görünür; sonuç üstteki köşeden okunur.
-  { sides: 4, corners: 3, minFaces: 3, maxFaces: 3 }
+  // Tepeden bakınca duran küpün yalnızca üst yüzü görünür.
+  { sides: 6, corners: 4, minFaces: 1, maxFaces: 1 }
 ]
 
 await run(async () => {
@@ -52,7 +52,6 @@ await run(async () => {
     const outside = []
     const settleTimes = []
     const misshapen = []
-    const miscounted = []
     let toneErrors = 0
     for (let i = 0; i < ROLLS; i++) {
       const startedAt = Date.now()
@@ -78,8 +77,6 @@ await run(async () => {
       }
       settleTimes.push(settleMs)
       if (faces.length < die.minFaces || faces.length > die.maxFaces || faces.some((corners) => corners !== die.corners)) misshapen.push(`${thrown.value}: ${show(faces)}`)
-      // d4: üstteki köşenin sayısı görünen üç yüzde de yazar; her yüzde üç rakam vardır.
-      if (die.sides === 4 && (top?.count !== 3 || top?.labels !== 9)) miscounted.push(`${thrown.value}: ${top?.count} kez, toplam ${top?.labels} rakam`)
       const crit = dice.className.includes('is-crit')
       const fumble = dice.className.includes('is-fumble')
       if (crit !== (die.sides === 20 && thrown.value === 20) || fumble !== (die.sides === 20 && thrown.value === 1)) toneErrors += 1
@@ -100,8 +97,7 @@ await run(async () => {
     check(`${name}: zar 3,2 saniye içinde duruyor (atışların onda dokuzu; en yavaşı 5 saniyeyi geçmez)`, p90 <= 3200 && slowest <= 5000, `onda dokuzu ${p90} ms, en yavaş ${slowest} ms`)
     check(`${name}: zarın biçimi doğru (yüzler ${die.corners} köşeli, ${die.minFaces}-${die.maxFaces} yüz görünüyor)`, misshapen.length === 0, misshapen.slice(0, 4).join(' | '))
     check(`${name}: ${die.sides === 20 ? '20 ve 1 vurgusu yalnızca o değerlerde' : 'sonuç vurgusuz (vurgu yalnızca d20 içindir)'}`, toneErrors === 0, String(toneErrors))
-    if (die.sides === 4) check('d4: üstteki köşenin sayısı görünen üç yüzde de yazıyor (yüz başına üç rakam)', miscounted.length === 0, miscounted.slice(0, 4).join(' | '))
-    if (die.sides === 4 && ROLLS >= 30) check('d4: 1, 2, 3 ve 4 hepsi geldi', values.join(' ') === '1 2 3 4', values.join(' '))
+    if (die.sides === 6 && ROLLS >= 30) check('d6: 1-6 hepsi geldi', values.join(' ') === '1 2 3 4 5 6', values.join(' '))
   }
   {
     const history = (await session.state()).session.diceHistory
@@ -136,7 +132,7 @@ await run(async () => {
         rowHeight: Math.round(top.height)
       }
     })
-    check('üç zar düğmesi var: d20, d10, d4', show(layout.labels) === show(['d20 at', 'd10 at', 'd4 at']) && show(layout.texts) === show(['d20', 'd10', 'd4']), show(layout))
+    check('üç zar düğmesi var: d20, d10, d6', show(layout.labels) === show(['d20 at', 'd10 at', 'd6 at']) && show(layout.texts) === show(['d20', 'd10', 'd6']), show(layout))
     check('üç düğme tek satırda, yazıları kırpılmadan', layout.tops === 1 && layout.clipped === 0, show(layout))
     check('zar satırının yüksekliği eskisi gibi (64 piksel)', layout.rowHeight === 64, String(layout.rowHeight))
 
@@ -172,7 +168,7 @@ await run(async () => {
     await sleep(150)
     const second = await roll(10)
     await sleep(150)
-    const third = await roll(4)
+    const third = await roll(6)
     await sleep(600)
     const during = await game.evaluate(() => ({ canvases: document.querySelectorAll('.dice-canvas').length, results: document.querySelectorAll('.dice-result').length }))
     check('üç hızlı atışta tek zar çiziliyor, erken sonuç yok', during.canvases === 1 && during.results === 0, show(during))
@@ -181,7 +177,7 @@ await run(async () => {
     const top = await session.probe('diceTop')
     const faces = await session.probe('diceFaces')
     check('hızlı atışlardan sonuncusu gösteriliyor', dice.text === String(third.value) && top?.text === String(third.value), `atışlar ${first.value}, ${second.value}, ${third.value}; gösterilen ${dice.text}`)
-    check('ekrandaki zar son atılan zar (piramit)', faces.length === 3 && faces.every((corners) => corners === 3), show(faces))
+    check('ekrandaki zar son atılan zar (küp)', faces.length === 1 && faces[0] === 4, show(faces))
     await waitGone()
     check('hızlı atışlardan sonra da geride bir şey kalmadı', (await session.probe('counts')).dom === baseline.dom)
   }
@@ -205,7 +201,7 @@ await run(async () => {
   {
     await waitGone()
     const before = (await session.state()).session.diceHistory.length
-    const refused = await control.evaluate(() => Promise.all([window.dnd.dice.roll(6), window.dnd.dice.roll(3), window.dnd.dice.roll(), window.dnd.dice.roll('20')]))
+    const refused = await control.evaluate(() => Promise.all([window.dnd.dice.roll(4), window.dnd.dice.roll(3), window.dnd.dice.roll(), window.dnd.dice.roll('20')]))
     await sleep(400)
     const after = (await session.state()).session.diceHistory.length
     check('tanınmayan zar atılmaz, oyun ekranında bir şey belirmez', refused.every((result) => result === null) && after === before && (await session.probe('dice')).children === 0, show(refused))

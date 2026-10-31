@@ -122,7 +122,7 @@ dönünce çizim ekranda kalır; böylece çizdikten sonra fareyle görsel taş�
 "Çizimi temizle" o an açık olan pencerenin çizimini siler. Çizimler diske kaydedilmez;
 oyun bitince hepsi kaybolur.
 
-### Zarlar: d20, d10, d4
+### Zarlar: d20, d10, d6
 
 Kontrol panelindeki zar düğmelerinden birine basılınca oyun ekranında o zar atılır: zar
 ekrana düşer, yuvarlanır, durur ve üste gelen sayı büyük olarak gösterilir. Birkaç saniye
@@ -131,8 +131,7 @@ durumda ve `zar.json`'da tutulur.
 
 - d20: yirmi yüzlü. 20 ve 1 vurgulanır (altın / kırmızı); bu vurgu yalnızca d20 içindir.
 - d10: on uçurtma yüzlü gerçek d10 biçimi. Yüzlerde 1-10 yazar (0 yerine 10).
-- d4: dört yüzlü piramit. Bir köşesi üstte durur; sonuç o köşedeki sayıdır ve görünen üç yüzde
-  de yazar (gerçek d4'lerdeki gibi her yüzde, köşelerin yanında üç sayı vardır).
+- d6: küp. Karşılıklı yüzlerin toplamı 7'dir.
 
 Zarlar, uygulamanın kendi çizdiği üç boyutlu cisimlerdir; hareketleri bir fizik
 benzetimiyle hesaplanır (yerçekimi, sekme, sürtünme). Hazır 3B zar kütüphanesi
@@ -153,7 +152,7 @@ Ayrıca:
 
 - kütüphane (8 bölme)
 - araç seçimi: Fare / Kalem kırmızı / Kalem siyah, "Çizimi temizle"
-- zar düğmeleri (d20, d10, d4), son atış ve istatistikle zar seçimi
+- zar düğmeleri (d20, d10, d6), son atış ve istatistikle zar seçimi
 - genel not alanı
 - pencere listesi (tıklayarak geçiş)
 - oyun ekranında şu an duran görsellerin listesi (tek tıkla kaldırma)
@@ -570,12 +569,19 @@ Kullanıcı kararı (2026-10-31): her açılışta internet varsa GitHub'daki so
 istedikten sonra yapılır. Ana menüde sorulur; oyun sırasında kurulum başlamaz. "Şimdi değil" denirse bir sonraki
 açılışta yeniden sorulur. Kod aralığı DND-6xx. Ayrıntı ve yayımlama adımları: `docs/PAKETLEME.md`.
 
+### 10. d4 yerine d6 (1.2.0) — yapıldı
+
+Kullanıcı isteği (2026-10-31): piramit masaya tepeden bakınca basık görünüyordu (bkz. 4b, "Bilinen sınır").
+d4 kaldırıldı, yerine küp biçimli d6 geldi; zarlar d20, d10, d6. Sonuç yeniden üstteki yüzden okunur, köşeden
+okumaya özgü kod kalktı. Eski oturumdan kalan d4 atışları geçmişe alınmaz. Bu bölümden önceki d3 ve d4 anlatımları
+o sürümlerin kaydıdır.
+
 ### Kararlar (2026-10-05)
 
 - Mevcut arka planın kartına tekrar tıklamak hiçbir şey yapmaz; böyle kalacak.
 - Kontrol panelindeki can denetimi olduğu gibi kalacak; komut satırı (`/can 3 -5`) yapılmayacak.
 - Birden fazla kampanya yapılmayacak.
-- Zarlar d4, d10, d20 ile sınırlı; formül (`2d6+3`) yapılmayacak.
+- Zarlar d6, d10, d20 ile sınırlı (d6, 2026-10-31'de d4'ün yerine geçti); formül (`2d6+3`) yapılmayacak.
 - Dışa aktarma yalnızca karakter bilgileri ve portreler.
 
 ### İstenirse (sıraya alınmadı)
