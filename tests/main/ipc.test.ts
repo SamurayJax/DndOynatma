@@ -66,6 +66,7 @@ let dir: string
 let paths: DataPaths
 let store: Store
 let windows: { roleOf: Mock; startGame: Mock; endGame: Mock; toggleGameFullscreen: Mock }
+let update: { getStatus: Mock; accept: Mock; decline: Mock }
 let libraryAddAccepted: boolean
 const info: AppInfo = {
   version: '0.1.0',
@@ -153,7 +154,8 @@ beforeEach(() => {
     trashSound: vi.fn()
   })
   windows = { roleOf: vi.fn(() => 'control'), startGame: vi.fn(), endGame: vi.fn(), toggleGameFullscreen: vi.fn() }
-  registerIpc({ store, windows: windows as unknown as WindowManager, paths, storage, getInfo: () => info })
+  update = { getStatus: vi.fn(() => ({ phase: 'idle' as const })), accept: vi.fn(), decline: vi.fn() }
+  registerIpc({ store, windows: windows as unknown as WindowManager, paths, storage, getInfo: () => info, update })
 })
 
 afterEach(() => {

@@ -4,7 +4,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {
-    resolve: { alias: { '@shared': resolve('src/shared') } }
+    resolve: { alias: { '@shared': resolve('src/shared') } },
+    // node_modules pakete girmez (electron-builder.config.cjs); ana sürecin tek kütüphanesi derlemeye katılır.
+    build: { externalizeDeps: { exclude: ['electron-updater'] } }
   },
   preload: {
     resolve: { alias: { '@shared': resolve('src/shared') } }

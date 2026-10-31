@@ -73,6 +73,13 @@ Kodların kaynağı `src/shared/errors.ts` dosyasıdır; bu liste onunla aynı t
 | DND-505 | UYARI | Ses dosyası silinemedi | Parça ya da ortam sesi listeden kaldırıldı ama dosyası diskten silinemedi. Dosya muzik klasöründe kalır. |
 | DND-506 | UYARI | Videoda görüntü yok | Seçilen MP4 dosyasında oynatılabilen bir görüntü bulunamadı. Parça yalnızca ses olarak eklendi. |
 
+## 6xx — Otomatik güncelleme
+
+| Kod | Seviye | Durum | Açıklama |
+|-----|--------|-------|----------|
+| DND-601 | BILGI | Güncelleme denetlenemedi | Son sürüme bakılamadı (internet yok ya da GitHub yanıt vermedi). Uygulama olağan açılır; bir sonraki açılışta yeniden denenir. |
+| DND-602 | UYARI | Güncelleme indirilemedi | Yeni sürüm indirilemedi ya da dosya doğrulanamadı. Hiçbir şey kurulmadı; uygulama olduğu gibi duruyor. |
+
 ## 9xx — Beklenmeyen
 
 | Kod | Seviye | Durum | Açıklama |

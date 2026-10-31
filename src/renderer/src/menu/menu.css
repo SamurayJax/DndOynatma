@@ -5,6 +5,28 @@
   height: 100%;
 }
 
+/* ---------- Güncelleme ---------- */
+
+.menu-update__text {
+  margin: 0 0 var(--space-2);
+  line-height: 1.5;
+}
+
+.menu-update__bar {
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg-0);
+}
+
+.menu-update__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+
 /* ---------- Ana menü ---------- */
 
 .menu-main {

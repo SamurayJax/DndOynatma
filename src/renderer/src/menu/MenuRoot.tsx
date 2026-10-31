@@ -4,6 +4,7 @@ import { useFullState } from '@renderer/lib/useAppState'
 import { LoadingScreen, ToastHost } from '@renderer/ui'
 import { MainMenu } from './MainMenu'
 import { SettingsView } from './SettingsView'
+import { UpdatePrompt } from './UpdatePrompt'
 import './menu.css'
 
 type MenuView = 'menu' | 'settings'
@@ -33,6 +34,7 @@ export function MenuRoot(): JSX.Element {
   return (
     <div className="menu-root">
       {content}
+      {state !== null && <UpdatePrompt />}
       <ToastHost />
     </div>
   )

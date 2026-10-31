@@ -268,6 +268,7 @@ Her iş ayrı dalda yapılır; kullanıcı deneyip onaylayınca `main`'e birleş
 | 6c | Beceri dışında istatistikle zar atma | 0.9.9 |
 | 7 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
 | 8 | Düşman ve boss kartları (oyuncu isteği) | 1.1.0 |
+| 9 | Otomatik güncelleme | 1.1.0 |
 
 ### 1. Kayıt yeri (0.9.0) — yapıldı
 
@@ -562,6 +563,12 @@ Teknik notlar:
 - `StageItem.card` ve `LibraryImage.cardDefaults` isteğe bağlıdır; eski kayıtlar düz görsel olarak açılır.
 - Kart 300x420 tasarım ölçüsünde çizilir ve kutuya ölçeklenir; görsel çerçeveye kırpılır, oranı bozulmaz.
   Seçim çerçevesi kutuyu çocukların kapladığı alandan ölçtüğü için süsler kartın dışına taşmaz.
+
+### 9. Otomatik güncelleme (1.1.0) — yapıldı
+
+Kullanıcı kararı (2026-10-31): her açılışta internet varsa GitHub'daki son sürüme bakılır, güncelleme onay
+istedikten sonra yapılır. Ana menüde sorulur; oyun sırasında kurulum başlamaz. "Şimdi değil" denirse bir sonraki
+açılışta yeniden sorulur. Kod aralığı DND-6xx. Ayrıntı ve yayımlama adımları: `docs/PAKETLEME.md`.
 
 ### Kararlar (2026-10-05)
 

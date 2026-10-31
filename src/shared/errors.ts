@@ -185,6 +185,16 @@ export const ERROR_CODES = {
     title: 'Videoda görüntü yok',
     description: 'Seçilen MP4 dosyasında oynatılabilen bir görüntü bulunamadı. Parça yalnızca ses olarak eklendi.'
   },
+  'DND-601': {
+    level: 'BILGI',
+    title: 'Güncelleme denetlenemedi',
+    description: 'Son sürüme bakılamadı (internet yok ya da GitHub yanıt vermedi). Uygulama olağan açılır; bir sonraki açılışta yeniden denenir.'
+  },
+  'DND-602': {
+    level: 'UYARI',
+    title: 'Güncelleme indirilemedi',
+    description: 'Yeni sürüm indirilemedi ya da dosya doğrulanamadı. Hiçbir şey kurulmadı; uygulama olduğu gibi duruyor.'
+  },
   'DND-901': {
     level: 'HATA',
     title: 'Beklenmeyen hata (ana süreç)',

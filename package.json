@@ -21,6 +21,7 @@
     "test:paket": "node e2e/paket/paket.mjs"
   },
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "konva": "^10.7.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

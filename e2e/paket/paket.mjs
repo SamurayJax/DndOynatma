@@ -65,7 +65,7 @@ function checkFiles() {
   if (!existsSync(exePath)) return false
 
   const resources = readdirSync(join(appDir, 'resources'))
-  check('kaynaklar yalnızca app.asar', resources.length === 1 && resources[0] === 'app.asar', resources.join(', '))
+  check('kaynaklar yalnızca app.asar ve güncelleme ayarı', resources.length === 2 && resources.includes('app.asar') && resources.includes('app-update.yml'), resources.join(', '))
 
   const version = JSON.parse(
     powershell(`(Get-Item -LiteralPath '${exePath}').VersionInfo | Select-Object ProductName, ProductVersion, FileVersion, FileDescription, CompanyName | ConvertTo-Json`)

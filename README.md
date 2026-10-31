@@ -52,7 +52,10 @@ Ayrıntılı özellik tanımı: [PLAN.md](PLAN.md)
 Başlat menüsüne kısayol ekler. Kurulum dosyası imzasız olduğu için Windows ilk çalıştırmada
 uyarı gösterebilir ("Ek bilgi" → "Yine de çalıştır").
 
-Kurulum dosyasının nasıl üretildiği: [docs/PAKETLEME.md](docs/PAKETLEME.md)
+Uygulama her açılışta internet varsa yeni sürüme bakar; varsa sorar, onaylanınca kendini günceller ve yeniden
+açılır. Kayıtlar etkilenmez.
+
+Kurulum dosyasının nasıl üretildiği ve yeni sürümün nasıl yayımlandığı: [docs/PAKETLEME.md](docs/PAKETLEME.md)
 
 ## Kullanım
 

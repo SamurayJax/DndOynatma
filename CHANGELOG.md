@@ -14,6 +14,9 @@ Oyuncu isteği: düşmanlar oyuncuların yanında sade duruyordu.
 - **Boss çerçeveleri:** Gölge, Işık, Kan, Buz ve Zehir; taçlı, parlayan ve temaya özgü süslü.
 - Kartın adı, seviyesi, en yüksek canı ve çerçevesi görsele kaydedilir, bir sonraki koyuşta aynı gelir.
   Aynı görselden başka kart varsa ad numaralanır ("Goblin", "Goblin 2").
+- **Otomatik güncelleme:** her açılışta internet varsa GitHub'daki son sürüme bakılır. Yeni sürüm varsa önce
+  sorulur; onaylanırsa indirilir, doğrulanır, kurulur ve uygulama yeniden açılır. "Şimdi değil" denirse ya da
+  internet yoksa uygulama olağan açılır. Kayıtlar etkilenmez. Önceki sürümlerden 1.1.0'a bir kez elle geçilir.
 
 ## 1.0.0 — 2026-10-31
 

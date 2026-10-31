@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import { DndApi, IPC, MEDIA_HOST, MEDIA_SCHEME, Notice, PlaybackStatus, SOUND_HOST, WindowRole } from '@shared/ipc'
+import { DndApi, IPC, MEDIA_HOST, MEDIA_SCHEME, Notice, PlaybackStatus, SOUND_HOST, UpdateStatus, WindowRole } from '@shared/ipc'
 import { DiceRoll, FullState } from '@shared/types'
 
 // Preload pencere bağlamında çalışır ama ana süreçle aynı tsconfig'i (DOM'suz) kullanır.
@@ -80,6 +80,13 @@ const api: DndApi = {
     getInfo: () => ipcRenderer.invoke(IPC.appGetInfo),
     getDisplays: () => ipcRenderer.invoke(IPC.appGetDisplays),
     toggleGameFullscreen: () => ipcRenderer.send(IPC.appToggleGameFullscreen)
+  },
+
+  update: {
+    getStatus: () => ipcRenderer.invoke(IPC.updateGetStatus),
+    onStatus: (listener) => subscribe<UpdateStatus>(IPC.updateStatus, listener),
+    accept: () => ipcRenderer.send(IPC.updateAccept),
+    decline: () => ipcRenderer.send(IPC.updateDecline)
   },
 
   log: (level, code, message) => ipcRenderer.send(IPC.log, level, code, message)

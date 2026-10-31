@@ -48,6 +48,10 @@ export const IPC = {
   storageConfirmSetup: 'dnd:storage:confirmSetup',
   storageRetry: 'dnd:storage:retry',
   storageMove: 'dnd:storage:move',
+  updateStatus: 'dnd:update:status',
+  updateGetStatus: 'dnd:update:getStatus',
+  updateAccept: 'dnd:update:accept',
+  updateDecline: 'dnd:update:decline',
   log: 'dnd:log'
 } as const
 
@@ -199,6 +203,15 @@ export interface AppInfo {
   crashedLastTime: boolean
 }
 
+/** Otomatik güncellemenin durumu. Yeni sürüm yokken, denetlenemediyse ya da ertelendiyse `idle`. */
+export type UpdateStatus =
+  | { phase: 'idle' }
+  /** Yeni sürüm var; kullanıcının onayı bekleniyor. */
+  | { phase: 'available'; version: string }
+  | { phase: 'downloading'; version: string; percent: number }
+  | { phase: 'installing'; version: string }
+  | { phase: 'failed'; version: string }
+
 export interface DisplayInfo {
   id: number
   /** "1: 2560x1440 (ana)" gibi gösterim metni. */
@@ -310,6 +323,15 @@ export interface DndApi {
     getInfo(): Promise<AppInfo>
     getDisplays(): Promise<DisplayInfo[]>
     toggleGameFullscreen(): void
+  }
+
+  /** Otomatik güncelleme. İndirme yalnızca `accept` ile başlar; onay ana menüden gelir. */
+  update: {
+    getStatus(): Promise<UpdateStatus>
+    onStatus(listener: (status: UpdateStatus) => void): () => void
+    accept(): void
+    /** Soruyu kapatır ya da süren indirmeyi iptal eder. Bir sonraki açılışta yeniden sorulur. */
+    decline(): void
   }
 
   /** Arayüzden log dosyasına satır yazar. */

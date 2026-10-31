@@ -7,13 +7,15 @@ module.exports = {
   productName: 'DndOynatma',
   directories: { output: 'release', buildResources: 'build' },
 
-  // Yalnızca derlenmiş çıktı ve package.json paketlenir. Arayüz kütüphaneleri derlemenin içindedir,
-  // ana süreç yalnızca Electron ve Node modüllerini kullanır; node_modules pakete girmez.
+  // Yalnızca derlenmiş çıktı ve package.json paketlenir. Bütün kütüphaneler derlemenin içindedir
+  // (ana süreçte electron-updater da); node_modules pakete girmez.
   files: [{ from: outDir, to: 'out' }, 'package.json', '!node_modules'],
   asar: true,
   npmRebuild: false,
   electronLanguages: ['tr', 'en-US'],
-  publish: null,
+  // Otomatik güncelleme buradan okur. Yükleme komutla yapılır (docs/PAKETLEME.md); `dist` yalnızca
+  // `latest.yml` ve pakete giren `app-update.yml` dosyalarını üretir.
+  publish: { provider: 'github', owner: 'SamurayJax', repo: 'DndOynatma' },
 
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],
@@ -24,8 +26,9 @@ module.exports = {
     // Tek tıkla kurulum: yönetici izni istemez, kullanıcının kendi klasörüne kurar.
     oneClick: true,
     perMachine: false,
-    // Yönetici izni ve otomatik güncelleme kullanılmadığı için yardımcı dosyaları üretilmez.
+    // Yönetici izni kullanılmadığı için yardımcısı paketlenmez.
     packElevateHelper: false,
+    // Güncelleme parça parça değil, kurulum dosyasının tamamı indirilerek yapılır; tek dosya yayımlanır.
     differentialPackage: false,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,

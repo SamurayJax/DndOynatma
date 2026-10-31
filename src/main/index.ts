@@ -19,6 +19,8 @@ import { checkParent, copySave, failure, isUsablePath, pickParent, success, tras
 import { runSetup } from './setup'
 import { LoadResult, loadAppState, loadDiceHistory, saveAppState } from './storage'
 import { Store } from './store'
+import { loadUpdateEngine } from './updateEngine'
+import { Updater } from './updater'
 import { WindowManager } from './windows'
 
 let paths: DataPaths | null = null
@@ -191,6 +193,11 @@ async function moveDataDir(parent: unknown, dataPaths: DataPaths, activeStore: S
   return success(target, trashed ? '' : 'Eski kayıt klasörü kaldırılamadı; yerinde duruyor.')
 }
 
+/** Yalnızca kurulu uygulama güncellenir; testler internete çıkmaz (yerel sunucu verilmedikçe). */
+function updatesEnabled(): boolean {
+  return app.isPackaged && (!isolatedRun || Boolean(process.env['DND_UPDATE_URL']?.trim()))
+}
+
 function startWithDataDir(dataDir: string, fixed: boolean, configFile: string): void {
   const prepared = prepareDataPaths(dataDir)
   const dataPaths = prepared.paths
@@ -252,6 +259,12 @@ function startWithDataDir(dataDir: string, fixed: boolean, configFile: string): 
   const activeWindows = new WindowManager({ store: activeStore, clearDice: () => clearDiceFile(dataPaths.diceFile) })
   windows = activeWindows
 
+  const updater = new Updater({
+    loadEngine: loadUpdateEngine,
+    publish: broadcast,
+    isPlaying: () => activeStore.getState().session.phase === 'playing'
+  })
+
   handleMediaProtocol(dataPaths.imagesDir, dataPaths.soundsDir)
   registerIpc({
     store: activeStore,
@@ -270,10 +283,12 @@ function startWithDataDir(dataDir: string, fixed: boolean, configFile: string): 
       logDir: dataPaths.logDir,
       logFile: log.currentFile(),
       crashedLastTime
-    })
+    }),
+    update: updater
   })
 
   activeWindows.openMenu()
+  if (updatesEnabled()) void updater.check()
 }
 
 /** Düzgün kapanış. Çökme işareti yalnızca burada silinir. */

@@ -20,10 +20,12 @@ Her şey `release\` klasörüne yazılır (repoya girmez):
 |----------------|--------|
 | `DndOynatma-Kurulum-<sürüm>.exe` | kullanıcıya verilecek kurulum dosyası (yaklaşık 90 MB) |
 | `win-unpacked\` | kurulumun açılmış hâli; `DndOynatma.exe` buradan doğrudan çalışır (yaklaşık 320 MB) |
+| `latest.yml` | otomatik güncellemenin okuduğu sürüm bilgisi; kurulum dosyasıyla birlikte yayımlanır |
 | `builder-debug.yml` | electron-builder'ın ayrıntı dökümü |
 
 Pakete yalnızca derlenmiş `out/` klasörü ve `package.json` girer (`resources\app.asar`).
-Kaynak kod, testler, belgeler ve `node_modules` girmez; arayüz kütüphaneleri derlemenin içindedir.
+Kaynak kod, testler, belgeler ve `node_modules` girmez; kütüphaneler derlemenin içindedir.
+`resources\app-update.yml` otomatik güncellemenin nereye bakacağını söyler.
 
 ## Kurulum dosyası ne yapar
 
@@ -43,6 +45,30 @@ klasöründedir (bkz. `PLAN.md`, "Kayıt"). Klasörün yeri `%APPDATA%\DndOynatm
 tutulur. İkisi de kurulum klasörünün dışındadır: güncelleme de kaldırma da onlara dokunmaz.
 Electron'un kendi önbelleği `%APPDATA%\dndoynatma\` altındadır; kaldırmada o da silinmez
 (`deleteAppDataOnUninstall: false`).
+
+## Otomatik güncelleme
+
+Kurulu uygulama her açılışta, internet varsa, GitHub Releases'teki son sürüme bakar (`electron-updater`,
+`src/main/updater.ts`). Yeni sürüm varsa ana menüde sorar; **onay gelmeden hiçbir şey indirilmez**. Onay
+gelince kurulum dosyası indirilir, SHA-512 özeti `latest.yml` ile karşılaştırılır, uygulama kaydını yazıp
+kapanır, kurulum sessizce çalışır ve uygulama yeniden açılır. İnternet yoksa, "Şimdi değil" denirse ya da
+dosya doğrulanamazsa uygulama olduğu gibi kalır. Kayıt klasörü kurulum klasörünün dışındadır, etkilenmez.
+
+Yeni sürüm yayımlamak (depo herkese açık olmalı; uygulamaya anahtar gömülmez):
+
+1. `package.json` sürümünü artır, `CHANGELOG.md`'yi yaz.
+2. `npm run dist` ile `release\` altında kurulum dosyasını ve `latest.yml`'yi üret.
+3. Sürümü GitHub'a yükle. Etiket `v<sürüm>`, iki dosya da gerekir:
+
+   `gh release create v<sürüm> release/DndOynatma-Kurulum-<sürüm>.exe release/latest.yml --title "DndOynatma <sürüm>" --notes-file <notlar>`
+
+Taslak (`--draft`) ya da ön sürüm (`--prerelease`) kullanıcılara gitmez.
+
+Bu özellikten önceki sürümler (1.0.0 ve öncesi) kendini güncelleyemez; onlara yeni kurulum dosyası bir kez elle
+kurulur. Kurulum dosyası imzasız olduğu için imza denetimi yapılmaz; doğrulama özet ve HTTPS ile sağlanır.
+
+`node e2e/paket/guncelleme.mjs` akışı paketli uygulamada yerel bir sunucuyla dener (soru, "Şimdi değil", vazgeçme,
+bozuk dosya, indirme, çevrimdışı). Kurulumu çalıştırmaz; asıl kurulum adımı gerçek bir sürüm geçişinde görülür.
 
 ## Simge
 

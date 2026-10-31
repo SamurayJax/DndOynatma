@@ -15,6 +15,7 @@ import { MusicDeps, addAmbientFile, addAmbientWithDialog, importTracks, importTr
 import { deliverStartupNotices, notify, report } from './notify'
 import { DataPaths } from './paths'
 import { Store } from './store'
+import { Updater } from './updater'
 import { WindowManager } from './windows'
 
 export interface IpcDeps {
@@ -28,6 +29,7 @@ export interface IpcDeps {
     move: (parent: unknown) => Promise<StorageResult>
   }
   getInfo: () => AppInfo
+  update: Pick<Updater, 'getStatus' | 'accept' | 'decline'>
 }
 
 const LOG_LEVELS: readonly LogLevel[] = ['BILGI', 'UYARI', 'HATA']
@@ -107,6 +109,15 @@ export function registerIpc(deps: IpcDeps): void {
 
   on(IPC.dispatch, (_role, _event, action) => {
     store.dispatch(action)
+  })
+
+  handle(IPC.updateGetStatus, () => deps.update.getStatus())
+  // Soru yalnızca ana menüde çıkar; oyun sırasında açık bir pencereden kurulum başlatılmaz.
+  on(IPC.updateAccept, (role) => {
+    if (role === 'menu') deps.update.accept()
+  })
+  on(IPC.updateDecline, (role) => {
+    if (role === 'menu') deps.update.decline()
   })
 
   handle(IPC.libraryImport, (_role, event, kind) => {
