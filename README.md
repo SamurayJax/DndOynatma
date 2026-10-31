@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 1.1.0 (Windows)
+**Sürüm:** 1.2.0 (Windows)
 
 ## Ne yapar
 

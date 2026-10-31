@@ -1,6 +1,6 @@
 # Sürüm Geçmişi
 
-## 1.2.0 — hazırlanıyor
+## 1.2.0 — 2026-10-31
 
 ### Değişenler
 

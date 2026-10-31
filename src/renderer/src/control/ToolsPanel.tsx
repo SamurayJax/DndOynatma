@@ -64,21 +64,22 @@ export function ToolsPanel(): JSX.Element {
           Panel
         </Button>
       </div>
-      <div className="ctl-colors" role="group" aria-label="Kalem rengi">
-        {PEN_COLORS.map((color) => (
-          <button
-            key={color}
-            type="button"
-            className={cx('ctl-color', usesPenColor(tool) && penColor === color && 'is-active')}
-            style={{ background: PEN_COLOR_INFO[color].value }}
-            aria-label={`Kalem rengi: ${PEN_COLOR_INFO[color].label}`}
-            aria-pressed={usesPenColor(tool) && penColor === color}
-            title={`Kalem: ${PEN_COLOR_INFO[color].label}`}
-            onClick={() => dispatch({ type: 'session/setPenColor', color })}
-          />
-        ))}
-      </div>
+      {/* Sağ sütun 1080p'de tam dolu: renkler ayrı satır değil, kalınlıkla aynı satırda durur. */}
       <div className="ctl-tools__footer">
+        <div className="ctl-colors" role="group" aria-label="Kalem rengi">
+          {PEN_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              className={cx('ctl-color', usesPenColor(tool) && penColor === color && 'is-active')}
+              style={{ background: PEN_COLOR_INFO[color].value }}
+              aria-label={`Kalem rengi: ${PEN_COLOR_INFO[color].label}`}
+              aria-pressed={usesPenColor(tool) && penColor === color}
+              title={`Kalem: ${PEN_COLOR_INFO[color].label}`}
+              onClick={() => dispatch({ type: 'session/setPenColor', color })}
+            />
+          ))}
+        </div>
         {/* Kalınlık kalem ve silgi için ortaktır; silgi aynı ayarda kalemden geniştir. */}
         <div className="ctl-widths" role="group" aria-label="Kalınlık">
           {WIDTHS.map((width) => (
@@ -96,9 +97,7 @@ export function ToolsPanel(): JSX.Element {
           ))}
         </div>
         {/* Çizimler oyun ekranında tutulur; burada var olup olmadıkları bilinmez, düğme hep açıktır. */}
-        <Button size="sm" icon={<TrashIcon size={16} />} title={CLEAR_HINT} onClick={() => dispatch({ type: 'session/clearDrawing' })}>
-          Çizimi temizle
-        </Button>
+        <Button size="sm" className="ctl-clear" icon={<TrashIcon size={16} />} aria-label="Çizimi temizle" title={`Çizimi temizle. ${CLEAR_HINT}`} onClick={() => dispatch({ type: 'session/clearDrawing' })} />
       </div>
     </Panel>
   )
