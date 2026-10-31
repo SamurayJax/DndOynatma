@@ -1,15 +1,20 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { JSX, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
-import { PEN_COLORS, PEN_COLOR_INFO, PEN_WIDTHS } from '@shared/types'
+import { PEN_COLORS, PEN_COLOR_INFO, PEN_WIDTHS, usesPenColor } from '@shared/types'
 import type { PenWidth, Tool, ToolbarLayout } from '@shared/types'
 import { dispatch, useApp, useSession } from '@renderer/lib/useAppState'
-import { ChevronLeftIcon, ChevronRightIcon, CursorIcon, EraserIcon, GripIcon, OrientationIcon, PencilIcon, TrashIcon, UndoIcon, cx } from '@renderer/ui'
+import { ChevronLeftIcon, ChevronRightIcon, CursorIcon, DrawArrowIcon, DrawEllipseIcon, DrawLineIcon, DrawRectIcon, DrawTextIcon, EraserIcon, GripIcon, OrientationIcon, PencilIcon, TrashIcon, UndoIcon, cx } from '@renderer/ui'
 import type { FitScale } from './useFitScale'
 
 const TOOLS: readonly { id: Tool; label: string; icon: ReactNode }[] = [
   { id: 'mouse', label: 'Fare', icon: <CursorIcon size={18} /> },
   { id: 'pen', label: 'Kalem', icon: <PencilIcon size={18} /> },
-  { id: 'eraser', label: 'Silgi', icon: <EraserIcon size={18} /> }
+  { id: 'eraser', label: 'Silgi', icon: <EraserIcon size={18} /> },
+  { id: 'line', label: 'Düz çizgi', icon: <DrawLineIcon size={18} /> },
+  { id: 'arrow', label: 'Ok', icon: <DrawArrowIcon size={18} /> },
+  { id: 'rect', label: 'Dikdörtgen', icon: <DrawRectIcon size={18} /> },
+  { id: 'ellipse', label: 'Daire', icon: <DrawEllipseIcon size={18} /> },
+  { id: 'text', label: 'Metin', icon: <DrawTextIcon size={18} /> }
 ]
 
 const WIDTH_LABELS: Record<PenWidth, string> = { thin: 'ince', medium: 'orta', thick: 'kalın' }
@@ -37,7 +42,7 @@ function ToolButton(props: { label: string; active?: boolean; className?: string
 }
 
 /**
- * Oyun ekranındaki araç paneli: fare, kalem, silgi, renk, kalınlık, geri al ve temizle. DM tutamaçtan
+ * Oyun ekranındaki araç paneli: fare, kalem, silgi, şekiller, metin, renk, kalınlık, geri al ve temizle. DM tutamaçtan
  * sürükleyerek taşır, yatay ya da dikey dizer, küçültür; `T` tuşu gizler ve geri açar. Yeri kayda girer.
  * Oyuncular da görür (paylaşılan pencere burası); bu yüzden üstüne gelinmedikçe yarı saydamdır.
  *
@@ -138,7 +143,7 @@ export function ToolBar({ fit }: { fit: FitScale }): JSX.Element | null {
           ))}
           <span className="game-tb__sep" />
           {PEN_COLORS.map((color) => (
-            <ToolButton key={color} label={`Renk: ${PEN_COLOR_INFO[color].label}`} active={tool === 'pen' && penColor === color} className="game-tb__color" onClick={() => dispatch({ type: 'session/setPenColor', color })}>
+            <ToolButton key={color} label={`Renk: ${PEN_COLOR_INFO[color].label}`} active={usesPenColor(tool) && penColor === color} className="game-tb__color" onClick={() => dispatch({ type: 'session/setPenColor', color })}>
               <span className="game-tb__dot" style={{ background: PEN_COLOR_INFO[color].value }} />
             </ToolButton>
           ))}

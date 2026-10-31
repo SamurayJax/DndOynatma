@@ -310,7 +310,12 @@ export interface AppState {
   classes: CharacterClass[]
 }
 
-export type Tool = 'mouse' | 'pen' | 'eraser'
+export type Tool = 'mouse' | 'pen' | 'eraser' | 'line' | 'arrow' | 'rect' | 'ellipse' | 'text'
+
+/** Seçili renkle çizen araçlar. */
+export function usesPenColor(tool: Tool): boolean {
+  return tool !== 'mouse' && tool !== 'eraser'
+}
 
 export const PEN_COLORS = ['red', 'black', 'white', 'blue', 'green', 'yellow'] as const
 export type PenColor = (typeof PEN_COLORS)[number]

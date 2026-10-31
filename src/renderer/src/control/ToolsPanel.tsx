@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from 'react'
-import { PEN_COLORS, PEN_COLOR_INFO } from '@shared/types'
+import { PEN_COLORS, PEN_COLOR_INFO, usesPenColor } from '@shared/types'
 import type { PenWidth, Tool } from '@shared/types'
 import { dispatch, useApp, useSession } from '@renderer/lib/useAppState'
 import { Button, CursorIcon, EraserIcon, GripIcon, Panel, PencilIcon, TrashIcon, cx } from '@renderer/ui'
@@ -69,10 +69,10 @@ export function ToolsPanel(): JSX.Element {
           <button
             key={color}
             type="button"
-            className={cx('ctl-color', tool === 'pen' && penColor === color && 'is-active')}
+            className={cx('ctl-color', usesPenColor(tool) && penColor === color && 'is-active')}
             style={{ background: PEN_COLOR_INFO[color].value }}
             aria-label={`Kalem rengi: ${PEN_COLOR_INFO[color].label}`}
-            aria-pressed={tool === 'pen' && penColor === color}
+            aria-pressed={usesPenColor(tool) && penColor === color}
             title={`Kalem: ${PEN_COLOR_INFO[color].label}`}
             onClick={() => dispatch({ type: 'session/setPenColor', color })}
           />

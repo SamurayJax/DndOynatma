@@ -117,7 +117,7 @@ export type AppAction =
 export type SessionAction =
   /** Araç değişimi çizimlere dokunmaz; çizim dururken fareyle görsel taşınabilir. */
   | { type: 'session/setTool'; tool: Tool }
-  /** Kalemin rengini seçer ve kaleme geçer. Çizilmiş çizgileri etkilemez. */
+  /** Rengi seçer; renkle çizen bir araçta değilse kaleme geçer. Çizilmiş çizgileri etkilemez. */
   | { type: 'session/setPenColor'; color: PenColor }
   /** Kalemin ve silginin kalınlığı. Çizilmiş çizgileri etkilemez. */
   | { type: 'session/setPenWidth'; width: PenWidth }

@@ -425,3 +425,19 @@
 .game-tb__width--thick {
   height: 9px;
 }
+
+/* Oyun alanına yazılan metin: bırakılınca tuvale geçer. */
+.game-text-draft {
+  position: absolute;
+  z-index: 4;
+  width: 40%;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px dashed var(--accent);
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+}

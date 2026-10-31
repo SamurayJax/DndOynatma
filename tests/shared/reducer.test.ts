@@ -2017,6 +2017,17 @@ describe('session/setTool', () => {
     expect(next.session.drawingNonce).toBe(3)
   })
 
+  it('şekil aracındayken renk seçmek aracı değiştirmez', () => {
+    const rect = apply(makeState(), { type: 'session/setTool', tool: 'rect' })
+    expect(apply(rect, { type: 'session/setPenColor', color: 'blue' }).session).toMatchObject({ tool: 'rect', penColor: 'blue' })
+    const eraser = apply(makeState(), { type: 'session/setTool', tool: 'eraser' })
+    expect(apply(eraser, { type: 'session/setPenColor', color: 'blue' }).session.tool).toBe('pen')
+  })
+
+  it.each([['line'], ['arrow'], ['rect'], ['ellipse'], ['text']] as const)('%s bir araçtır', (tool) => {
+    expect(apply(makeState(), { type: 'session/setTool', tool }).session.tool).toBe(tool)
+  })
+
   it('renk seçmek kaleme geçirir; aynı renk ve kalemde durum değişmez', () => {
     const mouse = apply(makeState(), { type: 'session/setTool', tool: 'mouse' })
     expect(apply(mouse, { type: 'session/setPenColor', color: 'red' }).session.tool).toBe('pen')

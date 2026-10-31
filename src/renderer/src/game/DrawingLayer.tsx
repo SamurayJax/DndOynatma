@@ -1,13 +1,16 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import type Konva from 'konva'
-import { Layer, Line, Rect as HitRect } from 'react-konva'
+import { Layer, Line, Rect as HitRect, Text } from 'react-konva'
 import type { Rect } from '@shared/layout'
 import { ERASER_WIDTH_FACTOR, PEN_COLOR_INFO, PEN_WIDTH_PX } from '@shared/types'
 import type { ID, PenColor, PenWidth, Tool } from '@shared/types'
+import { constrainEnd, isShapeTool, isTooSmall, shapePoints } from './drawShapes'
+import type { Point } from './drawShapes'
+import { stagePalette } from './stageTheme'
 
-/** Oyun alanına iz bırakan araçlar: kalem ve silgi. */
-type DrawTool = Exclude<Tool, 'mouse'>
+/** Oyun alanına basılınca iz bırakan araçlar; metin ayrı yoldan gelir (bkz. `DrawingApi`). */
+type DrawTool = Exclude<Tool, 'mouse' | 'text'>
 
 interface Stroke {
   id: number
@@ -19,12 +22,33 @@ interface Stroke {
   points: number[]
 }
 
+/** Oyun alanına yazılmış metin. */
+interface TextMark {
+  id: number
+  tool: 'text'
+  color: PenColor
+  x: number
+  y: number
+  text: string
+  fontSize: number
+}
+
+type Mark = Stroke | TextMark
+
 interface ActiveStroke {
   pointerId: number
   tool: DrawTool
   color: PenColor
   width: number
   points: number[]
+  /** Şekil araçlarında sürüklemenin başı ve o anki ucu; kalem ve silgide null. */
+  start: Point | null
+  end: Point | null
+}
+
+/** PlayStage'in tuval dışındaki yazı kutusundan metni katmana vermesi için. */
+export interface DrawingApi {
+  addText: (sceneKey: string, x: number, y: number, text: string, color: PenColor, fontSize: number) => void
 }
 
 /** Halenin çizgiden her iki yana taşan toplam genişliği. */
@@ -32,6 +56,9 @@ const HALO_EXTRA = 5
 /** Bir önceki noktaya bundan yakın olan nokta eklenmez (sanal piksel). */
 const MIN_POINT_DISTANCE = 1.5
 const PEN_CURSOR = 'crosshair'
+const TEXT_CURSOR = 'text'
+/** Metnin zeminde kaybolmaması için çevresine çizilen şeridin kalınlığı. */
+const TEXT_OUTLINE = 4
 /**
  * Silgi, kendinden önce çizilmiş her şeyi geçtiği yerde saydamlaştırır. Çizimler ayrı bir katmanda
  * olduğu için alttaki görseller etkilenmez.
@@ -39,7 +66,7 @@ const PEN_CURSOR = 'crosshair'
 const ERASE_OPERATION = 'destination-out'
 const DRAW_OPERATION = 'source-over'
 
-function widthFor(tool: DrawTool, penWidth: PenWidth): number {
+function widthFor(tool: Exclude<Tool, 'mouse'>, penWidth: PenWidth): number {
   const base = PEN_WIDTH_PX[penWidth]
   return tool === 'eraser' ? base * ERASER_WIDTH_FACTOR : base
 }
@@ -66,6 +93,12 @@ function drawSmoothStroke(context: Konva.Context, shape: Konva.Shape): void {
   if (points.length < 4) return
   context.beginPath()
   context.moveTo(points[0], points[1])
+  // Şekillerin köşeleri keskin kalır; yumuşatma yalnızca serbest çizim içindir.
+  if (shape.getAttr('straight') === true) {
+    for (let i = 2; i < points.length; i += 2) context.lineTo(points[i], points[i + 1])
+    context.strokeShape(shape)
+    return
+  }
   for (let i = 2; i < points.length - 2; i += 2) {
     context.quadraticCurveTo(points[i], points[i + 1], (points[i] + points[i + 2]) / 2, (points[i + 1] + points[i + 3]) / 2)
   }
@@ -80,16 +113,37 @@ function drawablePoints(points: number[]): number[] {
   return points.length === 2 ? [points[0], points[1], points[0] + 0.01, points[1]] : points
 }
 
+const MarkText = memo(function MarkText({ mark }: { mark: TextMark }): JSX.Element {
+  const style = PEN_COLOR_INFO[mark.color]
+  return (
+    <Text
+      x={mark.x}
+      y={mark.y}
+      text={mark.text}
+      fontSize={mark.fontSize}
+      fontStyle="600"
+      fontFamily={stagePalette().fontBody}
+      fill={style.value}
+      stroke={style.halo ?? 'rgba(0, 0, 0, 0.55)'}
+      strokeWidth={TEXT_OUTLINE}
+      fillAfterStrokeEnabled
+      wrap="none"
+      listening={false}
+    />
+  )
+})
+
 const StrokeLines = memo(function StrokeLines({ stroke }: { stroke: Stroke }): JSX.Element {
   const points = drawablePoints(stroke.points)
+  const straight = isShapeTool(stroke.tool)
   if (stroke.tool === 'eraser') {
     return <Line {...LINE_PROPS} points={points} stroke="#000" strokeWidth={stroke.width} globalCompositeOperation={ERASE_OPERATION} />
   }
   const style = PEN_COLOR_INFO[stroke.color]
   return (
     <>
-      {style.halo !== null && <Line {...LINE_PROPS} points={points} stroke={style.halo} strokeWidth={stroke.width + HALO_EXTRA} />}
-      <Line {...LINE_PROPS} points={points} stroke={style.value} strokeWidth={stroke.width} />
+      {style.halo !== null && <Line {...LINE_PROPS} straight={straight} points={points} stroke={style.halo} strokeWidth={stroke.width + HALO_EXTRA} />}
+      <Line {...LINE_PROPS} straight={straight} points={points} stroke={style.value} strokeWidth={stroke.width} />
     </>
   )
 })
@@ -99,21 +153,23 @@ let nextStrokeId = 1
 
 interface DrawingSurfaceProps {
   /** Seçili çizim aracı; fare seçiliyken null. */
-  tool: DrawTool | null
+  tool: Exclude<Tool, 'mouse'> | null
   color: PenColor
   /** Seçili aracın o anki kalınlığı (sanal piksel). */
   width: number
   area: Rect
   /** Bu pencerenin bitmiş çizgileri; katmanda tutulur ki pencere değişip geri gelince dursunlar. */
-  strokes: Stroke[]
-  setStrokes: (update: (previous: Stroke[]) => Stroke[]) => void
+  strokes: Mark[]
+  setStrokes: (update: (previous: Mark[]) => Mark[]) => void
+  /** Metin aracıyla oyun alanına tıklandı (sanal koordinat). */
+  onTextPoint: (x: number, y: number) => void
 }
 
 /**
  * Bir pencerenin çizgilerini çizer ve yenilerini toplar. Katman bunu pencere ve sayaçla anahtarlar:
  * pencere ya da sayaç değişince baştan kurulur, yarım kalan çizgi bırakılır.
  */
-function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: DrawingSurfaceProps): JSX.Element {
+function DrawingSurface({ tool, color, width, area, strokes, setStrokes, onTextPoint }: DrawingSurfaceProps): JSX.Element {
   // Çizilmekte olan çizgi React durumuna girmez; bu iki Konva çizgisi doğrudan güncellenir.
   const haloRef = useRef<Konva.Line>(null)
   const inkRef = useRef<Konva.Line>(null)
@@ -126,6 +182,9 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
     const ink = inkRef.current
     if (!halo || !ink) return
     const points = drawablePoints(active.points)
+    const straight = isShapeTool(active.tool)
+    ink.setAttr('straight', straight)
+    halo.setAttr('straight', straight)
     ink.strokeWidth(active.width)
     if (active.tool === 'eraser') {
       halo.points([])
@@ -150,7 +209,7 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
   }
 
   /** Olayın sanal koordinattaki yeri; `onStage`: imleç hâlâ sahnenin üstünde mi. */
-  const locate = (evt: PointerEvent): { x: number; y: number; onStage: boolean } | null => {
+  const locate = (evt: MouseEvent): { x: number; y: number; onStage: boolean } | null => {
     const layer = inkRef.current?.getLayer()
     const stage = layer?.getStage()
     if (!layer || !stage) return null
@@ -164,10 +223,25 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
     return { x: point.x, y: point.y, onStage }
   }
 
+  // Yazı kutusu basışta değil tıklama bitince açılır: basış sırasında tarayıcı odağı tuvale geri alır,
+  // kutu açılır açılmaz kapanırdı. Açık kutu da aynı basışta odağını kaybedip kendini bırakmış olur.
+  const onHitClick = (event: Konva.KonvaEventObject<MouseEvent>): void => {
+    if (tool !== 'text' || event.evt.button !== 0) return
+    const point = locate(event.evt)
+    if (point) onTextPoint(point.x, point.y)
+  }
+
   /** Noktayı çizgiye ekler; imleç sahnenin üstündeyse true döner. */
   const extend = (active: ActiveStroke, evt: PointerEvent): boolean => {
     const point = locate(evt)
     if (!point) return false
+    if (active.start !== null && isShapeTool(active.tool)) {
+      const end = evt.shiftKey ? constrainEnd(active.tool, active.start, point) : { x: point.x, y: point.y }
+      active.end = end
+      active.points = shapePoints(active.tool, active.start, end, active.width)
+      // Şekil, imleç sahneden çıksa da bırakılana kadar sürer; dışında kalan kısmı kırpılır.
+      return true
+    }
     const { points } = active
     const dx = point.x - points[points.length - 2]
     const dy = point.y - points[points.length - 1]
@@ -185,6 +259,10 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
     if (!active) return
     activeRef.current = null
     stopTracking()
+    if (active.start !== null && (active.end === null || isTooSmall(active.start, active.end))) {
+      erase()
+      return
+    }
     const stroke: Stroke = { id: nextStrokeId++, tool: active.tool, color: active.color, width: active.width, points: active.points }
     // Geçici çizgi burada silinmez: React yeni çizgiyi çizene kadar ekranda kalır, yoksa bir an kaybolur.
     setStrokes((previous) => [...previous, stroke])
@@ -195,7 +273,16 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
     finish()
     const start = locate(evt)
     if (!start) return
-    const active: ActiveStroke = { pointerId: evt.pointerId, tool: withTool, color, width, points: [start.x, start.y] }
+    const shape = isShapeTool(withTool)
+    const active: ActiveStroke = {
+      pointerId: evt.pointerId,
+      tool: withTool,
+      color,
+      width,
+      points: shape ? [] : [start.x, start.y],
+      start: shape ? { x: start.x, y: start.y } : null,
+      end: null
+    }
     activeRef.current = active
     paint(active)
 
@@ -239,7 +326,7 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
   const onPointerDown = (event: Konva.KonvaEventObject<PointerEvent>): void => {
     const evt = event.evt
     // İkinci parmak ve sol dışındaki fare tuşları çizmez.
-    if (tool === null || !evt.isPrimary || evt.button !== 0) return
+    if (tool === null || tool === 'text' || !evt.isPrimary || evt.button !== 0) return
     begin(evt, tool)
   }
 
@@ -269,6 +356,8 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || event.repeat) return
       if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) return
+      // Yazı kutusunda Ctrl+Z yazıyı geri alır, çizimi değil.
+      if (event.target instanceof HTMLInputElement) return
       if (event.key.toLowerCase() !== 'z') return
       event.preventDefault()
       if (activeRef.current !== null) return
@@ -281,10 +370,8 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
   return (
     <>
       {/* Dolgusu yok, görünmez; ama Konva isabet alanına çizildiği için oyun alanındaki basışları yakalar. */}
-      <HitRect x={area.x} y={area.y} width={area.width} height={area.height} onPointerDown={onPointerDown} />
-      {strokes.map((stroke) => (
-        <StrokeLines key={stroke.id} stroke={stroke} />
-      ))}
+      <HitRect x={area.x} y={area.y} width={area.width} height={area.height} onPointerDown={onPointerDown} onClick={onHitClick} />
+      {strokes.map((mark) => (mark.tool === 'text' ? <MarkText key={mark.id} mark={mark} /> : <StrokeLines key={mark.id} stroke={mark} />))}
       <Line ref={haloRef} {...LINE_PROPS} />
       <Line ref={inkRef} {...LINE_PROPS} />
     </>
@@ -294,12 +381,12 @@ function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: Drawi
 interface DrawingStore {
   /** Çizimlerin en son temizlendiği sayaç değeri. */
   nonce: number
-  byScene: Record<string, Stroke[]>
+  byScene: Record<string, Mark[]>
 }
 
-const NO_STROKES: Stroke[] = []
+const NO_STROKES: Mark[] = []
 /** Hiç pencere yokken çizilenlerin tutulduğu anahtar. */
-const NO_SCENE = '(pencere yok)'
+export const NO_SCENE = '(pencere yok)'
 
 /**
  * Kalem çizimleri: GameScreen'deki `<Stage>` içinde en üst katman.
@@ -319,8 +406,11 @@ export function DrawingLayer(props: {
   undoNonce: number
   area: Rect
   sceneId: ID | null
+  onTextPoint: (x: number, y: number) => void
+  /** PlayStage'in metin eklemek için tuttuğu bağlantı. */
+  apiRef: { current: DrawingApi | null }
 }): JSX.Element | null {
-  const { tool, penColor, penWidth, nonce, undoNonce, area } = props
+  const { tool, penColor, penWidth, nonce, undoNonce, area, onTextPoint, apiRef } = props
   const sceneKey = props.sceneId ?? NO_SCENE
   const drawTool = tool === 'mouse' ? null : tool
   const penActive = drawTool !== null
@@ -328,7 +418,7 @@ export function DrawingLayer(props: {
   const layerRef = useRef<Konva.Layer>(null)
   // Silgi imleci ekrandaki gerçek çapı gösterir; pencere boyutu değişince ölçek de değişir.
   const stageScale = layerRef.current?.getStage()?.scaleX() ?? 1
-  const cursor = drawTool === 'eraser' ? eraserCursor(width * stageScale) : PEN_CURSOR
+  const cursor = drawTool === 'eraser' ? eraserCursor(width * stageScale) : drawTool === 'text' ? TEXT_CURSOR : PEN_CURSOR
 
   const [store, setStore] = useState<DrawingStore>(() => ({ nonce, byScene: {} }))
   let current = store
@@ -342,7 +432,7 @@ export function DrawingLayer(props: {
   const strokes = current.byScene[sceneKey] ?? NO_STROKES
 
   const setStrokes = useCallback(
-    (update: (previous: Stroke[]) => Stroke[]): void => {
+    (update: (previous: Mark[]) => Mark[]): void => {
       setStore((previous) => {
         const before = previous.byScene[sceneKey] ?? NO_STROKES
         const after = update(before)
@@ -351,6 +441,18 @@ export function DrawingLayer(props: {
     },
     [sceneKey]
   )
+
+  useEffect(() => {
+    apiRef.current = {
+      addText: (key, x, y, text, color, fontSize) => {
+        const mark: TextMark = { id: nextStrokeId++, tool: 'text', color, x, y, text, fontSize }
+        setStore((previous) => ({ ...previous, byScene: { ...previous.byScene, [key]: [...(previous.byScene[key] ?? NO_STROKES), mark] } }))
+      }
+    }
+    return () => {
+      apiRef.current = null
+    }
+  }, [apiRef])
 
   const lastUndo = useRef(undoNonce)
   useEffect(() => {
@@ -384,7 +486,7 @@ export function DrawingLayer(props: {
       clipWidth={area.width}
       clipHeight={area.height}
     >
-      <DrawingSurface key={`${sceneKey}:${nonce}`} tool={drawTool} color={penColor} width={width} area={area} strokes={strokes} setStrokes={setStrokes} />
+      <DrawingSurface key={`${sceneKey}:${nonce}`} tool={drawTool} color={penColor} width={width} area={area} strokes={strokes} setStrokes={setStrokes} onTextPoint={onTextPoint} />
     </Layer>
   )
 }

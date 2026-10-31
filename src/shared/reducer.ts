@@ -20,6 +20,7 @@ import {
   DEFAULT_CARD_HP,
   isAbility,
   isBossFrame,
+  usesPenColor,
   MAX_CARD_HP,
   StageCard,
   MAX_ABILITY,
@@ -82,7 +83,7 @@ export const MAX_REQUIREMENT = 40
 export const DEFAULT_REQUIREMENT = 10
 export const MAX_PROFICIENCY = 20
 
-const TOOLS: readonly Tool[] = ['mouse', 'pen', 'eraser']
+const TOOLS: readonly Tool[] = ['mouse', 'pen', 'eraser', 'line', 'arrow', 'rect', 'ellipse', 'text']
 const REPEAT_MODES: readonly RepeatMode[] = ['off', 'all', 'one']
 const REORDER_TARGETS = ['front', 'back', 'forward', 'backward'] as const
 const GEOMETRY_KEYS = ['x', 'y', 'width', 'height', 'rotation'] as const
@@ -1460,9 +1461,10 @@ function setPenColor(state: FullState, action: ActionOf<'session/setPenColor'>):
   const color: unknown = action.color
   if (!PEN_COLORS.some((known) => known === color)) return reject(state, 'DND-306', `session/setPenColor: renk geçersiz: ${show(color)}`)
   const session = state.session
-  // Renk seçen kalemle çizmek istiyordur; fareden ya da silgiden kaleme geçilir.
-  if (color === session.penColor && session.tool === 'pen') return { state }
-  return { state: withSession(state, { ...session, penColor: color as PenColor, tool: 'pen' }) }
+  // Renk seçen çizmek istiyordur: fareden ya da silgiden kaleme geçilir, şekil aracı olduğu gibi kalır.
+  const tool = usesPenColor(session.tool) ? session.tool : 'pen'
+  if (color === session.penColor && tool === session.tool) return { state }
+  return { state: withSession(state, { ...session, penColor: color as PenColor, tool }) }
 }
 
 function setPenWidth(state: FullState, action: ActionOf<'session/setPenWidth'>): ReduceResult {

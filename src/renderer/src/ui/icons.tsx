@@ -228,6 +228,47 @@ export function D6Icon(props: IconProps): JSX.Element {
   )
 }
 
+/** Çizim araçları (oyun ekranındaki panel). */
+export function DrawLineIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M5 19 19 5" />
+    </Svg>
+  )
+}
+
+export function DrawArrowIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M5 19 19 5M10 5h9v9" />
+    </Svg>
+  )
+}
+
+export function DrawRectIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <rect x="4" y="6" width="16" height="12" rx="1" />
+    </Svg>
+  )
+}
+
+export function DrawEllipseIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="8" />
+    </Svg>
+  )
+}
+
+export function DrawTextIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M5 7V5h14v2M12 5v14M9 19h6" />
+    </Svg>
+  )
+}
+
 /** Araç panelini taşıma tutamacı: altı nokta. */
 export function GripIcon(props: IconProps): JSX.Element {
   return (

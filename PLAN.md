@@ -598,6 +598,19 @@ Kullanıcı isteği (2026-10-31): TradingView'deki gibi, oyun ekranında duran v
   gibi haleyle çizilir.
 - Kontrol panelindeki araçlar kalır, ikisi aynı durumu paylaşır.
 
+### 13. Çizim araçları (1.2.0) — yapıldı
+
+Araç panelinde düz çizgi, ok, dikdörtgen, daire ve metin (kullanıcı onayı, 2026-10-31).
+
+- Şekil sürükleyerek çizilir; Shift çizgiyi ve oku 45°'ye yapıştırır, dikdörtgeni kare, elipsi daire yapar. Kısa
+  sürükleme iz bırakmaz. Şekiller içi boştur; seçili renk ve kalınlıkla çizilir.
+- Şekil, kalem çizgisi gibi bir nokta dizisidir (`game/drawShapes.ts`): silgi değdiği kısmını siler, geri alınır, çizildiği
+  pencereye aittir, kaydedilmez. Çizildikten sonra taşınmaz.
+- Metin: tıklanan yerde yazı kutusu açılır. Enter ya da başka yere tıklamak bırakır, Escape vazgeçer. Boyutu kalınlık
+  ayarından gelir (30 / 44 / 64). Yazarken 1-9, T ve Ctrl+Z oyun ekranını etkilemez. Bırakılınca düzenlenmez; yanlışsa
+  geri alınır.
+- Bu araçlar yalnızca oyun ekranındaki paneldedir; kontrol panelinde renk ve kalınlık ortaktır.
+
 ### Kararlar (2026-10-05)
 
 - Mevcut arka planın kartına tekrar tıklamak hiçbir şey yapmaz; böyle kalacak.

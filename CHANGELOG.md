@@ -15,6 +15,8 @@
   yazısı basılmaz; fazla boyut çerçeveye gider.
 - **Araç paneli:** oyun ekranında sürüklenebilir şerit: fare, kalem, silgi, renk, kalınlık, geri al, temizle. Yatay ya da
   dikey dizilir, küçültülür; `T` tuşu gizler, yeri kaydedilir. Oyuncular da görür; üstüne gelinmedikçe yarı saydamdır.
+- **Çizim araçları:** düz çizgi, ok, dikdörtgen, daire ve metin. Shift çizgiyi 45°'ye yapıştırır, kare ve daire çizdirir.
+  Silgi, geri alma ve "Çizimi temizle" bunlarda da çalışır; kalem gibi pencereye aittir, kaydedilmez.
 - **Kalem renkleri:** kırmızı ve siyaha beyaz, mavi, yeşil ve sarı eklendi. Kalem tek araç oldu, renk ayrı seçilir.
 
 ## 1.1.0 — 2026-10-31

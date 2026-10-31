@@ -28,6 +28,7 @@
     "src/renderer/src/game/dice/physics.ts",
     "src/renderer/src/game/dice/optics.ts",
     "src/renderer/src/game/dice/throwPlan.ts",
+    "src/renderer/src/game/drawShapes.ts",
     "tests/**/*"
   ]
 }

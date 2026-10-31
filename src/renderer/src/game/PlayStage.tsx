@@ -4,11 +4,12 @@ import type Konva from 'konva'
 import { Group, Layer, Stage, Transformer } from 'react-konva'
 import { activeScene, findImage } from '@shared/layout'
 import type { Rect } from '@shared/layout'
-import { MIN_ITEM_SIZE } from '@shared/types'
-import type { ID } from '@shared/types'
+import { MIN_ITEM_SIZE, PEN_COLOR_INFO } from '@shared/types'
+import type { ID, PenColor, PenWidth } from '@shared/types'
 import { dispatch, useApp, useSession } from '@renderer/lib/useAppState'
 import { ErrorBoundary } from '@renderer/ui'
-import { DrawingLayer } from './DrawingLayer'
+import { DrawingLayer, NO_SCENE } from './DrawingLayer'
+import type { DrawingApi } from './DrawingLayer'
 import { isInside, quarterTurn } from './itemGeometry'
 import { ITEM_NODE_NAME, StageItemNode } from './StageItemNode'
 import { stagePalette } from './stageTheme'
@@ -18,6 +19,20 @@ interface Selection {
   sceneId: ID
   itemId: ID
 }
+
+/** Oyun alanına yazılmakta olan metin. */
+interface TextDraft {
+  id: number
+  x: number
+  y: number
+  sceneKey: string
+  color: PenColor
+  fontSize: number
+}
+
+/** Kalınlık ayarı metnin boyutunu da belirler (sanal piksel). */
+const TEXT_FONT_SIZES: Record<PenWidth, number> = { thin: 30, medium: 44, thick: 64 }
+const MAX_TEXT_LENGTH = 80
 
 type HitKind = 'empty' | 'item' | 'background' | 'other'
 
@@ -98,6 +113,10 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
   /** Arka planın çift tıklamayla seçildiği an (olay zaman damgası). */
   const backgroundPickedAt = useRef(Number.NEGATIVE_INFINITY)
   const [selection, setSelection] = useState<Selection | null>(null)
+  const drawingApi = useRef<DrawingApi | null>(null)
+  const [textDraft, setTextDraft] = useState<TextDraft | null>(null)
+  const nextDraftId = useRef(1)
+  const textInputRef = useRef<HTMLInputElement>(null)
 
   const sceneId = scene?.id ?? null
   const background = scene?.background ?? null
@@ -126,6 +145,30 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
     transformer.nodes(node ? [node] : [])
     transformer.getLayer()?.batchDraw()
   }, [selectedId])
+
+  /** Açık metni bırakır: yazılmışsa oyun alanına geçer, boşsa iz bırakmaz. */
+  const commitText = useCallback((draft: TextDraft, value: string): void => {
+    const text = value.trim()
+    if (text !== '') drawingApi.current?.addText(draft.sceneKey, draft.x, draft.y, text, draft.color, draft.fontSize)
+    setTextDraft((current) => (current?.id === draft.id ? null : current))
+  }, [])
+
+  const placeText = useCallback(
+    (x: number, y: number): void => {
+      setTextDraft({ id: nextDraftId.current++, x, y, sceneKey: sceneId ?? NO_SCENE, color: session.penColor, fontSize: TEXT_FONT_SIZES[session.penWidth] })
+    },
+    [sceneId, session.penColor, session.penWidth]
+  )
+
+  // Araç ya da pencere değişince açık metin bırakılır.
+  useEffect(() => {
+    if (session.tool === 'text' && textDraft?.sceneKey === (sceneId ?? NO_SCENE)) return
+    if (textDraft !== null) commitText(textDraft, textInputRef.current?.value ?? '')
+  }, [session.tool, sceneId, textDraft, commitText])
+
+  useEffect(() => {
+    if (textDraft !== null) textInputRef.current?.focus()
+  }, [textDraft])
 
   const pixelRatio = useDevicePixelRatio()
   useLayoutEffect(() => {
@@ -368,9 +411,33 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
         </Layer>
         {/* Çizim katmanındaki bir hata oyun ekranının tamamını düşürmesin. */}
         <ErrorBoundary scope="çizim" fallback={null}>
-          <DrawingLayer tool={session.tool} penColor={session.penColor} penWidth={session.penWidth} nonce={session.drawingNonce} undoNonce={session.drawingUndoNonce} area={area} sceneId={sceneId} />
+          <DrawingLayer tool={session.tool} penColor={session.penColor} penWidth={session.penWidth} nonce={session.drawingNonce} undoNonce={session.drawingUndoNonce} area={area} sceneId={sceneId} onTextPoint={placeText} apiRef={drawingApi} />
         </ErrorBoundary>
       </Stage>
+      {textDraft !== null && (
+        <input
+          key={textDraft.id}
+          ref={textInputRef}
+          className="game-text-draft"
+          aria-label="Çizim metni"
+          maxLength={MAX_TEXT_LENGTH}
+          autoComplete="off"
+          spellCheck={false}
+          style={{
+            left: textDraft.x * fit.scale,
+            top: textDraft.y * fit.scale,
+            fontSize: textDraft.fontSize * fit.scale,
+            color: PEN_COLOR_INFO[textDraft.color].value
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) commitText(textDraft, event.currentTarget.value)
+            else if (event.key === 'Escape') commitText(textDraft, '')
+            // Oyun ekranının tuşları (R, Delete, 1-9, T) yazarken çalışmaz.
+            event.stopPropagation()
+          }}
+          onBlur={(event) => commitText(textDraft, event.currentTarget.value)}
+        />
+      )}
     </div>
   )
 }
