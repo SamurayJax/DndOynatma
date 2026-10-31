@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 0.9.9 (Windows)
+**Sürüm:** 1.0.0 (Windows)
 
 ## Ne yapar
 
@@ -19,7 +19,7 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
 - **Kalem:** kırmızı ve siyah, üç kalınlık; silgi çizginin değdiği kısmını siler. Çizimin tamamı
   yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
 - **Zarlar:** d20, d10 ve d4 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
-  sonucu gösterir. Geçmişte hangi zarın atıldığı yazar.
+  sonucu gösterir. Kontrol panelinde son atış görünür.
 - **Müzik:** kontrol panelinin "Müzik" sekmesinden kendi dosyalarını (MP3, OGG, WAV, M4A, MP4) yükle,
   çal, ileri-geri sar; tekrar ve ses düzeyi ayarlanır. Ses oyun ekranından çıkar, yani Discord'da
   paylaşılan pencereden oyunculara gider.

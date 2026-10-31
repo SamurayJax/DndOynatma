@@ -126,8 +126,8 @@ oyun bitince hepsi kaybolur.
 
 Kontrol panelindeki zar düğmelerinden birine basılınca oyun ekranında o zar atılır: zar
 ekrana düşer, yuvarlanır, durur ve üste gelen sayı büyük olarak gösterilir. Birkaç saniye
-sonra kaybolur. Kontrol panelinde son atışların kısa geçmişi durur; her satırda hangi zarın
-atıldığı yazar.
+sonra kaybolur. Kontrol panelinde son atış ve hangi zarın atıldığı görünür; atış geçmişi yine
+durumda ve `zar.json`'da tutulur.
 
 - d20: yirmi yüzlü. 20 ve 1 vurgulanır (altın / kırmızı); bu vurgu yalnızca d20 içindir.
 - d10: on uçurtma yüzlü gerçek d10 biçimi. Yüzlerde 1-10 yazar (0 yerine 10).
@@ -153,7 +153,7 @@ Ayrıca:
 
 - kütüphane (8 bölme)
 - araç seçimi: Fare / Kalem kırmızı / Kalem siyah, "Çizimi temizle"
-- zar düğmeleri (d20, d10, d4) ve son atışlar
+- zar düğmeleri (d20, d10, d4), son atış ve istatistikle zar seçimi
 - genel not alanı
 - pencere listesi (tıklayarak geçiş)
 - oyun ekranında şu an duran görsellerin listesi (tek tıkla kaldırma)
@@ -357,7 +357,7 @@ ve d4.
 **Bilinen sınır:** Oyun ekranı masaya tam tepeden bakar. Duran piramidin yüzleri bu açıdan dik
 göründüğü için üzerindeki sayılar basık durur; sonuç her zaman zarın üstündeki büyük sayıdan okunur.
 
-### 5. Müzik, ortam sesleri ve hareketli arka plan (0.9.6) — yapıldı, Discord denemesi bekliyor
+### 5. Müzik, ortam sesleri ve hareketli arka plan (0.9.6) — yapıldı
 
 Kontrol panelinde iki katmanlı bir ses bölümü: arkada çalan **müzik** ve DM'in kendi eklediği
 **ortam sesleri** (kuş sesi, yağmur, taverna uğultusu gibi). Kullanıcı kendi dosyalarını (mp3, ogg,
@@ -423,7 +423,7 @@ karşı taraf duyar. Uygulama kapatılıp açılınca liste yerindedir. Çalına
 koduyla bildirilir.
 
 Durum (2026-10-28): Discord dışındaki her madde otomatik denetimle doğrulandı (`e2e/oyun/08-muzik.mjs`).
-Discord'da pencere paylaşımında sesin karşıya gidip gitmediği kullanıcının denemesini bekliyor.
+Discord'da pencere paylaşımında sesin karşıya gittiğini kullanıcı 2026-10-31'de denedi; ses geliyor.
 
 ### 6. Sınıflar, beceriler ve karakter ekranı (0.9.7) — yapıldı
 
@@ -535,6 +535,11 @@ Kararlar (2026-10-29):
   değilse zarın adı da). Avantajda iki zar (d10 / d4 de olabilir) düşer.
 - Atış geçmişi yine durumda ve `zar.json`'da tutulur; Karakterler sekmesindeki "Son atış"ta
   istatistik atışı "Toplam" diye görünür.
+
+### 7. Gerçek oturumda deneme, tam sürüm (1.0.0) — yapıldı
+
+Kullanıcı uygulamayı yaklaşık 3 saatlik gerçek bir oturumda kullandı, sorun çıkmadı (2026-10-31).
+Müzik ve ortam sesleri Discord pencere paylaşımında karşıya gidiyor. Düzeltme gerekmedi.
 
 ### Kararlar (2026-10-05)
 

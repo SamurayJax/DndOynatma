@@ -1,5 +1,15 @@
 # Sürüm Geçmişi
 
+## 1.0.0 — 2026-10-31
+
+İlk tam sürüm. Uygulama yaklaşık 3 saatlik gerçek bir oturumda sorunsuz kullanıldı; müzik ve ortam
+seslerinin Discord pencere paylaşımında karşıya gittiği de denendi. Bu sürümde yeni özellik yok,
+davranış 0.9.9 ile aynı.
+
+### Değişenler
+
+- Belgeler güncellendi: Zar panelinde atış geçmişi listesinin kalktığı README ve PLAN'a da işlendi.
+
 ## 0.9.9 — 2026-10-29
 
 ### Eklenenler
