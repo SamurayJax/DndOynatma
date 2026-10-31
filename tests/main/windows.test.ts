@@ -378,7 +378,7 @@ describe('oyunu başlatma', () => {
 
   it('araç fareye döner', () => {
     manager.openMenu()
-    store.updateSession((session) => ({ ...session, tool: 'pen-red' }))
+    store.updateSession((session) => ({ ...session, tool: 'pen' }))
     manager.startGame()
     expect(store.getState().session.tool).toBe('mouse')
   })
@@ -441,7 +441,8 @@ describe('oyunu bitirme', () => {
     const { menu, game, control } = startPlaying()
     store.updateSession((session) => ({
       ...session,
-      tool: 'pen-black',
+      tool: 'pen',
+      penColor: 'blue',
       diceHistory: [{ id: 'r1', sides: 20, value: 17, at: '2026-10-03T19:00:00.000Z' }]
     }))
     const nonceBefore = store.getState().session.drawingNonce
@@ -453,7 +454,7 @@ describe('oyunu bitirme', () => {
     expect(control.destroyed).toBe(true)
     expect(menu.visible).toBe(true)
     expect(menu.focused).toBe(true)
-    expect(store.getState().session).toEqual({ phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: nonceBefore + 1, diceHistory: [], playback: createStoppedPlayback() })
+    expect(store.getState().session).toEqual({ phase: 'menu', tool: 'mouse', penColor: 'blue', penWidth: 'medium', drawingNonce: nonceBefore + 1, drawingUndoNonce: 0, diceHistory: [], playback: createStoppedPlayback() })
     expect(clearDice).toHaveBeenCalledTimes(1)
     expect(quit).not.toHaveBeenCalled()
   })

@@ -49,8 +49,8 @@ await run(async () => {
     check('seçili kalınlık işaretli', (await control.getByRole('button', { name: 'Kalınlık: kalın' }).getAttribute('aria-pressed')) === 'true')
     await control.getByRole('button', { name: 'Silgi' }).click()
     check('silgi düğmesi aracı silgi yapar', (await stateSession()).tool === 'eraser')
-    await control.getByRole('button', { name: 'Kalem (kırmızı)' }).click()
-    check('kalem düğmeleri tam adlarıyla bulunur', (await stateSession()).tool === 'pen-red')
+    await control.getByRole('button', { name: 'Kalem', exact: true }).click()
+    check('kalem düğmesi kaleme geçirir', (await stateSession()).tool === 'pen')
     check('araç değişince kalınlık korunur', (await stateSession()).penWidth === 'thick')
     check('dört araç düğmesi tek satırda', await control.evaluate(() => new Set([...document.querySelectorAll('.ctl-tool')].map((el) => Math.round(el.getBoundingClientRect().top))).size === 1))
   }
@@ -102,7 +102,7 @@ await run(async () => {
     check('silgi görseli taşımaz', near(node.x, state.x) && near(node.y, state.y) && near(state.x, 500) && near(state.y, 150))
 
     // Silgiden sonra çizilen çizgi silinen yerin üstünden geçer.
-    await session.send({ type: 'session/setTool', tool: 'pen-red' })
+    await session.send({ type: 'session/setTool', tool: 'pen' })
     await session.drag([930, 500], [970, 500], { steps: 4 })
     await session.send({ type: 'session/setTool', tool: 'eraser' })
     check('silgi sonradan çizilen başka çizgiyi etkilemez', isRed(await session.colorAt(950, 500)))

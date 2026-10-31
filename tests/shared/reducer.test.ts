@@ -5,6 +5,7 @@ import { containRect, coverRect, Rect } from '@shared/layout'
 import { reduce, TEXT_LIMITS } from '@shared/reducer'
 import {
   AmbientSound,
+  createDefaultToolbar,
   createEmptyMusic,
   createEmptyPlayer,
   createStoppedPlayback,
@@ -113,15 +114,17 @@ function makeState(): FullState {
       scenes,
       activeSceneId: 's1',
       generalNote: 'genel not',
-      settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true },
+      settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true, toolbar: createDefaultToolbar() },
       music: sampleMusic(),
       classes: [{ id: 'savasci', name: 'Savaşçı', skills: [{ id: 'ac', name: 'Ac', ability: 'str', requirement: 10 }, { id: 'kos', name: 'Koş', ability: 'dex', requirement: 12 }] }]
     },
     session: {
       phase: 'playing',
-      tool: 'pen-red',
+      tool: 'pen',
+      penColor: 'red',
       penWidth: 'medium',
       drawingNonce: 3,
+      drawingUndoNonce: 0,
       diceHistory: [],
       playback: { ...createStoppedPlayback(), trackId: 'ta', playing: true, seekNonce: 2, ambientIds: ['am1'] }
     }
@@ -225,6 +228,9 @@ const ALL_ACTION_TYPES: Record<Action['type'], true> = {
   'settings/update': true,
   'session/setTool': true,
   'session/setPenWidth': true,
+  'session/setPenColor': true,
+  'session/undoDrawing': true,
+  'toolbar/update': true,
   'session/clearDrawing': true,
   'scene/setVideo': true,
   'music/addTracks': true,
@@ -364,8 +370,15 @@ function everyAction(): Action[] {
     { type: 'settings/update', patch: {} },
     bad({ type: 'settings/update', patch: { gameDisplayId: 'x', gameFullscreen: 1 } }),
     { type: 'session/setTool', tool: 'mouse' },
-    { type: 'session/setTool', tool: 'pen-black' },
-    { type: 'session/setTool', tool: 'pen-red' },
+    { type: 'session/setTool', tool: 'eraser' },
+    { type: 'session/setTool', tool: 'pen' },
+    { type: 'session/setPenColor', color: 'blue' },
+    { type: 'session/setPenColor', color: 'red' },
+    bad({ type: 'session/setPenColor', color: 'pembe' }),
+    { type: 'session/undoDrawing' },
+    { type: 'toolbar/update', patch: { x: 0.5, vertical: true } },
+    { type: 'toolbar/update', patch: { x: 0.5 } },
+    bad({ type: 'toolbar/update', patch: 3 }),
     { type: 'session/setTool', tool: 'eraser' },
     bad({ type: 'session/setTool', tool: 'firca' }),
     { type: 'session/setPenWidth', width: 'thick' },
@@ -1917,11 +1930,11 @@ describe('settings/update', () => {
   it('monitörü ve tam ekranı ayarlar', () => {
     const state = makeState()
     const next = apply(state, { type: 'settings/update', patch: { gameDisplayId: 2528732444, controlDisplayId: null, gameFullscreen: false } })
-    expect(next.app.settings).toEqual({ gameDisplayId: 2528732444, controlDisplayId: null, gameFullscreen: false })
+    expect(next.app.settings).toEqual({ gameDisplayId: 2528732444, controlDisplayId: null, gameFullscreen: false, toolbar: createDefaultToolbar() })
     expect(next.app.scenes).toBe(state.app.scenes)
 
     const back = apply(next, { type: 'settings/update', patch: { gameDisplayId: null } })
-    expect(back.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: null, gameFullscreen: false })
+    expect(back.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: null, gameFullscreen: false, toolbar: createDefaultToolbar() })
   })
 
   it('yanlış tipteki alanları yok sayar, doğru olanları uygular', () => {
@@ -1930,7 +1943,7 @@ describe('settings/update', () => {
     expectNoop(state, bad({ type: 'settings/update', patch: { gameDisplayId: Number.NaN, gameFullscreen: 0 } }))
 
     const next = apply(state, bad({ type: 'settings/update', patch: { gameDisplayId: 'x', gameFullscreen: false } }))
-    expect(next.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: null, gameFullscreen: false })
+    expect(next.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: null, gameFullscreen: false, toolbar: createDefaultToolbar() })
   })
 
   it('değer aynıysa aynı durumu döndürür; patch nesne değilse DND-306 verir', () => {
@@ -1980,7 +1993,7 @@ describe('stage/updateItem: döndürme', () => {
 describe('settings/update: kontrol paneli monitörü', () => {
   it('kontrol paneli monitörünü ayarlar ve otomatiğe döndürür', () => {
     const chosen = apply(makeState(), { type: 'settings/update', patch: { controlDisplayId: 7 } })
-    expect(chosen.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: 7, gameFullscreen: true })
+    expect(chosen.app.settings).toEqual({ gameDisplayId: null, controlDisplayId: 7, gameFullscreen: true, toolbar: createDefaultToolbar() })
     const auto = apply(chosen, { type: 'settings/update', patch: { controlDisplayId: null } })
     expect(auto.app.settings.controlDisplayId).toBeNull()
   })
@@ -1999,20 +2012,32 @@ describe('session/setTool', () => {
   })
 
   it('kalem rengi değişince sayaç artmaz', () => {
-    const next = apply(makeState(), { type: 'session/setTool', tool: 'pen-black' })
-    expect(next.session.tool).toBe('pen-black')
+    const next = apply(makeState(), { type: 'session/setPenColor', color: 'black' })
+    expect(next.session.penColor).toBe('black')
     expect(next.session.drawingNonce).toBe(3)
+  })
+
+  it('renk seçmek kaleme geçirir; aynı renk ve kalemde durum değişmez', () => {
+    const mouse = apply(makeState(), { type: 'session/setTool', tool: 'mouse' })
+    expect(apply(mouse, { type: 'session/setPenColor', color: 'red' }).session.tool).toBe('pen')
+    expectNoop(makeState(), { type: 'session/setPenColor', color: 'red' })
+    expectRejected(makeState(), bad({ type: 'session/setPenColor', color: 'pembe' }), 'DND-306')
+  })
+
+  it('geri alma yalnızca kendi sayacını artırır', () => {
+    const state = makeState()
+    expect(apply(state, { type: 'session/undoDrawing' }).session).toEqual({ ...state.session, drawingUndoNonce: 1 })
   })
 
   it('fareden kaleme geçince sayaç artmaz', () => {
     const mouse = apply(makeState(), { type: 'session/setTool', tool: 'mouse' })
-    const pen = apply(mouse, { type: 'session/setTool', tool: 'pen-red' })
-    expect(pen.session.tool).toBe('pen-red')
+    const pen = apply(mouse, { type: 'session/setTool', tool: 'pen' })
+    expect(pen.session.tool).toBe('pen')
     expect(pen.session.drawingNonce).toBe(3)
   })
 
   it('araç aynıysa aynı durumu döndürür (fare -> fare dahil)', () => {
-    expectNoop(makeState(), { type: 'session/setTool', tool: 'pen-red' })
+    expectNoop(makeState(), { type: 'session/setTool', tool: 'pen' })
     expectNoop(emptyState(), { type: 'session/setTool', tool: 'mouse' })
   })
 
@@ -2025,6 +2050,20 @@ describe('session/setTool', () => {
   it('geçersiz araç DND-306 verir', () => {
     expectRejected(makeState(), bad({ type: 'session/setTool', tool: 'firca' }), 'DND-306')
     expectRejected(makeState(), bad({ type: 'session/setTool' }), 'DND-306')
+  })
+})
+
+describe('toolbar/update', () => {
+  it('yeri sınırlar, düzeni kaydeder, verilmeyene dokunmaz', () => {
+    const state = apply(makeState(), { type: 'toolbar/update', patch: { x: 5, y: -1, vertical: true } })
+    expect(state.app.settings.toolbar).toMatchObject({ x: 1, y: 0, vertical: true, collapsed: false, hidden: false })
+    const next = apply(state, { type: 'toolbar/update', patch: { hidden: true } })
+    expect(next.app.settings.toolbar).toMatchObject({ x: 1, y: 0, vertical: true, hidden: true })
+  })
+
+  it('geçersiz alan yok sayılır; değişiklik yoksa durum aynı kalır', () => {
+    expectNoop(makeState(), { type: 'toolbar/update', patch: bad({ x: 'sol', hidden: 'evet' }) as never })
+    expectRejected(makeState(), bad({ type: 'toolbar/update', patch: 3 }), 'DND-306')
   })
 })
 
@@ -2077,14 +2116,14 @@ describe('boş durumdan başlayan oturum', () => {
     step({ type: 'stage/addItem', fallbackSceneId: 'f2', itemId: 'i1', imageId: 'npc' })
     step({ type: 'scene/add', sceneId: 's2', name: 'Orman' })
     step({ type: 'scene/update', sceneId: 's2', patch: { hotkey: 2 } })
-    step({ type: 'session/setTool', tool: 'pen-black' })
+    step({ type: 'session/setPenColor', color: 'black' })
     step({ type: 'scene/activateHotkey', hotkey: 2 })
     step({ type: 'player/adjustHp', slot: 0, delta: -4 })
     step({ type: 'stage/updateItem', sceneId: 'f1', itemId: 'i1', patch: { x: 900, y: 300, width: 250, label: 'Muhafız' } })
 
     expect(state.app.scenes.map((entry) => entry.name)).toEqual(['Pencere 1', 'Orman'])
     expect(state.app.activeSceneId).toBe('s2')
-    expect(state.session).toMatchObject({ tool: 'pen-black', drawingNonce: 0 })
+    expect(state.session).toMatchObject({ tool: 'pen', penColor: 'black', drawingNonce: 0 })
     expect(state.app.players[0]).toMatchObject({ name: 'Aragorn', hp: 6, portraitId: PORTRAIT_SOLO.id })
     // Oyuncu dolduktan sonra konduğu için arka plan portre sütununun sağındaki alana göre yerleşir.
     expect(sceneOf(state, 'f1').background).toMatchObject({ x: 150, y: 0, width: 1920, height: 1080 })

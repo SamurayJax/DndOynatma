@@ -18,8 +18,10 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
 - **Kartlar:** NPC, tüccar, düşman ve boss'lar düz görsel ya da ad, seviye ve canla çerçeveli kart olarak
   konur. Boss'ların beş çerçevesi var (Gölge, Işık, Kan, Buz, Zehir); can Ekrandakiler listesinden düşer.
 - **Pencereler:** "Kraliyet İçi", "Orman Yolu" gibi hazır düzenler; 1–9 tuşlarıyla geçilir.
-- **Kalem:** kırmızı ve siyah, üç kalınlık; silgi çizginin değdiği kısmını siler. Çizimin tamamı
+- **Kalem:** altı renk (kırmızı, siyah, beyaz, mavi, yeşil, sarı), üç kalınlık; silgi çizginin değdiği kısmını siler. Çizimin tamamı
   yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.
+- **Araç paneli:** oyun ekranında sürüklenebilir şerit: fare, kalem, silgi, renk, kalınlık, geri al, temizle. Yatay ya
+  da dikey dizilir, küçültülür; `T` tuşu gizler. Oyuncular da görür; üstüne gelinmedikçe yarı saydamdır.
 - **Zarlar:** d20, d10 ve d6 kontrol panelinden atılır; oyun ekranında zar düşer, yuvarlanır ve
   sonucu gösterir. Kontrol panelinde son atış görünür.
 - **Müzik:** kontrol panelinin "Müzik" sekmesinden kendi dosyalarını (MP3, OGG, WAV, M4A, MP4) yükle,
@@ -80,6 +82,7 @@ Oyun ekranında:
 | Kenardan sürükle | yalnızca o yönde esnet; "Oranı düzelt" (Ekrandakiler) geri alır |
 | R / Shift+R | seçili görseli 90° döndür (saat yönü / ters yön) |
 | Ctrl+Z | kalem ya da silgi seçiliyken son izi geri al |
+| T | araç panelini gizle / göster |
 | Üstteki tutamaç | serbest döndür (düz açılara yapışır) |
 | Çift tıkla (boş alana) | arka planı seç |
 | Delete | seçili görseli kaldır |

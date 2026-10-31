@@ -10,6 +10,14 @@ function repaired(overrides: Record<string, unknown>) {
   return state
 }
 
+describe('araç paneli', () => {
+  it('eski kayıt varsayılan düzenle açılır, bozuk değerler onarılır', () => {
+    expect(normalizeAppState({ settings: { gameFullscreen: false } })?.settings.toolbar).toEqual(createInitialAppState().settings.toolbar)
+    const toolbar = normalizeAppState({ settings: { toolbar: { x: 9, y: 'üst', vertical: true, hidden: 1 } } })?.settings.toolbar
+    expect(toolbar).toEqual({ x: 1, y: createInitialAppState().settings.toolbar.y, vertical: true, collapsed: false, hidden: false })
+  })
+})
+
 describe('kartlar', () => {
   const stored = (card: unknown): unknown => ({
     library: [{ id: 'g', kind: 'enemy', fileName: 'g.png', originalName: 'G', width: 10, height: 10, addedAt: 'x', cardDefaults: { name: 'G', level: 3, maxHp: 50, frame: 'standard' } }],
@@ -272,7 +280,8 @@ describe('normalizeAppState', () => {
         gameDisplayId: 2779098405,
         // Kontrol paneli monitörü sonradan eklendi; eski kayıtta yoksa otomatik sayılır.
         controlDisplayId: null,
-        gameFullscreen: false
+        gameFullscreen: false,
+        toolbar: defaults.toolbar
       })
       expect(repaired({ settings: { controlDisplayId: 7, gameFullscreen: true } }).settings.controlDisplayId).toBe(7)
       expect(repaired({ settings: { controlDisplayId: 'sol' } }).settings.controlDisplayId).toBeNull()

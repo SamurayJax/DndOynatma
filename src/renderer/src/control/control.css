@@ -10,9 +10,6 @@
    * Kalem düğmelerindeki renk örnekleri. Oyun ekranında çizilen renklerle aynı olmalı:
    * game/DrawingLayer.tsx içindeki PEN_STYLES (e2e/kontrol/01-duzen.mjs eşitliği denetler).
    */
-  --ctl-pen-red: #ff2a2a;
-  --ctl-pen-black: #0a0a0a;
-  --ctl-pen-black-halo: rgba(255, 255, 255, 0.6);
   /* Sütun arası kaydırma çubuğu genişliğindedir: çubuk aralıkta belirir, içerik daralmaz. */
   --ctl-gutter: var(--space-3);
   --ctl-stack-gap: 10px;
@@ -587,8 +584,7 @@
   gap: var(--space-2);
 }
 
-/* Dört araç tek satıra sığsın diye örnek üstte, kısa ad altta durur. Yükseklik eski üç düğmeli
-   satırla aynıdır; sağ sütun 1080p'de tam dolu olduğu için fazladan yer yok. */
+/* Dört düğme tek satıra sığsın diye örnek üstte, kısa ad altta durur. */
 .ctl-tool.ui-btn {
   --btn-h: var(--control-lg);
   flex-direction: column;
@@ -620,16 +616,28 @@
   color: var(--text);
 }
 
-.ctl-tool--pen-red .ctl-tool__swatch {
-  border-color: var(--ctl-pen-red);
-  background: var(--ctl-pen-red);
-  color: var(--danger-ink);
+.ctl-colors {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-1);
+  margin-top: var(--space-2);
 }
 
-/* Siyah kalem oyun ekranında açık renkli bir haleyle çizilir; örnek de aynı haleyi taşır. */
-.ctl-tool--pen-black .ctl-tool__swatch {
-  border-color: var(--ctl-pen-black-halo);
-  background: var(--ctl-pen-black);
+.ctl-color {
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.ctl-color:hover {
+  border-color: var(--text-muted);
+}
+
+.ctl-color.is-active {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .ctl-tools__footer {

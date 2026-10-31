@@ -1,7 +1,8 @@
 import type { JSX, ReactNode } from 'react'
+import { PEN_COLORS, PEN_COLOR_INFO } from '@shared/types'
 import type { PenWidth, Tool } from '@shared/types'
-import { dispatch, useSession } from '@renderer/lib/useAppState'
-import { Button, CursorIcon, EraserIcon, Panel, PencilIcon, TrashIcon, cx } from '@renderer/ui'
+import { dispatch, useApp, useSession } from '@renderer/lib/useAppState'
+import { Button, CursorIcon, EraserIcon, GripIcon, Panel, PencilIcon, TrashIcon, cx } from '@renderer/ui'
 
 interface ToolChoice {
   id: Tool
@@ -14,8 +15,7 @@ interface ToolChoice {
 
 const TOOLS: readonly ToolChoice[] = [
   { id: 'mouse', short: 'Fare', full: 'Fare', icon: <CursorIcon size={18} /> },
-  { id: 'pen-red', short: 'Kırmızı', full: 'Kalem (kırmızı)', icon: <PencilIcon size={16} /> },
-  { id: 'pen-black', short: 'Siyah', full: 'Kalem (siyah)', icon: <PencilIcon size={16} /> },
+  { id: 'pen', short: 'Kalem', full: 'Kalem', icon: <PencilIcon size={16} /> },
   { id: 'eraser', short: 'Silgi', full: 'Silgi', icon: <EraserIcon size={16} /> }
 ]
 
@@ -27,9 +27,10 @@ const WIDTHS: readonly { id: PenWidth; label: string }[] = [
 
 const CLEAR_HINT = 'Çizimi yalnızca bu düğme siler; fareye geçince çizim kalır. Açık olan pencerenin çizimi silinir.'
 
-/** Araç seçimi (fare, iki kalem, silgi), kalınlık ve "Çizimi temizle". */
+/** Araç seçimi (fare, kalem, silgi), renk, kalınlık, "Çizimi temizle" ve oyun ekranındaki panelin görünürlüğü. */
 export function ToolsPanel(): JSX.Element {
-  const { tool, penWidth } = useSession()
+  const { tool, penColor, penWidth } = useSession()
+  const { hidden } = useApp().settings.toolbar
 
   return (
     <Panel className="ctl-panel" title="Araçlar">
@@ -46,6 +47,35 @@ export function ToolsPanel(): JSX.Element {
           >
             {choice.short}
           </Button>
+        ))}
+        {/* T tuşu oyun ekranında çalışır; panel gizliyken geri açmanın görünür yolu burasıdır. */}
+        <Button
+          className="ctl-tool"
+          active={!hidden}
+          aria-label="Araç panelini oyun ekranında göster"
+          title="Oyun ekranındaki araç paneli (oyun ekranında T tuşu)"
+          icon={
+            <span className="ctl-tool__swatch">
+              <GripIcon size={16} />
+            </span>
+          }
+          onClick={() => dispatch({ type: 'toolbar/update', patch: { hidden: !hidden } })}
+        >
+          Panel
+        </Button>
+      </div>
+      <div className="ctl-colors" role="group" aria-label="Kalem rengi">
+        {PEN_COLORS.map((color) => (
+          <button
+            key={color}
+            type="button"
+            className={cx('ctl-color', tool === 'pen' && penColor === color && 'is-active')}
+            style={{ background: PEN_COLOR_INFO[color].value }}
+            aria-label={`Kalem rengi: ${PEN_COLOR_INFO[color].label}`}
+            aria-pressed={tool === 'pen' && penColor === color}
+            title={`Kalem: ${PEN_COLOR_INFO[color].label}`}
+            onClick={() => dispatch({ type: 'session/setPenColor', color })}
+          />
         ))}
       </div>
       <div className="ctl-tools__footer">

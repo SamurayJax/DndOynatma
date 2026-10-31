@@ -68,7 +68,7 @@ await run(async () => {
   {
     await session.click(...(await centerOf(b)))
     check('ikinci görsel seçildi', (await selected()) === b)
-    await session.send({ type: 'session/setTool', tool: 'pen-red' }, 250)
+    await session.send({ type: 'session/setPenColor', color: 'red' }, 250)
     const nodes = await session.probe('items')
     check('kalem seçilince seçim tutamaçları gizlendi, görseller tutulamıyor', (await selected()) === null && nodes.every((node) => !node.listening))
 
@@ -139,7 +139,7 @@ await run(async () => {
     await sleep(200)
     check('seçim yokken Delete etkisiz', (await session.scene()).items.length === 2)
 
-    await session.send({ type: 'session/setTool', tool: 'pen-black' }, 250)
+    await session.send({ type: 'session/setPenColor', color: 'black' }, 250)
     await session.drag([700, 300], [1000, 500])
     // Siyah çizgi iki Konva çizgisidir (hale + mürekkep).
     check('siyah kalemle çizildi', (await session.probe('strokes')) === 2)

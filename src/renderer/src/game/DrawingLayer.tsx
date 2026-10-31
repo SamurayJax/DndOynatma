@@ -3,23 +3,17 @@ import type { JSX } from 'react'
 import type Konva from 'konva'
 import { Layer, Line, Rect as HitRect } from 'react-konva'
 import type { Rect } from '@shared/layout'
-import { ERASER_WIDTH_FACTOR, PEN_WIDTH_PX } from '@shared/types'
-import type { ID, PenWidth, Tool } from '@shared/types'
+import { ERASER_WIDTH_FACTOR, PEN_COLOR_INFO, PEN_WIDTH_PX } from '@shared/types'
+import type { ID, PenColor, PenWidth, Tool } from '@shared/types'
 
-/** Oyun alanına iz bırakan araçlar: kalemler ve silgi. */
+/** Oyun alanına iz bırakan araçlar: kalem ve silgi. */
 type DrawTool = Exclude<Tool, 'mouse'>
-type Pen = Exclude<DrawTool, 'eraser'>
-
-interface PenStyle {
-  color: string
-  /** Çizginin altına çizilen daha geniş şeridin rengi; hale yoksa null. */
-  halo: string | null
-}
 
 interface Stroke {
   id: number
-  /** Çizgi, çizildiği aracı (rengi ya da silgi oluşunu) ve kalınlığı korur. */
+  /** Çizgi, çizildiği aracı, rengi ve kalınlığı korur. */
   tool: DrawTool
+  color: PenColor
   width: number
   /** Düz dizi [x1, y1, x2, y2, …], sanal koordinat. */
   points: number[]
@@ -28,6 +22,7 @@ interface Stroke {
 interface ActiveStroke {
   pointerId: number
   tool: DrawTool
+  color: PenColor
   width: number
   points: number[]
 }
@@ -61,12 +56,6 @@ function eraserCursor(diameter: number): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${half} ${half}, ${PEN_CURSOR}`
 }
 
-const PEN_STYLES: Record<Pen, PenStyle> = {
-  'pen-red': { color: '#ff2a2a', halo: null },
-  // Siyah çizgi koyu haritada kaybolmasın diye açık renkli ince bir hale ile çevrilir.
-  'pen-black': { color: '#0a0a0a', halo: 'rgba(255, 255, 255, 0.6)' }
-}
-
 /**
  * Noktaları köşesiz birleştirir: her nokta eğrinin denetim noktası, komşu iki noktanın ortası eğrinin ucudur.
  * Konva'nın `tension` eğrisi yerine bu kullanılır; o, hızlı çizimdeki seyrek noktalarda keskin dönüşlerin
@@ -96,11 +85,11 @@ const StrokeLines = memo(function StrokeLines({ stroke }: { stroke: Stroke }): J
   if (stroke.tool === 'eraser') {
     return <Line {...LINE_PROPS} points={points} stroke="#000" strokeWidth={stroke.width} globalCompositeOperation={ERASE_OPERATION} />
   }
-  const style = PEN_STYLES[stroke.tool]
+  const style = PEN_COLOR_INFO[stroke.color]
   return (
     <>
       {style.halo !== null && <Line {...LINE_PROPS} points={points} stroke={style.halo} strokeWidth={stroke.width + HALO_EXTRA} />}
-      <Line {...LINE_PROPS} points={points} stroke={style.color} strokeWidth={stroke.width} />
+      <Line {...LINE_PROPS} points={points} stroke={style.value} strokeWidth={stroke.width} />
     </>
   )
 })
@@ -111,6 +100,7 @@ let nextStrokeId = 1
 interface DrawingSurfaceProps {
   /** Seçili çizim aracı; fare seçiliyken null. */
   tool: DrawTool | null
+  color: PenColor
   /** Seçili aracın o anki kalınlığı (sanal piksel). */
   width: number
   area: Rect
@@ -123,7 +113,7 @@ interface DrawingSurfaceProps {
  * Bir pencerenin çizgilerini çizer ve yenilerini toplar. Katman bunu pencere ve sayaçla anahtarlar:
  * pencere ya da sayaç değişince baştan kurulur, yarım kalan çizgi bırakılır.
  */
-function DrawingSurface({ tool, width, area, strokes, setStrokes }: DrawingSurfaceProps): JSX.Element {
+function DrawingSurface({ tool, color, width, area, strokes, setStrokes }: DrawingSurfaceProps): JSX.Element {
   // Çizilmekte olan çizgi React durumuna girmez; bu iki Konva çizgisi doğrudan güncellenir.
   const haloRef = useRef<Konva.Line>(null)
   const inkRef = useRef<Konva.Line>(null)
@@ -142,12 +132,12 @@ function DrawingSurface({ tool, width, area, strokes, setStrokes }: DrawingSurfa
       ink.globalCompositeOperation(ERASE_OPERATION)
       ink.stroke('#000')
     } else {
-      const style = PEN_STYLES[active.tool]
+      const style = PEN_COLOR_INFO[active.color]
       halo.strokeWidth(active.width + HALO_EXTRA)
       if (style.halo !== null) halo.stroke(style.halo)
       halo.points(style.halo !== null ? points : [])
       ink.globalCompositeOperation(DRAW_OPERATION)
-      ink.stroke(style.color)
+      ink.stroke(style.value)
     }
     ink.points(points)
     ink.getLayer()?.batchDraw()
@@ -195,7 +185,7 @@ function DrawingSurface({ tool, width, area, strokes, setStrokes }: DrawingSurfa
     if (!active) return
     activeRef.current = null
     stopTracking()
-    const stroke: Stroke = { id: nextStrokeId++, tool: active.tool, width: active.width, points: active.points }
+    const stroke: Stroke = { id: nextStrokeId++, tool: active.tool, color: active.color, width: active.width, points: active.points }
     // Geçici çizgi burada silinmez: React yeni çizgiyi çizene kadar ekranda kalır, yoksa bir an kaybolur.
     setStrokes((previous) => [...previous, stroke])
   }
@@ -205,7 +195,7 @@ function DrawingSurface({ tool, width, area, strokes, setStrokes }: DrawingSurfa
     finish()
     const start = locate(evt)
     if (!start) return
-    const active: ActiveStroke = { pointerId: evt.pointerId, tool: withTool, width, points: [start.x, start.y] }
+    const active: ActiveStroke = { pointerId: evt.pointerId, tool: withTool, color, width, points: [start.x, start.y] }
     activeRef.current = active
     paint(active)
 
@@ -316,12 +306,21 @@ const NO_SCENE = '(pencere yok)'
  * `tool`: seçili araç (kalem seçiliyken çizilir). `area`: çizilebilen oyun alanı (sanal koordinat).
  * `sceneId`: çizimler pencereye aittir; başka pencereye geçince gizlenir, geri dönünce yeniden görünür.
  * `nonce`: her değişiminde o an açık olan pencerenin çizimleri silinir ("Çizimi temizle").
- * `penWidth`: kalemin ve silginin kalınlığı; çizilmiş çizgiler kendi kalınlığını korur.
+ * `penColor`, `penWidth`: kalemin rengi, kalemin ve silginin kalınlığı; çizilmiş çizgiler kendininkini korur.
+ * `undoNonce`: her değişiminde açık pencerenin son çizgisi geri alınır (araç panelindeki düğme).
  * Araç değişimi çizimleri silmez: çizdikten sonra fareye geçip görsel taşınabilir.
  * Çizimler hiçbir duruma girmez; yalnızca bu pencerenin belleğinde yaşar ve oyun bitince kaybolur.
  */
-export function DrawingLayer(props: { tool: Tool; penWidth: PenWidth; nonce: number; area: Rect; sceneId: ID | null }): JSX.Element | null {
-  const { tool, penWidth, nonce, area } = props
+export function DrawingLayer(props: {
+  tool: Tool
+  penColor: PenColor
+  penWidth: PenWidth
+  nonce: number
+  undoNonce: number
+  area: Rect
+  sceneId: ID | null
+}): JSX.Element | null {
+  const { tool, penColor, penWidth, nonce, undoNonce, area } = props
   const sceneKey = props.sceneId ?? NO_SCENE
   const drawTool = tool === 'mouse' ? null : tool
   const penActive = drawTool !== null
@@ -353,6 +352,13 @@ export function DrawingLayer(props: { tool: Tool; penWidth: PenWidth; nonce: num
     [sceneKey]
   )
 
+  const lastUndo = useRef(undoNonce)
+  useEffect(() => {
+    if (lastUndo.current === undoNonce) return
+    lastUndo.current = undoNonce
+    setStrokes((previous) => (previous.length > 0 ? previous.slice(0, -1) : previous))
+  }, [undoNonce, setStrokes])
+
   useEffect(() => {
     if (!penActive) return
     const container = layerRef.current?.getStage()?.container()
@@ -378,7 +384,7 @@ export function DrawingLayer(props: { tool: Tool; penWidth: PenWidth; nonce: num
       clipWidth={area.width}
       clipHeight={area.height}
     >
-      <DrawingSurface key={`${sceneKey}:${nonce}`} tool={drawTool} width={width} area={area} strokes={strokes} setStrokes={setStrokes} />
+      <DrawingSurface key={`${sceneKey}:${nonce}`} tool={drawTool} color={penColor} width={width} area={area} strokes={strokes} setStrokes={setStrokes} />
     </Layer>
   )
 }

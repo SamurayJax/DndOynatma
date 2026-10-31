@@ -184,7 +184,7 @@ await run(async () => {
   // --- Kalem: fareye geçince silinmez ---
   const draw = async (from, to) => session.drag(from, to, { steps: 10 })
   {
-    await session.send({ type: 'session/setTool', tool: 'pen-red' })
+    await session.send({ type: 'session/setPenColor', color: 'red' })
     await draw([500, 900], [900, 950])
     await draw([520, 980], [880, 1000])
     const drawn = await session.probe('strokes')
@@ -202,7 +202,7 @@ await run(async () => {
     check('çizim dururken görsel fareyle taşınabiliyor', near(moved.x, before.x - 100) && near(moved.y, before.y + 40), show([moved.x - before.x, moved.y - before.y]))
     check('görsel taşındıktan sonra çizimler yerinde', (await session.probe('strokes')) === 2)
 
-    await session.send({ type: 'session/setTool', tool: 'pen-black' })
+    await session.send({ type: 'session/setPenColor', color: 'black' })
     await draw([1000, 900], [1300, 960])
     check('kaleme dönünce eski çizimlerin üstüne eklenir', (await session.probe('strokes')) >= 3)
   }
@@ -213,7 +213,7 @@ await run(async () => {
     await session.send({ type: 'scene/activateHotkey', hotkey: 2 })
     await sleep(300)
     check('başka pencereye geçince o pencerenin çizimleri görünür (boş)', (await session.probe('strokes')) === 0)
-    await session.send({ type: 'session/setTool', tool: 'pen-red' })
+    await session.send({ type: 'session/setPenColor', color: 'red' })
     await draw([600, 300], [900, 500])
     const second = await session.probe('strokes')
     check('ikinci pencereye de çizilebiliyor', second === 1)

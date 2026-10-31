@@ -113,7 +113,7 @@ Arka plan ilk konduğunda oyun alanını bozulmadan dolduracak şekilde yerleşi
 Araç kontrol panelinden seçilir; çizim oyun alanında yapılır.
 
 - **Fare** (varsayılan): görselleri taşıma, boyutlandırma, silme.
-- **Kalem — kırmızı** ve **Kalem — siyah**: oyun alanına serbest çizim. Kalem
+- **Kalem** (6 renk: kırmızı, siyah, beyaz, mavi, yeşil, sarı): oyun alanına serbest çizim. Kalem
   seçiliyken görseller taşınmaz.
 
 Çizimi yalnızca kontrol panelindeki "Çizimi temizle" düğmesi siler. Kalemden fareye
@@ -152,7 +152,7 @@ Her dolu oyuncu için bir kart:
 Ayrıca:
 
 - kütüphane (8 bölme)
-- araç seçimi: Fare / Kalem kırmızı / Kalem siyah, "Çizimi temizle"
+- araç seçimi: Fare / Kalem / Silgi, 6 renk, kalınlık, "Çizimi temizle"; oyun ekranındaki araç paneli de aynı işleri yapar
 - zar düğmeleri (d20, d10, d6), son atış ve istatistikle zar seçimi
 - genel not alanı
 - pencere listesi (tıklayarak geçiş)
@@ -585,6 +585,19 @@ köşeler o anki oranı korur. Esnemiş öğede "Oranı düzelt" düğmesi çık
 kapladığı alan yaklaşık aynı kalarak döner; arka plan oyun alanını yeniden kaplar. Kartlarda ad, seviye ve can
 yazısı basılmaz: fazla boyut çerçeveye ve can kutusuna gider, görsel çerçeveye kırpılır.
 
+### 12. Araç paneli ve kalem renkleri (1.2.0) — yapıldı
+
+Kullanıcı isteği (2026-10-31): TradingView'deki gibi, oyun ekranında duran ve hareket ettirilebilen bir panel.
+
+- Panel oyun ekranındadır: fare, kalem, silgi, 6 renk, 3 kalınlık, geri al, temizle. Tutamaçtan sürüklenir, yatay ya
+  da dikey dizilir, küçültülür. `T` tuşu gizler ve açar; kontrol panelindeki "Panel" düğmesi de aynı işi yapar.
+- Oyuncular da görür, çünkü paylaşılan pencere budur (bilinen ödün). Bu yüzden üstüne gelinmedikçe yarı saydamdır.
+- Yeri ve düzeni kayda girer (`settings.toolbar`). Yer çerçevenin oranıdır; pencere küçülünce dışarıda kalmaz. Boyutu
+  pencere ölçeğine bağlı değildir.
+- Kalem tek araç oldu, renk ayrı bir seçimdir (`session.penColor`); renk seçmek kaleme geçirir. Beyaz kalem de siyah
+  gibi haleyle çizilir.
+- Kontrol panelindeki araçlar kalır, ikisi aynı durumu paylaşır.
+
 ### Kararlar (2026-10-05)
 
 - Mevcut arka planın kartına tekrar tıklamak hiçbir şey yapmaz; böyle kalacak.
@@ -597,7 +610,6 @@ yazısı basılmaz: fazla boyut çerçeveye ve can kutusuna gider, görsel çer�
 
 - Özel kütüphane bölmesi ekleme / yeniden adlandırma
 - Eşyanın hangi oyuncuda olduğunu işaretleme
-- Kalem için başka renkler
 - Pencere geçiş efekti
 - Notları Obsidian vault'una aktarma
 

@@ -101,7 +101,7 @@ try {
   await shot(game, '07-oyun-kraliyet')
 
   // Kalem: oyun alanında kırmızı bir çizgi.
-  await control.evaluate(() => window.dnd.dispatch({ type: 'session/setTool', tool: 'pen-red' }))
+  await control.evaluate(() => window.dnd.dispatch({ type: 'session/setTool', tool: 'pen' }))
   await game.waitForTimeout(300)
   const box = await game.evaluate(() => ({ w: window.innerWidth, h: window.innerHeight }))
   await game.mouse.move(box.w * 0.45, box.h * 0.35)

@@ -228,6 +228,34 @@ export function D6Icon(props: IconProps): JSX.Element {
   )
 }
 
+/** Araç panelini taşıma tutamacı: altı nokta. */
+export function GripIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" strokeWidth={(props.strokeWidth ?? DEFAULT_STROKE) * 1.5} />
+    </Svg>
+  )
+}
+
+export function UndoIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M8.5 5 4 9.5 8.5 14" />
+      <path d="M4 9.5h10a5.5 5.5 0 0 1 0 11h-3" />
+    </Svg>
+  )
+}
+
+/** Yatay / dikey dizme: dik açılı iki ok. */
+export function OrientationIcon(props: IconProps): JSX.Element {
+  return (
+    <Svg {...props}>
+      <path d="M5 4v12a3 3 0 0 0 3 3h12" />
+      <path d="M2 7l3-3 3 3M17 16l3 3-3 3" />
+    </Svg>
+  )
+}
+
 export function FullscreenIcon(props: IconProps): JSX.Element {
   return (
     <Svg {...props}>

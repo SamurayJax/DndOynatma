@@ -112,10 +112,10 @@ describe('Store.dispatch', () => {
 
   it('yalnızca oturum değişince yayar ama kaydetmez', () => {
     const { store, initial, broadcast, writeSave } = createHarness()
-    const next: FullState = { app: initial.app, session: { ...initial.session, tool: 'pen-red' } }
+    const next: FullState = { app: initial.app, session: { ...initial.session, tool: 'pen' } }
     nextResult({ state: next })
 
-    expect(store.dispatch({ type: 'session/setTool', tool: 'pen-red' })).toBe(true)
+    expect(store.dispatch({ type: 'session/setTool', tool: 'pen' })).toBe(true)
     expect(broadcast).toHaveBeenCalledWith(IPC.state, next)
     vi.advanceTimersByTime(5000)
     expect(writeSave).not.toHaveBeenCalled()

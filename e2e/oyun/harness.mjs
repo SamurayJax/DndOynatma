@@ -350,8 +350,10 @@ export async function open(label, { args = [], dataDir: existingDataDir = null }
   session.displays = () => session.menu.evaluate(() => window.dnd.app.getDisplays())
 
   /** Oyunu başlatır. `size`: pencereli kipte içerik boyutu (CSS pikseli). */
-  session.start = async ({ fullscreen = false, displayId = null, size = [1280, 720] } = {}) => {
+  session.start = async ({ fullscreen = false, displayId = null, size = [1280, 720], toolbar = false } = {}) => {
     await session.menu.evaluate((patch) => window.dnd.dispatch({ type: 'settings/update', patch }), { gameFullscreen: fullscreen, gameDisplayId: displayId })
+    // Araç paneli yalnızca onu sınayan betikte açıktır; öbür betiklerin fare hareketlerine karışmasın.
+    await session.menu.evaluate((hidden) => window.dnd.dispatch({ type: 'toolbar/update', patch: { hidden } }), !toolbar)
     await session.menu.evaluate(() => window.dnd.game.start())
     session.game = await waitForRole('game')
     session.control = await waitForRole('control')

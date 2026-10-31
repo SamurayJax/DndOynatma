@@ -13,6 +13,7 @@ import {
   ID,
   LibraryImage,
   MusicTrack,
+  PenColor,
   PenWidth,
   PlayerEffect,
   PlayerProfile,
@@ -21,6 +22,7 @@ import {
   StageCard,
   StageItem,
   Tool,
+  ToolbarLayout,
   VideoLoop
 } from './types'
 
@@ -107,16 +109,22 @@ export type AppAction =
   | { type: 'ambient/remove'; ambientId: ID }
   // --- Diğer ---
   | { type: 'note/setGeneral'; text: string }
-  | { type: 'settings/update'; patch: Partial<AppSettings> }
+  | { type: 'settings/update'; patch: Partial<Omit<AppSettings, 'toolbar'>> }
+  /** Araç panelinin yeri ve düzeni. */
+  | { type: 'toolbar/update'; patch: Partial<ToolbarLayout> }
 
 /** Kaydedilmeyen oturum durumu üzerindeki işlemler. */
 export type SessionAction =
   /** Araç değişimi çizimlere dokunmaz; çizim dururken fareyle görsel taşınabilir. */
   | { type: 'session/setTool'; tool: Tool }
+  /** Kalemin rengini seçer ve kaleme geçer. Çizilmiş çizgileri etkilemez. */
+  | { type: 'session/setPenColor'; color: PenColor }
   /** Kalemin ve silginin kalınlığı. Çizilmiş çizgileri etkilemez. */
   | { type: 'session/setPenWidth'; width: PenWidth }
   /** O an açık olan pencerenin çizimlerini siler (drawingNonce artar). Çizimleri silen tek işlem budur. */
   | { type: 'session/clearDrawing' }
+  /** Açık pencerenin son çizgisini geri alır (drawingUndoNonce artar). */
+  | { type: 'session/undoDrawing' }
   // --- Çalma (oyun ekranı çalar, kontrol paneli yönetir) ---
   /** Parçayı baştan çalar. */
   | { type: 'playback/play'; trackId: ID }

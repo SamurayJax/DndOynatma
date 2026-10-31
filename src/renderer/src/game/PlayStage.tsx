@@ -368,7 +368,7 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
         </Layer>
         {/* Çizim katmanındaki bir hata oyun ekranının tamamını düşürmesin. */}
         <ErrorBoundary scope="çizim" fallback={null}>
-          <DrawingLayer tool={session.tool} penWidth={session.penWidth} nonce={session.drawingNonce} area={area} sceneId={sceneId} />
+          <DrawingLayer tool={session.tool} penColor={session.penColor} penWidth={session.penWidth} nonce={session.drawingNonce} undoNonce={session.drawingUndoNonce} area={area} sceneId={sceneId} />
         </ErrorBoundary>
       </Stage>
     </div>

@@ -33,7 +33,7 @@ export function sampleAppState(): AppState {
   ]
   state.activeSceneId = 'scene-1'
   state.generalNote = 'Genel not'
-  state.settings = { gameDisplayId: 2, controlDisplayId: null, gameFullscreen: false }
+  state.settings = { ...state.settings, gameDisplayId: 2, controlDisplayId: null, gameFullscreen: false }
   return state
 }
 

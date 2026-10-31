@@ -11,6 +11,7 @@ import { MusicPlayer } from './MusicPlayer'
 import { PlayStage } from './PlayStage'
 import { PortraitColumn } from './PortraitColumn'
 import { SceneVideo } from './SceneVideo'
+import { ToolBar } from './ToolBar'
 import { useFitScale } from './useFitScale'
 import type { FitScale } from './useFitScale'
 import './game.css'
@@ -66,6 +67,9 @@ function GameFrame({ fit }: { fit: FitScale }): JSX.Element {
           <DiceOverlay />
         </ErrorBoundary>
       </div>
+      <ErrorBoundary scope="araç paneli" fallback={null}>
+        <ToolBar fit={fit} />
+      </ErrorBoundary>
     </div>
   )
 }

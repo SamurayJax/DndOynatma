@@ -19,6 +19,8 @@ import {
   AbilityScores,
   AmbientSound,
   CardFrame,
+  ToolbarLayout,
+  createDefaultToolbar,
   CharacterClass,
   DEFAULT_ABILITY,
   DEFAULT_CARD_HP,
@@ -359,12 +361,27 @@ function volume(value: unknown, fallback: number): number {
   return isFiniteNumber(value) ? Math.min(1, Math.max(0, value)) : fallback
 }
 
+/** Araç paneli sonradan eklendi; eski kayıtlarda bu alan yoktur. */
+function normalizeToolbar(raw: unknown): ToolbarLayout {
+  const defaults = createDefaultToolbar()
+  if (!isRecord(raw)) return defaults
+  const fraction = (value: unknown, fallback: number): number => (isFiniteNumber(value) ? Math.min(1, Math.max(0, value)) : fallback)
+  return {
+    x: fraction(raw.x, defaults.x),
+    y: fraction(raw.y, defaults.y),
+    vertical: raw.vertical === true,
+    collapsed: raw.collapsed === true,
+    hidden: raw.hidden === true
+  }
+}
+
 function normalizeSettings(raw: unknown): AppSettings {
   const defaults = createInitialAppState().settings
   if (!isRecord(raw)) return defaults
   return {
     gameDisplayId: isFiniteNumber(raw.gameDisplayId) ? raw.gameDisplayId : null,
     controlDisplayId: isFiniteNumber(raw.controlDisplayId) ? raw.controlDisplayId : null,
-    gameFullscreen: typeof raw.gameFullscreen === 'boolean' ? raw.gameFullscreen : defaults.gameFullscreen
+    gameFullscreen: typeof raw.gameFullscreen === 'boolean' ? raw.gameFullscreen : defaults.gameFullscreen,
+    toolbar: normalizeToolbar(raw.toolbar)
   }
 }

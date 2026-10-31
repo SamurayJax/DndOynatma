@@ -183,13 +183,14 @@ await run(async () => {
   }
 
   // --- Kalem renkleri oyun ekranında çizilenle aynı ---
-  const drawing = readFileSync(join(root, 'src/renderer/src/game/DrawingLayer.tsx'), 'utf8')
-  const drawn = { red: /'pen-red':\s*\{\s*color:\s*'(#[0-9a-f]{6})'/i.exec(drawing)?.[1], black: /'pen-black':\s*\{\s*color:\s*'(#[0-9a-f]{6})'/i.exec(drawing)?.[1] }
+  const palette = readFileSync(join(root, 'src/shared/types.ts'), 'utf8')
+  const drawn = { red: /red: \{ label: '[^']*', value: '(#[0-9a-f]{6})'/i.exec(palette)?.[1], black: /black: \{ label: '[^']*', value: '(#[0-9a-f]{6})'/i.exec(palette)?.[1] }
   const swatches = await control.evaluate(() => {
-    const color = (selector) => getComputedStyle(document.querySelector(selector)).backgroundColor
-    return { red: color('.ctl-tool--pen-red .ctl-tool__swatch'), black: color('.ctl-tool--pen-black .ctl-tool__swatch') }
+    const color = (name) => getComputedStyle(document.querySelector(`.ctl-color[aria-label="Kalem rengi: ${name}"]`)).backgroundColor
+    return { red: color('kırmızı'), black: color('siyah'), count: document.querySelectorAll('.ctl-color').length }
   })
-  check('DrawingLayer.tsx içinde iki kalem rengi bulundu', Boolean(drawn.red && drawn.black), JSON.stringify(drawn))
+  check('types.ts içinde kalem renkleri bulundu', Boolean(drawn.red && drawn.black), JSON.stringify(drawn))
+  check('panelde altı kalem rengi var', swatches.count === 6, String(swatches.count))
   check('kırmızı kalem örneği çizilen renkle aynı', drawn.red !== undefined && swatches.red === rgb(drawn.red), `${swatches.red} / ${drawn.red}`)
   check('siyah kalem örneği çizilen renkle aynı', drawn.black !== undefined && swatches.black === rgb(drawn.black), `${swatches.black} / ${drawn.black}`)
 

@@ -42,7 +42,9 @@ import {
   MAX_PLAYERS,
   MIN_ITEM_SIZE,
   MIN_LEVEL,
-  PenWidth,
+  PEN_COLORS,
+  PEN_WIDTHS,
+  PenColor,
   PlayerProfile,
   SceneWindow,
   SessionState,
@@ -80,9 +82,8 @@ export const MAX_REQUIREMENT = 40
 export const DEFAULT_REQUIREMENT = 10
 export const MAX_PROFICIENCY = 20
 
-const TOOLS: readonly Tool[] = ['mouse', 'pen-red', 'pen-black', 'eraser']
+const TOOLS: readonly Tool[] = ['mouse', 'pen', 'eraser']
 const REPEAT_MODES: readonly RepeatMode[] = ['off', 'all', 'one']
-const PEN_WIDTHS: readonly PenWidth[] = ['thin', 'medium', 'thick']
 const REORDER_TARGETS = ['front', 'back', 'forward', 'backward'] as const
 const GEOMETRY_KEYS = ['x', 'y', 'width', 'height', 'rotation'] as const
 const FALLBACK_SCENE_NAME = 'Pencere 1'
@@ -227,13 +228,19 @@ export function reduce(state: FullState, action: Action): ReduceResult {
       return setGeneralNote(state, action)
     case 'settings/update':
       return updateSettings(state, action)
+    case 'toolbar/update':
+      return updateToolbar(state, action)
 
     case 'session/setTool':
       return setTool(state, action)
     case 'session/setPenWidth':
       return setPenWidth(state, action)
+    case 'session/setPenColor':
+      return setPenColor(state, action)
     case 'session/clearDrawing':
       return { state: withSession(state, bumpNonce(state.session)) }
+    case 'session/undoDrawing':
+      return { state: withSession(state, { ...state.session, drawingUndoNonce: state.session.drawingUndoNonce + 1 }) }
 
     default:
       return reject(state, 'DND-306', `Tanınmayan işlem türü: ${show((action as { type?: unknown }).type)}`)
@@ -1406,6 +1413,23 @@ function setGeneralNote(state: FullState, action: ActionOf<'note/setGeneral'>): 
   return generalNote === state.app.generalNote ? { state } : { state: withApp(state, { ...state.app, generalNote }) }
 }
 
+function updateToolbar(state: FullState, action: ActionOf<'toolbar/update'>): ReduceResult {
+  const patch: unknown = action.patch
+  if (!isRecord(patch)) return reject(state, 'DND-306', 'toolbar/update: patch bir nesne değil.')
+  const current = state.app.settings.toolbar
+  const fraction = (value: unknown, previous: number): number => (isFiniteNumber(value) ? clamp(value, 0, 1) : previous)
+  const flag = (value: unknown, previous: boolean): boolean => (typeof value === 'boolean' ? value : previous)
+  const next = {
+    x: fraction(patch.x, current.x),
+    y: fraction(patch.y, current.y),
+    vertical: flag(patch.vertical, current.vertical),
+    collapsed: flag(patch.collapsed, current.collapsed),
+    hidden: flag(patch.hidden, current.hidden)
+  }
+  if (shallowEqual(current, next)) return { state }
+  return { state: withApp(state, { ...state.app, settings: { ...state.app.settings, toolbar: next } }) }
+}
+
 function updateSettings(state: FullState, action: ActionOf<'settings/update'>): ReduceResult {
   const patch: unknown = action.patch
   if (!isRecord(patch)) return reject(state, 'DND-306', 'settings/update: patch bir nesne değil.')
@@ -1417,7 +1441,8 @@ function updateSettings(state: FullState, action: ActionOf<'settings/update'>): 
   const next: AppSettings = {
     gameDisplayId: displayChoice(patch.gameDisplayId, current.gameDisplayId),
     controlDisplayId: displayChoice(patch.controlDisplayId, current.controlDisplayId),
-    gameFullscreen: typeof fullscreen === 'boolean' ? fullscreen : current.gameFullscreen
+    gameFullscreen: typeof fullscreen === 'boolean' ? fullscreen : current.gameFullscreen,
+    toolbar: current.toolbar
   }
   return shallowEqual(current, next) ? { state } : { state: withApp(state, { ...state.app, settings: next }) }
 }
@@ -1429,6 +1454,15 @@ function setTool(state: FullState, action: ActionOf<'session/setTool'>): ReduceR
   if (tool === session.tool) return { state }
   // Araç değişimi çizimlere dokunmaz: çizdikten sonra fareye geçip görsel taşımak gerekebilir.
   return { state: withSession(state, { ...session, tool }) }
+}
+
+function setPenColor(state: FullState, action: ActionOf<'session/setPenColor'>): ReduceResult {
+  const color: unknown = action.color
+  if (!PEN_COLORS.some((known) => known === color)) return reject(state, 'DND-306', `session/setPenColor: renk geçersiz: ${show(color)}`)
+  const session = state.session
+  // Renk seçen kalemle çizmek istiyordur; fareden ya da silgiden kaleme geçilir.
+  if (color === session.penColor && session.tool === 'pen') return { state }
+  return { state: withSession(state, { ...session, penColor: color as PenColor, tool: 'pen' }) }
 }
 
 function setPenWidth(state: FullState, action: ActionOf<'session/setPenWidth'>): ReduceResult {

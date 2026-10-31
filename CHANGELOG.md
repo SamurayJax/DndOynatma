@@ -13,6 +13,9 @@
 - **Görsel esnetme:** görseller ve kartlar sağ/sol ve üst/alt kenardan yalnızca o yönde esnetilir; köşeler o anki
   oranı korur. Esnemiş öğede Ekrandakiler listesinde "Oranı düzelt" düğmesi çıkar. Kartlarda ad, seviye ve can
   yazısı basılmaz; fazla boyut çerçeveye gider.
+- **Araç paneli:** oyun ekranında sürüklenebilir şerit: fare, kalem, silgi, renk, kalınlık, geri al, temizle. Yatay ya da
+  dikey dizilir, küçültülür; `T` tuşu gizler, yeri kaydedilir. Oyuncular da görür; üstüne gelinmedikçe yarı saydamdır.
+- **Kalem renkleri:** kırmızı ve siyaha beyaz, mavi, yeşil ve sarı eklendi. Kalem tek araç oldu, renk ayrı seçilir.
 
 ## 1.1.0 — 2026-10-31
 

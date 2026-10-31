@@ -108,7 +108,7 @@ async function precision(session, tag, { sceneId, itemId }) {
 
   // --- Kalem: çizgi imlecin geçtiği yerde mi ---
   {
-    await session.send({ type: 'session/setTool', tool: 'pen-red' }, 250)
+    await session.send({ type: 'session/setTool', tool: 'pen' }, 250)
     const [x0, y0] = await session.toClient(700, 200)
     const [x1, y1] = await session.toClient(1500, 900)
     await session.game.mouse.move(x0, y0)

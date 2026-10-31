@@ -88,6 +88,10 @@ function describe(action: Action): string {
     }
     case 'session/setTool':
       return `araç=${id(action.tool)}`
+    case 'session/setPenColor':
+      return `renk=${id(action.color)}`
+    case 'toolbar/update':
+      return `alanlar=${fields(action.patch)}`
     case 'session/setPenWidth':
       return `kalınlık=${id(action.width)}`
     case 'session/clearDrawing':

@@ -273,12 +273,27 @@ export interface Playback {
   ambientIds: ID[]
 }
 
+/** Oyun ekranındaki araç panelinin düzeni. Yer, oyun çerçevesinin oranıdır (0..1), sol üst köşe. */
+export interface ToolbarLayout {
+  x: number
+  y: number
+  vertical: boolean
+  collapsed: boolean
+  hidden: boolean
+}
+
+export function createDefaultToolbar(): ToolbarLayout {
+  // Portre sütununun sağında, üstte.
+  return { x: 0.3, y: 0.012, vertical: false, collapsed: false, hidden: false }
+}
+
 export interface AppSettings {
   /** Oyun ekranının açılacağı monitör; null ise en büyük monitör seçilir. */
   gameDisplayId: number | null
   /** Kontrol panelinin açılacağı monitör; null ise oyun ekranının olmadığı monitör seçilir. */
   controlDisplayId: number | null
   gameFullscreen: boolean
+  toolbar: ToolbarLayout
 }
 
 /** Diske kaydedilen kalıcı durum (`kayit.json`). */
@@ -295,9 +310,23 @@ export interface AppState {
   classes: CharacterClass[]
 }
 
-export type Tool = 'mouse' | 'pen-red' | 'pen-black' | 'eraser'
+export type Tool = 'mouse' | 'pen' | 'eraser'
 
-export type PenWidth = 'thin' | 'medium' | 'thick'
+export const PEN_COLORS = ['red', 'black', 'white', 'blue', 'green', 'yellow'] as const
+export type PenColor = (typeof PEN_COLORS)[number]
+
+/** `halo`: çizginin altına çizilen daha geniş şerit; aynı tonda haritada çizgi kaybolmasın diye. */
+export const PEN_COLOR_INFO: Record<PenColor, { label: string; value: string; halo: string | null }> = {
+  red: { label: 'kırmızı', value: '#ff2a2a', halo: null },
+  black: { label: 'siyah', value: '#0a0a0a', halo: 'rgba(255, 255, 255, 0.6)' },
+  white: { label: 'beyaz', value: '#ffffff', halo: 'rgba(0, 0, 0, 0.6)' },
+  blue: { label: 'mavi', value: '#2f8cff', halo: null },
+  green: { label: 'yeşil', value: '#2ecc55', halo: null },
+  yellow: { label: 'sarı', value: '#ffd21f', halo: null }
+}
+
+export const PEN_WIDTHS = ['thin', 'medium', 'thick'] as const
+export type PenWidth = (typeof PEN_WIDTHS)[number]
 
 /** Kalem kalınlıkları (sanal piksel). Silgi aynı ayarda kalemden geniştir. */
 export const PEN_WIDTH_PX: Record<PenWidth, number> = { thin: 3, medium: 6, thick: 12 }
@@ -326,10 +355,13 @@ export interface DiceRoll {
 export interface SessionState {
   phase: 'menu' | 'playing'
   tool: Tool
+  penColor: PenColor
   /** Kalemin ve silginin kalınlığı; araç değişse de korunur. */
   penWidth: PenWidth
   /** Her artışında oyun ekranı, o an açık olan pencerenin çizimlerini siler ("Çizimi temizle"). */
   drawingNonce: number
+  /** Her artışında oyun ekranı, açık pencerenin son çizgisini geri alır. */
+  drawingUndoNonce: number
   /** En yeni atış başta. */
   diceHistory: DiceRoll[]
   playback: Playback
@@ -366,7 +398,7 @@ export function createInitialAppState(): AppState {
     scenes: [],
     activeSceneId: null,
     generalNote: '',
-    settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true },
+    settings: { gameDisplayId: null, controlDisplayId: null, gameFullscreen: true, toolbar: createDefaultToolbar() },
     music: createEmptyMusic(),
     classes: []
   }
@@ -384,7 +416,7 @@ export function createStoppedPlayback(): Playback {
 }
 
 export function createInitialSession(): SessionState {
-  return { phase: 'menu', tool: 'mouse', penWidth: 'medium', drawingNonce: 0, diceHistory: [], playback: createStoppedPlayback() }
+  return { phase: 'menu', tool: 'mouse', penColor: 'red', penWidth: 'medium', drawingNonce: 0, drawingUndoNonce: 0, diceHistory: [], playback: createStoppedPlayback() }
 }
 
 export function createInitialState(): FullState {
