@@ -64,14 +64,15 @@ export function droppedPaths(files: FileList): string[] {
  * Görseli etkin pencerenin üstüne ekler. Mekan ve sahne görselleri de arka plan yapılmaz; DM onları
  * oyun ekranında kendisi yerleştirir. Arka plan yalnızca Ayarlar'daki seçiciden konur.
  */
-export function placeOnStage(imageId: ID): void {
+export function placeOnStage(imageId: ID, asCard = false): void {
   const app = getFullState()?.app
   if (app === undefined || findImage(app, imageId) === undefined) return
   dispatch({
     type: 'stage/addItem',
     itemId: newId(),
     fallbackSceneId: newId(),
-    imageId
+    imageId,
+    ...(asCard ? { asCard: true } : {})
   })
 }
 

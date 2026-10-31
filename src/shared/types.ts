@@ -19,6 +19,29 @@ export const PORTRAIT_COLUMN_WIDTH = 300
 /** Sahnedeki bir görselin kısa kenarı bundan küçük olamaz. */
 export const MIN_ITEM_SIZE = 40
 
+/** Sahnedeki kartın tasarım ölçüsü; kart her zaman bu orandadır ve çizim buna göre ölçeklenir. */
+export const CARD_WIDTH = 300
+export const CARD_HEIGHT = 420
+export const MAX_CARD_HP = 9999
+export const DEFAULT_CARD_HP = 10
+
+/** Boss kartlarının çerçeveleri. */
+export const BOSS_FRAMES = ['shadow', 'radiant', 'blood', 'frost', 'venom'] as const
+export type BossFrame = (typeof BOSS_FRAMES)[number]
+export type CardFrame = 'standard' | BossFrame
+
+export const BOSS_FRAME_LABELS: Record<BossFrame, string> = {
+  shadow: 'Gölge',
+  radiant: 'Işık',
+  blood: 'Kan',
+  frost: 'Buz',
+  venom: 'Zehir'
+}
+
+export function isBossFrame(value: unknown): value is BossFrame {
+  return BOSS_FRAMES.some((frame) => frame === value)
+}
+
 /** Kütüphanenin 8 bölmesi. */
 export type LibraryCategory =
   | 'npc'
@@ -44,6 +67,8 @@ export interface LibraryImage {
   height: number
   /** ISO tarih. */
   addedAt: string
+  /** Kart olarak kullanılıp düzenlendiyse son bilgileri. */
+  cardDefaults?: CardDefaults
 }
 
 /** Altı istatistik: Güç, Çeviklik, Dayanıklılık, Zeka, Bilgelik, Karizma. */
@@ -158,6 +183,23 @@ export interface StageItem {
   rotation: number
   /** Görselin altında gösterilen kısa etiket ("7 LVL" gibi). Boş olabilir. */
   label: string
+  /** Varsa görsel kart olarak çizilir ve kutusu kartın oranındadır. Eski kayıtlarda bu alan yoktur. */
+  card?: StageCard
+}
+
+/** Görselin kart bilgileri; görsel bir sonraki koyuşta bunlarla gelir. */
+export interface CardDefaults {
+  name: string
+  level: number
+  /** 1..MAX_CARD_HP */
+  maxHp: number
+  frame: CardFrame
+}
+
+/** Sahnedeki kartın bilgileri. Can her kartın kendisinindir: üç goblinden biri ölürken öbürleri dolu kalır. */
+export interface StageCard extends CardDefaults {
+  /** 0..maxHp */
+  hp: number
 }
 
 /** Kullanıcının "pencere" dediği hazır düzen: arka plan + üstündeki görseller. */

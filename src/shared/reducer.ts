@@ -9,12 +9,19 @@
 import { Action, ReduceIssue, ReduceResult } from './actions'
 import { consumeEffects } from './character'
 import { ErrorCode } from './errors'
-import { categoryInfo, containRect, coverRect, findImage, isPlayerPristine, playArea, Rect } from './layout'
+import { categoryInfo, containRect, coverRect, findImage, isCardable, isPlayerPristine, playArea, Rect } from './layout'
 import {
   AmbientSound,
   AppSettings,
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  CardFrame,
   CharacterClass,
+  DEFAULT_CARD_HP,
   isAbility,
+  isBossFrame,
+  MAX_CARD_HP,
+  StageCard,
   MAX_ABILITY,
   MIN_ABILITY,
   PlayerEffect,
@@ -54,7 +61,8 @@ export const TEXT_LIMITS = {
   ambientName: 24,
   className: 30,
   skillName: 30,
-  effectLabel: 40
+  effectLabel: 40,
+  cardName: 30
 } as const
 
 export const MIN_HOTKEY = 1
@@ -157,6 +165,12 @@ export function reduce(state: FullState, action: Action): ReduceResult {
       return reorderItem(state, action)
     case 'stage/clearItems':
       return clearItems(state, action)
+    case 'stage/setCardMode':
+      return setCardMode(state, action)
+    case 'stage/updateCard':
+      return updateCard(state, action)
+    case 'stage/adjustCardHp':
+      return adjustCardHp(state, action)
 
     case 'scene/setVideo':
       return setSceneVideo(state, action)
@@ -580,9 +594,22 @@ function placeImage(state: FullState, action: ActionOf<'stage/setBackground' | '
     return reject(state, 'DND-306', `${action.type}: bu kimlikle bir öğe zaten var: ${show(itemId)}`)
   }
 
+  const asCard = action.type === 'stage/addItem' && action.asCard === true
+  if (asCard && !isCardable(image.kind)) {
+    return reject(state, 'DND-306', `stage/addItem: bu bölmenin görseli kart olamaz: ${show(image.kind)}`)
+  }
+
   const area = playArea(app)
   // Görsel arka plan konunca hareketli arka plan kalkar; ikisi aynı anda olmaz.
-  const nextScene: SceneWindow = asBackground
+  const nextScene: SceneWindow = asCard
+    ? {
+        ...scene,
+        items: [
+          ...scene.items,
+          { id: itemId, imageId: image.id, ...initialCardRect(area), rotation: 0, label: '', card: createCard(image, scene) }
+        ]
+      }
+    : asBackground
     ? {
         ...scene,
         background: { id: itemId, imageId: image.id, ...coverRect(image.width, image.height, area), rotation: 0, label: '' },
@@ -605,6 +632,113 @@ function initialItemRect(image: Size, area: Rect): Rect {
   if (Math.min(rect.width, rect.height) >= MIN_ITEM_SIZE) return rect
   const size = fitSize({ width: rect.width }, image)
   return { x: area.x + (area.width - size.width) / 2, y: area.y + (area.height - size.height) / 2, ...size }
+}
+
+/** Kart bir görselden küçük durmalı; alanın yarısına yakınını kaplar, oyun alanı görünür kalır. */
+function initialCardRect(area: Rect): Rect {
+  return containRect(CARD_WIDTH, CARD_HEIGHT, area, 0.45)
+}
+
+/**
+ * Yeni kartın bilgileri: görselin son kart bilgileri, yoksa dosya adı ve varsayılanlar. Aynı pencerede
+ * aynı görselden başka kart varsa ad numaralanır ("Goblin", "Goblin 2"); tek boss numara almaz.
+ */
+function createCard(image: LibraryImage, scene: SceneWindow): StageCard {
+  const defaults = image.cardDefaults
+  const base = defaults?.name ?? (truncate(image.originalName.trim(), TEXT_LIMITS.cardName) || 'Kart')
+  const taken = new Set(scene.items.filter((item) => item.card !== undefined && item.imageId === image.id).map((item) => item.card?.name))
+  let name = base
+  for (let number = 2; taken.has(name); number++) name = `${truncate(base, TEXT_LIMITS.cardName - String(number).length - 1)} ${number}`
+  const maxHp = defaults?.maxHp ?? DEFAULT_CARD_HP
+  return {
+    name,
+    level: defaults?.level ?? MIN_LEVEL,
+    maxHp,
+    hp: maxHp,
+    frame: allowedFrame(defaults?.frame, image)
+  }
+}
+
+/** Boss'lar beş çerçeveden birini kullanır, öbür kartlar standart çerçeveyi. */
+function allowedFrame(frame: unknown, image: LibraryImage): CardFrame {
+  if (image.kind !== 'boss') return 'standard'
+  return isBossFrame(frame) ? frame : 'shadow'
+}
+
+function setCardMode(state: FullState, action: ActionOf<'stage/setCardMode'>): ReduceResult {
+  const app = state.app
+  const scene = sceneById(app, action.sceneId)
+  if (!scene) return sceneNotFound(state, action.sceneId)
+  const item = findStageItem(scene, action.itemId)
+  if (!item) return itemNotFound(state, action.itemId)
+  if (scene.background === item) return reject(state, 'DND-306', 'stage/setCardMode: arka plan kart olamaz.')
+  const image = findImage(app, item.imageId)
+  if (!image || !isCardable(image.kind)) return reject(state, 'DND-306', `stage/setCardMode: bu görsel kart olamaz: ${show(item.imageId)}`)
+  const enabled = action.enabled === true
+  if (enabled === (item.card !== undefined)) return { state }
+
+  const area = playArea(app)
+  const centerX = item.x + item.width / 2
+  const centerY = item.y + item.height / 2
+  const { card: _dropped, ...plain } = item
+  const size: Size = enabled
+    ? fitSize({ height: Math.min(item.height, initialCardRect(area).height) }, { width: CARD_WIDTH, height: CARD_HEIGHT })
+    : // Çok geniş görselde kartın yüksekliği alanı aşan bir genişlik verirdi; ilk koyuş boyutu üst sınırdır.
+      fitSize({ height: Math.min(item.height, initialItemRect(image, area).height) }, image)
+  const moved = { ...plain, ...size, ...clampCenter(centerX - size.width / 2, centerY - size.height / 2, size.width, size.height, area) }
+  return { state: withScene(state, scene, replaceStageItem(scene, item, enabled ? { ...moved, card: createCard(image, scene) } : moved)) }
+}
+
+function updateCard(state: FullState, action: ActionOf<'stage/updateCard'>): ReduceResult {
+  const app = state.app
+  const scene = sceneById(app, action.sceneId)
+  if (!scene) return sceneNotFound(state, action.sceneId)
+  const item = findStageItem(scene, action.itemId)
+  if (!item) return itemNotFound(state, action.itemId)
+  const card = item.card
+  if (card === undefined) return reject(state, 'DND-306', `stage/updateCard: öğe kart değil: ${show(action.itemId)}`)
+  const raw: unknown = action.patch
+  if (!isRecord(raw)) return reject(state, 'DND-306', 'stage/updateCard: patch geçersiz.')
+  for (const key of ['level', 'maxHp', 'hp'] as const) {
+    if (raw[key] !== undefined && !isFiniteNumber(raw[key])) return reject(state, 'DND-306', `stage/updateCard: ${key} sayı değil.`)
+  }
+  if (raw.name !== undefined && typeof raw.name !== 'string') return reject(state, 'DND-306', 'stage/updateCard: ad metin değil.')
+  const image = findImage(app, item.imageId)
+
+  // Boş ad yok sayılır: yazarken alan bir an boşalsa da kart adsız kalmaz.
+  const name = cleanName(raw.name, TEXT_LIMITS.cardName) || card.name
+  const level = raw.level === undefined ? card.level : clamp(Math.round(raw.level as number), MIN_LEVEL, MAX_LEVEL)
+  const maxHp = raw.maxHp === undefined ? card.maxHp : clamp(Math.round(raw.maxHp as number), 1, MAX_CARD_HP)
+  // Canı dolu kartın en yüksek canı değişince kart dolu kalır.
+  const wantedHp = raw.hp !== undefined ? Math.round(raw.hp as number) : card.hp === card.maxHp ? maxHp : card.hp
+  const frame = raw.frame === undefined || image === undefined ? card.frame : allowedFrame(raw.frame, image)
+  const next: StageCard = { name, level, maxHp, hp: clamp(wantedHp, 0, maxHp), frame }
+  if (shallowEqual(card, next)) return { state }
+
+  const updated = withScene(state, scene, replaceStageItem(scene, item, { ...item, card: next }))
+  if (image === undefined || (card.name === name && card.level === level && card.maxHp === maxHp && card.frame === frame)) return { state: updated }
+  // Numara yalnızca bu kopyanındır; görsele numarasız ad yazılır ("Goblin 2" → "Goblin").
+  const copies = scene.items.filter((other) => other.card !== undefined && other.imageId === image.id).length
+  const cardDefaults = { name: copies > 1 ? name.replace(/\s+\d+$/, '') || name : name, level, maxHp, frame }
+  return {
+    state: withApp(updated, {
+      ...updated.app,
+      library: updated.app.library.map((entry) => (entry.id === image.id ? { ...entry, cardDefaults } : entry))
+    })
+  }
+}
+
+function adjustCardHp(state: FullState, action: ActionOf<'stage/adjustCardHp'>): ReduceResult {
+  const scene = sceneById(state.app, action.sceneId)
+  if (!scene) return sceneNotFound(state, action.sceneId)
+  const item = findStageItem(scene, action.itemId)
+  if (!item) return itemNotFound(state, action.itemId)
+  const card = item.card
+  if (card === undefined) return reject(state, 'DND-306', `stage/adjustCardHp: öğe kart değil: ${show(action.itemId)}`)
+  const delta: unknown = action.delta
+  if (!isFiniteNumber(delta)) return reject(state, 'DND-306', `stage/adjustCardHp: fark geçersiz: ${show(delta)}`)
+  const hp = clamp(card.hp + Math.round(delta), 0, card.maxHp)
+  return hp === card.hp ? { state } : { state: withScene(state, scene, replaceStageItem(scene, item, { ...item, card: { ...card, hp } })) }
 }
 
 function clearBackground(state: FullState, action: ActionOf<'stage/clearBackground'>): ReduceResult {
@@ -722,6 +856,7 @@ function parseItemPatch(raw: unknown): ItemPatch | null {
 
 /** Oranın kaynağı kütüphanedeki görseldir; görsel bulunamazsa öğenin o anki oranı korunur. */
 function referenceSize(app: AppState, item: StageItem): Size {
+  if (item.card !== undefined) return { width: CARD_WIDTH, height: CARD_HEIGHT }
   const image = findImage(app, item.imageId)
   if (image && hasValidSize(image)) return image
   return hasValidSize(item) ? item : { width: 1, height: 1 }

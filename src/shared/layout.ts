@@ -50,6 +50,11 @@ export function categoryInfo(kind: ImageKind): CategoryInfo | undefined {
   return CATEGORIES.find((c) => c.id === kind)
 }
 
+/** Yalnızca canlılar kart olabilir; eşyalar ve arka planlar düz görseldir. */
+export function isCardable(kind: ImageKind): boolean {
+  return kind === 'npc' || kind === 'merchant' || kind === 'enemy' || kind === 'boss'
+}
+
 /** Portresi ya da adı olan kart "dolu" sayılır ve oyunda görünür. */
 export function isPlayerFilled(player: PlayerProfile): boolean {
   return player.portraitId !== null || player.name.trim() !== ''

@@ -1,7 +1,7 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react'
 import type { DragEvent, JSX } from 'react'
 import type { ImportResult } from '@shared/ipc'
-import { CATEGORIES, activeScene, categoryInfo, findImage, scenesUsingImage } from '@shared/layout'
+import { CATEGORIES, activeScene, categoryInfo, findImage, isCardable, scenesUsingImage } from '@shared/layout'
 import type { ID, LibraryCategory, LibraryImage } from '@shared/types'
 import { dispatch, useApp } from '@renderer/lib/useAppState'
 import {
@@ -125,6 +125,8 @@ export function LibraryPanel(props: { mode: 'manage' | 'play' }): JSX.Element {
     [mode]
   )
 
+  const handlePlaceCard = useCallback((imageId: ID): void => placeOnStage(imageId, true), [])
+
   const handleDelete = useCallback((imageId: ID): void => {
     void confirmAndRemove(imageId)
   }, [])
@@ -186,6 +188,7 @@ export function LibraryPanel(props: { mode: 'manage' | 'play' }): JSX.Element {
         landscape={isBackgroundTab}
         stage={stage}
         onActivate={handleActivate}
+        onPlaceCard={handlePlaceCard}
         onDelete={handleDelete}
         onSetKind={handleSetKind}
       />
@@ -243,6 +246,7 @@ export function LibraryPanel(props: { mode: 'manage' | 'play' }): JSX.Element {
               <span>
                 <strong>Tıkla: oyun ekranına koy</strong>
                 {' — her tıklama bir kopya daha ekler'}
+                {category !== undefined && isCardable(category.id) && '. “Kart olarak koy”: ad, seviye ve canla çerçeveli kart'}
               </span>
             </p>
           )}

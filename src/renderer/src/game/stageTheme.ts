@@ -10,6 +10,7 @@ export interface StagePalette {
   bgControl: string
   borderStrong: string
   fontBody: string
+  fontHeading: string
 }
 
 const FALLBACK: StagePalette = {
@@ -19,7 +20,8 @@ const FALLBACK: StagePalette = {
   bgDeep: '#0c0a08',
   bgControl: '#26211b',
   borderStrong: '#4d4336',
-  fontBody: "'Segoe UI', system-ui, sans-serif"
+  fontBody: "'Segoe UI', system-ui, sans-serif",
+  fontHeading: "Georgia, 'Times New Roman', serif"
 }
 
 let cached: StagePalette | null = null
@@ -35,7 +37,8 @@ export function stagePalette(): StagePalette {
     bgDeep: read('--bg-0', FALLBACK.bgDeep),
     bgControl: read('--bg-3', FALLBACK.bgControl),
     borderStrong: read('--border-strong', FALLBACK.borderStrong),
-    fontBody: read('--font-body', FALLBACK.fontBody)
+    fontBody: read('--font-body', FALLBACK.fontBody),
+    fontHeading: read('--font-heading', FALLBACK.fontHeading)
   }
   return cached
 }

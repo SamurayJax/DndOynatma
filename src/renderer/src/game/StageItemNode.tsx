@@ -8,6 +8,7 @@ import { imageUrl } from '@renderer/lib/media'
 import { dispatch } from '@renderer/lib/useAppState'
 import { clampPosition, normalizeRotation, referenceSize, rotatedHalfHeight, sameBox, settleBox } from './itemGeometry'
 import type { Box } from './itemGeometry'
+import { StageCardFace } from './StageCardFace'
 import { stagePalette, withAlpha } from './stageTheme'
 import { useStageImage } from './useStageImage'
 
@@ -94,7 +95,8 @@ export const StageItemNode = memo(function StageItemNode({
 
   const palette = stagePalette()
   const box: Box = pending ?? item
-  const label = item.label.trim()
+  // Kartın adı ve seviyesi kendi üstünde yazar; etiket çizilmez.
+  const label = item.card !== undefined ? '' : item.label.trim()
   const itemId = item.id
 
   useEffect(() => {
@@ -252,7 +254,9 @@ export const StageItemNode = memo(function StageItemNode({
         onTransform={handleTransform}
         onTransformEnd={handleTransformEnd}
       >
-        {picture !== undefined ? (
+        {item.card !== undefined ? (
+          <StageCardFace card={item.card} picture={picture} missing={status === 'failed'} width={box.width} height={box.height} />
+        ) : picture !== undefined ? (
           <KonvaImage image={picture} width={box.width} height={box.height} />
         ) : status === 'failed' ? (
           <MissingImage width={box.width} height={box.height} />

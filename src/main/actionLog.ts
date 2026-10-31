@@ -68,6 +68,12 @@ function describe(action: Action): string {
     }
     case 'stage/removeItem':
       return `pencere=${id(action.sceneId)} öğe=${id(action.itemId)}`
+    case 'stage/setCardMode':
+      return `pencere=${id(action.sceneId)} öğe=${id(action.itemId)} kart=${action.enabled ? 'açık' : 'kapalı'}`
+    case 'stage/updateCard':
+      return `pencere=${id(action.sceneId)} öğe=${id(action.itemId)} alanlar=${fields(action.patch)}`
+    case 'stage/adjustCardHp':
+      return `pencere=${id(action.sceneId)} öğe=${id(action.itemId)} fark=${num(action.delta)}`
     case 'stage/reorderItem':
       return `pencere=${id(action.sceneId)} öğe=${id(action.itemId)} yön=${id(action.to)}`
     case 'note/setGeneral':

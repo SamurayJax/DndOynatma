@@ -18,8 +18,13 @@ import {
   ABILITIES,
   AbilityScores,
   AmbientSound,
+  CardFrame,
   CharacterClass,
   DEFAULT_ABILITY,
+  DEFAULT_CARD_HP,
+  MAX_CARD_HP,
+  StageCard,
+  isBossFrame,
   MAX_ABILITY,
   MIN_ABILITY,
   PlayerEffect,
@@ -208,7 +213,10 @@ function normalizeImage(raw: unknown): LibraryImage | null {
   if (!isId(raw.id) || !isSafeFileName(raw.fileName)) return null
   if (!IMAGE_KINDS.includes(raw.kind as ImageKind)) return null
   if (!isPositive(raw.width) || !isPositive(raw.height)) return null
+  // Kart bilgileri sonradan eklendi; eski kayıtlarda bu alan yoktur.
+  const card = normalizeCard(raw.cardDefaults)
   return {
+    ...(card === undefined ? {} : { cardDefaults: { name: card.name, level: card.level, maxHp: card.maxHp, frame: card.frame } }),
     id: raw.id,
     kind: raw.kind as ImageKind,
     fileName: raw.fileName,
@@ -238,7 +246,9 @@ function normalizeScenes(raw: unknown, imageIds: ReadonlySet<ID>, videoIds: Read
     }
 
     const itemIds = new Set<ID>()
-    const background = normalizeStageItem(entry.background, imageIds, itemIds)
+    const rawBackground = normalizeStageItem(entry.background, imageIds, itemIds)
+    // Arka plan kart olamaz; elle düzenlenmiş kayıttan gelse de düz görsel sayılır.
+    const background = rawBackground === null ? null : withoutCard(rawBackground)
     const items: StageItem[] = []
     for (const rawItem of Array.isArray(entry.items) ? entry.items : []) {
       const item = normalizeStageItem(rawItem, imageIds, itemIds)
@@ -260,7 +270,9 @@ function normalizeStageItem(raw: unknown, imageIds: ReadonlySet<ID>, usedIds: Se
   if (!isFiniteNumber(raw.x) || !isFiniteNumber(raw.y)) return null
   if (!isPositive(raw.width) || !isPositive(raw.height)) return null
   usedIds.add(raw.id)
+  const card = normalizeCard(raw.card)
   return {
+    ...(card === undefined ? {} : { card }),
     id: raw.id,
     imageId: raw.imageId,
     x: raw.x,
@@ -270,6 +282,26 @@ function normalizeStageItem(raw: unknown, imageIds: ReadonlySet<ID>, usedIds: Se
     // Döndürme sonradan eklendi; eski kayıtlarda bu alan yoktur.
     rotation: isFiniteNumber(raw.rotation) ? (Math.round((((raw.rotation % 360) + 360) % 360) * 100) / 100) % 360 : 0,
     label: text(raw.label)
+  }
+}
+
+function withoutCard(item: StageItem): StageItem {
+  if (item.card === undefined) return item
+  const { card: _dropped, ...plain } = item
+  return plain
+}
+
+/** Kart yoksa ya da nesne değilse `undefined`; öğe düz görsel olarak açılır. */
+function normalizeCard(raw: unknown): StageCard | undefined {
+  if (!isRecord(raw)) return undefined
+  const maxHp = clampInt(raw.maxHp, 1, MAX_CARD_HP, DEFAULT_CARD_HP)
+  const frame: CardFrame = isBossFrame(raw.frame) ? raw.frame : 'standard'
+  return {
+    name: text(raw.name).trim() || 'Kart',
+    level: clampInt(raw.level, MIN_LEVEL, MAX_LEVEL, MIN_LEVEL),
+    maxHp,
+    hp: clampInt(raw.hp, 0, maxHp, maxHp),
+    frame
   }
 }
 

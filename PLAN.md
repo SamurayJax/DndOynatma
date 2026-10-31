@@ -267,6 +267,7 @@ Her iş ayrı dalda yapılır; kullanıcı deneyip onaylayınca `main`'e birleş
 | 6b | Video arka plan düzeltmeleri (sonradan eklendi) | 0.9.8 |
 | 6c | Beceri dışında istatistikle zar atma | 0.9.9 |
 | 7 | Gerçek oturumda deneme, düzeltmeler, tam sürüm | 1.0.0 |
+| 8 | Düşman ve boss kartları (oyuncu isteği) | 1.1.0 |
 
 ### 1. Kayıt yeri (0.9.0) — yapıldı
 
@@ -540,6 +541,27 @@ Kararlar (2026-10-29):
 
 Kullanıcı uygulamayı yaklaşık 3 saatlik gerçek bir oturumda kullandı, sorun çıkmadı (2026-10-31).
 Müzik ve ortam sesleri Discord pencere paylaşımında karşıya gidiyor. Düzeltme gerekmedi.
+
+### 8. Düşman ve boss kartları (1.1.0) — yapıldı
+
+Oyuncu isteği (2026-10-31): oyuncular çerçeveli kartlarla dururken düşmanlar sade görünüyor.
+
+Kararlar (2026-10-31):
+
+- Kart ayrı bir görsel türü değil, oyun alanındaki görselin görünümüdür. Yalnızca NPC, tüccar, düşman ve
+  boss kart olabilir. Düz görsel olduğu gibi kalır; ikisi arasında geçilir.
+- Can bar değil sayı olarak görünür ve yanında "CAN" yazar; oyunculardan gizlenmez. En yüksek can kart
+  başınadır (varsayılan 10, en çok 9999). İhtiyaç olursa sonra değiştirilir.
+- Boss kartları belirgin ve şaşalıdır; beş çerçeve: Gölge, Işık, Kan, Buz, Zehir. Öbür kartlar oyuncu
+  kartlarıyla aynı altın çerçeveyi kullanır.
+- Can her kartındır; ad, seviye, en yüksek can ve çerçeve görsele de yazılır. Yeni kart dolu canla gelir.
+  Aynı pencerede aynı görselden kart varsa ad numaralanır; ilk kart numarasızdır (tek boss "Ejderha 1" olmasın).
+
+Teknik notlar:
+
+- `StageItem.card` ve `LibraryImage.cardDefaults` isteğe bağlıdır; eski kayıtlar düz görsel olarak açılır.
+- Kart 300x420 tasarım ölçüsünde çizilir ve kutuya ölçeklenir; görsel çerçeveye kırpılır, oranı bozulmaz.
+  Seçim çerçevesi kutuyu çocukların kapladığı alandan ölçtüğü için süsler kartın dışına taşmaz.
 
 ### Kararlar (2026-10-05)
 

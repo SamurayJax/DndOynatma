@@ -13,6 +13,7 @@ export interface LibraryGridProps {
   landscape: boolean
   stage: StageUsage
   onActivate: (imageId: ID) => void
+  onPlaceCard: (imageId: ID) => void
   onDelete: (imageId: ID) => void
   onSetKind: (imageId: ID, kind: SwapKind) => void
 }
@@ -72,6 +73,7 @@ export const LibraryGrid = memo(function LibraryGrid({
   landscape,
   stage,
   onActivate,
+  onPlaceCard,
   onDelete,
   onSetKind
 }: LibraryGridProps): JSX.Element {
@@ -95,6 +97,7 @@ export const LibraryGrid = memo(function LibraryGrid({
           isBackground={stage.backgroundImageId === image.id}
           tabbable={image.id === tabStopId}
           onActivate={onActivate}
+          onPlaceCard={onPlaceCard}
           onDelete={onDelete}
           onSetKind={onSetKind}
         />

@@ -1,6 +1,6 @@
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type { JSX } from 'react'
-import { activeScene } from '@shared/layout'
+import { activeScene, isCardable } from '@shared/layout'
 import { TEXT_LIMITS } from '@shared/reducer'
 import type { ID, LibraryImage, MusicTrack, SceneWindow, StageItem } from '@shared/types'
 import { dispatch, useApp } from '@renderer/lib/useAppState'
@@ -20,6 +20,7 @@ import {
   confirmDialog,
   cx
 } from '@renderer/ui'
+import { CardEditor } from './CardEditor'
 import { blurOnEnterOrEscape } from './leaveField'
 
 const MISSING_IMAGE_NAME = 'Görsel bulunamadı'
@@ -173,8 +174,9 @@ interface ItemRowProps {
 
 // Oyun ekranında bir görsel sürüklenirken yalnızca o görselin satırı yeniden çizilir.
 const ItemRow = memo(function ItemRow({ sceneId, item, image, canForward, canBackward }: ItemRowProps): JSX.Element {
-  const name = image?.originalName ?? MISSING_IMAGE_NAME
+  const name = item.card?.name ?? image?.originalName ?? MISSING_IMAGE_NAME
   const itemId = item.id
+  const [editing, setEditing] = useState(false)
 
   return (
     <li className="ctl-stage__row">
@@ -183,16 +185,31 @@ const ItemRow = memo(function ItemRow({ sceneId, item, image, canForward, canBac
         <span className="ctl-stage__name" title={name}>
           {name}
         </span>
-        <TextInput
-          className="ctl-stage__label"
-          value={item.label}
-          maxLength={TEXT_LIMITS.itemLabel}
-          placeholder="Etiket (ör. 7 LVL)"
-          aria-label={`${name} etiketi`}
-          onChange={(label) => dispatch({ type: 'stage/updateItem', sceneId, itemId, patch: { label } })}
-          onKeyDown={blurOnEnterOrEscape}
-        />
+        {item.card === undefined && (
+          <TextInput
+            className="ctl-stage__label"
+            value={item.label}
+            maxLength={TEXT_LIMITS.itemLabel}
+            placeholder="Etiket (ör. 7 LVL)"
+            aria-label={`${name} etiketi`}
+            onChange={(label) => dispatch({ type: 'stage/updateItem', sceneId, itemId, patch: { label } })}
+            onKeyDown={blurOnEnterOrEscape}
+          />
+        )}
+        {item.card !== undefined ? (
+          <Button className="ctl-stage__mode" size="sm" aria-expanded={editing} onClick={() => setEditing((open) => !open)}>
+            {editing ? 'Kapat' : 'Düzenle'}
+          </Button>
+        ) : (
+          image !== undefined &&
+          isCardable(image.kind) && (
+            <Button className="ctl-stage__mode" size="sm" onClick={() => dispatch({ type: 'stage/setCardMode', sceneId, itemId, enabled: true })}>
+              Karta çevir
+            </Button>
+          )
+        )}
       </div>
+      {item.card !== undefined && <CardEditor sceneId={sceneId} itemId={itemId} card={item.card} boss={image?.kind === 'boss'} editing={editing} />}
       <div className="ctl-stage__actions">
         <IconButton label={`${name} görselini 90° döndür`} size="sm" icon={<RotateIcon size={16} />} onClick={() => rotate(sceneId, item)} />
         <IconButton

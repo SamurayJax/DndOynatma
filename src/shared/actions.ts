@@ -18,6 +18,7 @@ import {
   PlayerProfile,
   RepeatMode,
   Skill,
+  StageCard,
   StageItem,
   Tool,
   VideoLoop
@@ -56,8 +57,13 @@ export type AppAction =
   /** Arka planı koyar; oyun alanını oranı bozmadan dolduracak şekilde yerleştirir. */
   | { type: 'stage/setBackground'; sceneId?: ID; fallbackSceneId: ID; itemId: ID; imageId: ID }
   | { type: 'stage/clearBackground'; sceneId: ID }
-  /** Görseli oyun alanının ortasına, oranını bozmadan koyar. */
-  | { type: 'stage/addItem'; sceneId?: ID; fallbackSceneId: ID; itemId: ID; imageId: ID }
+  /** Görseli oyun alanının ortasına, oranını bozmadan koyar. `asCard`: kart olarak koyar. */
+  | { type: 'stage/addItem'; sceneId?: ID; fallbackSceneId: ID; itemId: ID; imageId: ID; asCard?: boolean }
+  /** Düz görseli karta ya da kartı düz görsele çevirir; merkezi yerinde kalır. */
+  | { type: 'stage/setCardMode'; sceneId: ID; itemId: ID; enabled: boolean }
+  /** Ad, seviye, en yüksek can ve çerçeve görsele de yazılır; bir sonraki koyuşta aynı gelir. */
+  | { type: 'stage/updateCard'; sceneId: ID; itemId: ID; patch: Partial<StageCard> }
+  | { type: 'stage/adjustCardHp'; sceneId: ID; itemId: ID; delta: number }
   /**
    * itemId arka planın kimliğiyse arka planı günceller. En-boy oranı her zaman görselinkine
    * çekilir; öğenin merkezi oyun alanının (portre sütununun sağı) içinde tutulur.

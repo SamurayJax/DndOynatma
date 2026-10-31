@@ -3,7 +3,7 @@
 DnD oturumlarında Canva yerine kullanılan masaüstü sahne yönetim uygulaması. DM yönetir,
 oyuncular ekran paylaşımından (Discord / Teams) izler.
 
-**Sürüm:** 1.0.0 (Windows)
+**Sürüm:** 1.1.0 (Windows)
 
 ## Ne yapar
 
@@ -15,6 +15,8 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
   İtemler. Görsele tıklayınca oyun ekranına gelir; oyuncular kütüphaneyi görmez.
 - **Oyun alanı:** görseller taşınır, oranı bozulmadan boyutlandırılır, döndürülür,
   öne/arkaya alınır, etiket alır ("7 LVL").
+- **Kartlar:** NPC, tüccar, düşman ve boss'lar düz görsel ya da ad, seviye ve canla çerçeveli kart olarak
+  konur. Boss'ların beş çerçevesi var (Gölge, Işık, Kan, Buz, Zehir); can Ekrandakiler listesinden düşer.
 - **Pencereler:** "Kraliyet İçi", "Orman Yolu" gibi hazır düzenler; 1–9 tuşlarıyla geçilir.
 - **Kalem:** kırmızı ve siyah, üç kalınlık; silgi çizginin değdiği kısmını siler. Çizimin tamamı
   yalnızca "Çizimi temizle" ile silinir, fareye geçince kalır.

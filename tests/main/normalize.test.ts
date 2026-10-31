@@ -10,6 +10,31 @@ function repaired(overrides: Record<string, unknown>) {
   return state
 }
 
+describe('kartlar', () => {
+  const stored = (card: unknown): unknown => ({
+    library: [{ id: 'g', kind: 'enemy', fileName: 'g.png', originalName: 'G', width: 10, height: 10, addedAt: 'x', cardDefaults: { name: 'G', level: 3, maxHp: 50, frame: 'standard' } }],
+    scenes: [{ id: 's', name: 'S', items: [{ id: 'i', imageId: 'g', x: 0, y: 0, width: 300, height: 420, rotation: 0, label: '', card }], background: { id: 'b', imageId: 'g', x: 0, y: 0, width: 10, height: 10, card } }]
+  })
+
+  it('eski kayıttaki öğe düz görsel kalır', () => {
+    const state = normalizeAppState(stored(undefined))
+    expect(state?.scenes[0].items[0]).not.toHaveProperty('card')
+  })
+
+  it('kart ve görselin kart bilgileri korunur; arka plan kart olamaz', () => {
+    const card = { name: 'Goblin', level: 5, maxHp: 40, hp: 12, frame: 'blood' }
+    const state = normalizeAppState(stored(card))
+    expect(state?.scenes[0].items[0].card).toEqual(card)
+    expect(state?.scenes[0].background).not.toHaveProperty('card')
+    expect(state?.library[0].cardDefaults).toEqual({ name: 'G', level: 3, maxHp: 50, frame: 'standard' })
+  })
+
+  it('bozuk kart onarılır', () => {
+    const state = normalizeAppState(stored({ name: '  ', level: -4, maxHp: 1e9, hp: 'x', frame: 'pembe' }))
+    expect(state?.scenes[0].items[0].card).toEqual({ name: 'Kart', level: 1, maxHp: 9999, hp: 9999, frame: 'standard' })
+  })
+})
+
 describe('normalizeAppState', () => {
   it('nesne olmayan girdide null döner', () => {
     for (const input of [null, undefined, 42, 'kayıt', true, [], [{}]]) {

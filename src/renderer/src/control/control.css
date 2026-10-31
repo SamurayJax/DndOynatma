@@ -1000,6 +1000,47 @@
 }
 
 /* Arka plan tek satırlık, daha alçak bir satırdır: asıl yer üstteki görsellere kalsın. */
+/* Kart denetimleri satırın altına tam genişlikte iner; düğmeler üst sırada kalır. */
+.ctl-stage-card {
+  display: flex;
+  grid-row: 2;
+  grid-column: 1 / -1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ctl-stage-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctl-stage-card__name.ui-input {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.ctl-stage-card__hp .ctl-hp__value {
+  font-size: var(--text-lg);
+}
+
+.ctl-stage-card__max.ui-input {
+  width: 64px;
+  height: 36px;
+  padding: 0 var(--space-1);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.ctl-stage-card__frame {
+  flex: 1 1 120px;
+}
+
+.ctl-stage__mode.ui-btn {
+  align-self: flex-start;
+}
+
 .ctl-stage__row--background {
   grid-template-columns: 32px minmax(0, 1fr) auto;
   padding: var(--space-1) 6px;

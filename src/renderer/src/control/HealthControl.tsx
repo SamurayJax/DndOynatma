@@ -4,6 +4,7 @@ import { MAX_HP } from '@shared/types'
 import { dispatch } from '@renderer/lib/useAppState'
 import { Button, HeartIcon, TextInput, cx } from '@renderer/ui'
 import { parseHpEntry } from './hpEntry'
+import type { HpEntry } from './hpEntry'
 
 const SEGMENTS: readonly number[] = Array.from({ length: MAX_HP }, (_, index) => index + 1)
 
@@ -36,7 +37,11 @@ export const HealthControl = memo(function HealthControl({ slot, hp }: HealthCon
           <Button className="ctl-hp__step" aria-label="Canı 1 artır" onClick={() => dispatch({ type: 'player/adjustHp', slot, delta: 1 })}>
             +1
           </Button>
-          <HpQuickEntry slot={slot} />
+          <HpQuickEntry
+            onEntry={(entry) =>
+              dispatch(entry.kind === 'delta' ? { type: 'player/adjustHp', slot, delta: entry.amount } : { type: 'player/setHp', slot, hp: entry.amount })
+            }
+          />
         </div>
       </div>
 
@@ -61,7 +66,7 @@ export const HealthControl = memo(function HealthControl({ slot, hp }: HealthCon
 })
 
 /** "-5" / "+3" yazıp Enter: fark uygular. İşaretsiz sayı: canı o değere ayarlar. */
-function HpQuickEntry({ slot }: { slot: number }): JSX.Element {
+export function HpQuickEntry({ onEntry }: { onEntry: (entry: HpEntry) => void }): JSX.Element {
   // Alan uygulamadan sonra boşalmalı. TextInput odaktayken yazılanı tuttuğu için boşaltmanın yolu
   // onu yeniden bağlamaktır; odak da art arda giriş yapılabilsin diye geri verilir.
   const [generation, setGeneration] = useState(0)
@@ -96,11 +101,7 @@ function HpQuickEntry({ slot }: { slot: number }): JSX.Element {
       setInvalid(true)
       return
     }
-    dispatch(
-      entry.kind === 'delta'
-        ? { type: 'player/adjustHp', slot, delta: entry.amount }
-        : { type: 'player/setHp', slot, hp: entry.amount }
-    )
+    onEntry(entry)
     reset()
   }
 

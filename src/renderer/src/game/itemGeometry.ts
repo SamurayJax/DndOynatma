@@ -1,5 +1,5 @@
 import type { Rect } from '@shared/layout'
-import { MIN_ITEM_SIZE } from '@shared/types'
+import { CARD_HEIGHT, CARD_WIDTH, MIN_ITEM_SIZE } from '@shared/types'
 import type { LibraryImage, StageItem } from '@shared/types'
 
 /**
@@ -33,6 +33,7 @@ function isValidSize(size: Size | undefined): size is Size {
 
 /** Oranın kaynağı kütüphanedeki görseldir; görsel yoksa öğenin o anki oranı (reducer ile aynı kural). */
 export function referenceSize(item: StageItem, image: LibraryImage | undefined): Size {
+  if (item.card !== undefined) return { width: CARD_WIDTH, height: CARD_HEIGHT }
   if (isValidSize(image)) return image
   return isValidSize(item) ? item : { width: 1, height: 1 }
 }

@@ -1,5 +1,20 @@
 # Sürüm Geçmişi
 
+## 1.1.0 — 2026-10-31
+
+Oyuncu isteği: düşmanlar oyuncuların yanında sade duruyordu.
+
+### Eklenenler
+
+- **Kartlar:** NPC, tüccar, düşman ve boss görselleri oyuncu kartları gibi çerçeveli konabilir: görsel,
+  seviye, ad ve can. Kütüphanede "Kart olarak koy" düğmesi; karta tıklamak eskisi gibi düz görsel koyar.
+  Ekrandakiler listesinden düz görsel karta, kart düz görsele çevrilir.
+- **Can:** kartta sayıyla yazar ("CAN 45 / 60"). En yüksek can kart başına girilir (1–9999), −1 / +1 ve
+  "-5" gibi girişle Ekrandakiler listesinden değişir. Her kopyanın canı ayrıdır; can 0 olunca kart soluklaşır.
+- **Boss çerçeveleri:** Gölge, Işık, Kan, Buz ve Zehir; taçlı, parlayan ve temaya özgü süslü.
+- Kartın adı, seviyesi, en yüksek canı ve çerçevesi görsele kaydedilir, bir sonraki koyuşta aynı gelir.
+  Aynı görselden başka kart varsa ad numaralanır ("Goblin", "Goblin 2").
+
 ## 1.0.0 — 2026-10-31
 
 İlk tam sürüm. Uygulama yaklaşık 3 saatlik gerçek bir oturumda sorunsuz kullanıldı; müzik ve ortam

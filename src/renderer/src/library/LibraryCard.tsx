@@ -1,5 +1,6 @@
 import { memo, useState } from 'react'
 import type { JSX } from 'react'
+import { isCardable } from '@shared/layout'
 import type { ID, LibraryImage } from '@shared/types'
 import { Button, CheckIcon, IconButton, ImageThumb, TrashIcon, cx } from '@renderer/ui'
 
@@ -19,6 +20,7 @@ export interface LibraryCardProps {
   tabbable: boolean
   // İşleyiciler kimlik alır ve hiç değişmez; böylece `memo` her yayında kartı yeniden çizdirmez.
   onActivate: (imageId: ID) => void
+  onPlaceCard: (imageId: ID) => void
   onDelete: (imageId: ID) => void
   onSetKind: (imageId: ID, kind: SwapKind) => void
 }
@@ -30,6 +32,7 @@ export const LibraryCard = memo(function LibraryCard({
   isBackground,
   tabbable,
   onActivate,
+  onPlaceCard,
   onDelete,
   onSetKind
 }: LibraryCardProps): JSX.Element {
@@ -85,6 +88,21 @@ export const LibraryCard = memo(function LibraryCard({
         />
       </div>
 
+      {click === 'place' && isCardable(image.kind) && (
+        <Button
+          className="lib-card__swap"
+          size="sm"
+          block
+          tabIndex={tabIndex}
+          title="Görseli ad, seviye ve canla birlikte kart olarak koy"
+          onClick={() => {
+            setFlash((count) => count + 1)
+            onPlaceCard(image.id)
+          }}
+        >
+          Kart olarak koy
+        </Button>
+      )}
       {image.kind === 'item' && (
         <Button
           className="lib-card__swap"
