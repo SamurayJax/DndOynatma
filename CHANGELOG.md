@@ -8,6 +8,12 @@
   toplamı 7, sayı üst yüzden net okunur. Zarlar d20, d10 ve d6. Beceri ve istatistik atışları d6 ile de çalışır.
   Eski oturumdan kalan d4 atışları geçmişe alınmaz.
 
+### Eklenenler
+
+- **Görsel esnetme:** görseller ve kartlar sağ/sol ve üst/alt kenardan yalnızca o yönde esnetilir; köşeler o anki
+  oranı korur. Esnemiş öğede Ekrandakiler listesinde "Oranı düzelt" düğmesi çıkar. Kartlarda ad, seviye ve can
+  yazısı basılmaz; fazla boyut çerçeveye gider.
+
 ## 1.1.0 — 2026-10-31
 
 Oyuncu isteği: düşmanlar oyuncuların yanında sade duruyordu.

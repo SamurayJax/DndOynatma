@@ -1,6 +1,5 @@
 import type { Rect } from '@shared/layout'
-import { CARD_HEIGHT, CARD_WIDTH, MIN_ITEM_SIZE } from '@shared/types'
-import type { LibraryImage, StageItem } from '@shared/types'
+import { MIN_ITEM_SIZE } from '@shared/types'
 
 /**
  * Bir sahne öğesinin konumu, boyutu ve açısı (sanal koordinat). `StageItem` de bu biçime uyar.
@@ -15,27 +14,11 @@ export interface Box {
   rotation: number
 }
 
-interface Size {
-  width: number
-  height: number
-}
-
 /** Bundan küçük fark kayan nokta gürültüsüdür. */
 const EPSILON = 0.01
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
-}
-
-function isValidSize(size: Size | undefined): size is Size {
-  return size !== undefined && Number.isFinite(size.width) && Number.isFinite(size.height) && size.width > 0 && size.height > 0
-}
-
-/** Oranın kaynağı kütüphanedeki görseldir; görsel yoksa öğenin o anki oranı (reducer ile aynı kural). */
-export function referenceSize(item: StageItem, image: LibraryImage | undefined): Size {
-  if (item.card !== undefined) return { width: CARD_WIDTH, height: CARD_HEIGHT }
-  if (isValidSize(image)) return image
-  return isValidSize(item) ? item : { width: 1, height: 1 }
 }
 
 /** Merkezi oyun alanının içinde tutar; görsel portre sütununun altına ya da ekran dışına kaybolmasın. */
@@ -47,22 +30,13 @@ export function clampPosition(x: number, y: number, width: number, height: numbe
 }
 
 /**
- * Sürükleme ya da boyutlandırma sonucunu durumun kabul edeceği hale getirir: yükseklik genişlikten
- * türetilir, kısa kenar alt sınıra çekilir, merkez oyun alanında kalır. Reducer aynı kuralları
- * uygular; burada önceden hesaplanır ki durum geri geldiğinde görsel yerinden oynamasın.
+ * Boyutlandırma sonucunu durumun kabul edeceği hale getirir: her kenar alt sınıra çekilir, merkez
+ * oyun alanında kalır. Reducer aynı kuralları uygular; burada önceden hesaplanır ki durum geri
+ * geldiğinde görsel yerinden oynamasın. Oranı seçim çerçevesi belirler: köşe korur, kenar esnetir.
  */
-export function settleBox(x: number, y: number, width: number, rotation: number, reference: Size, area: Rect): Box {
-  let nextWidth = Math.abs(width)
-  let nextHeight = (nextWidth * reference.height) / reference.width
-  if (Math.min(nextWidth, nextHeight) < MIN_ITEM_SIZE) {
-    if (reference.width >= reference.height) {
-      nextHeight = MIN_ITEM_SIZE
-      nextWidth = (MIN_ITEM_SIZE * reference.width) / reference.height
-    } else {
-      nextWidth = MIN_ITEM_SIZE
-      nextHeight = (MIN_ITEM_SIZE * reference.height) / reference.width
-    }
-  }
+export function settleBox(x: number, y: number, width: number, height: number, rotation: number, area: Rect): Box {
+  const nextWidth = Math.max(Math.abs(width), MIN_ITEM_SIZE)
+  const nextHeight = Math.max(Math.abs(height), MIN_ITEM_SIZE)
   return {
     ...clampPosition(x, y, nextWidth, nextHeight, area),
     width: nextWidth,

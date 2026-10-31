@@ -121,7 +121,7 @@ function installProbe() {
       if (!transformer) return null
       const ids = transformer.nodes().map((node) => node.id())
       const anchors = {}
-      for (const name of ['top-left', 'top-right', 'bottom-left', 'bottom-right']) {
+      for (const name of ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'middle-right', 'bottom-center', 'middle-left']) {
         const anchor = transformer.findOne(`.${name}`)
         if (anchor) {
           const rect = toClient(stage, anchor.getClientRect())

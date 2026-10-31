@@ -3,6 +3,8 @@
  */
 import {
   AppState,
+  CARD_HEIGHT,
+  CARD_WIDTH,
   ID,
   ImageKind,
   LibraryCategory,
@@ -13,6 +15,7 @@ import {
   PlayerProfile,
   PORTRAIT_COLUMN_WIDTH,
   SceneWindow,
+  StageItem,
   STAGE_HEIGHT,
   STAGE_WIDTH
 } from './types'
@@ -48,6 +51,19 @@ export const CATEGORIES: readonly CategoryInfo[] = [
 
 export function categoryInfo(kind: ImageKind): CategoryInfo | undefined {
   return CATEGORIES.find((c) => c.id === kind)
+}
+
+/** Öğenin esnetilmemiş oranı: kartta kartınki, görselde dosyanınki. Görsel bulunamazsa null. */
+export function naturalSize(item: StageItem, image: LibraryImage | undefined): { width: number; height: number } | null {
+  if (item.card !== undefined) return { width: CARD_WIDTH, height: CARD_HEIGHT }
+  return image !== undefined && image.width > 0 && image.height > 0 ? image : null
+}
+
+/** Öğe kendi oranından sapmış mı ("Oranı düzelt" düğmesi için). Yuvarlama farkları sayılmaz. */
+export function isStretched(item: StageItem, image: LibraryImage | undefined): boolean {
+  const natural = naturalSize(item, image)
+  if (natural === null || item.width <= 0 || item.height <= 0) return false
+  return Math.abs((item.width * natural.height) / (item.height * natural.width) - 1) > 0.01
 }
 
 /** Yalnızca canlılar kart olabilir; eşyalar ve arka planlar düz görseldir. */

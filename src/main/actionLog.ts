@@ -67,6 +67,7 @@ function describe(action: Action): string {
       return parts.join(' ')
     }
     case 'stage/removeItem':
+    case 'stage/resetRatio':
       return `pencere=${id(action.sceneId)} öğe=${id(action.itemId)}`
     case 'stage/setCardMode':
       return `pencere=${id(action.sceneId)} öğe=${id(action.itemId)} kart=${action.enabled ? 'açık' : 'kapalı'}`

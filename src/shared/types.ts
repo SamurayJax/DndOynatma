@@ -169,8 +169,8 @@ export interface SkillCheck {
 }
 
 /**
- * Oyun alanına konmuş bir görsel. x,y döndürülmemiş kutunun sol üst köşesidir; en-boy oranı
- * her zaman görselinkiyle aynıdır. Döndürme kutunun merkezi etrafında yapılır.
+ * Oyun alanına konmuş bir görsel. x,y döndürülmemiş kutunun sol üst köşesidir. Görsel kendi oranıyla
+ * konur, kenarlardan esnetilebilir. Döndürme kutunun merkezi etrafında yapılır.
  */
 export interface StageItem {
   id: ID

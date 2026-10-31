@@ -98,7 +98,8 @@ pencere üstündeki görselleri hatırlar.
 Oyun alanındaki görseller (arka plan dahil):
 
 - fareyle taşınır, öne/arkaya alınır, silinir
-- köşeden büyütülür/küçültülür; en-boy oranı her zaman korunur, görsel bozulmaz
+- köşeden büyütülür/küçültülür ve o anki oranı korunur; kenardan yalnızca o yönde esnetilir (görsel
+  bozulabilir). Ekrandakiler listesindeki "Oranı düzelt" kendi oranına döndürür
 - döndürülür (ters ya da yan gelen görsel için): seçiliyken R tuşu saat yönünde, Shift+R ters
   yönde çeyrek tur çevirir; seçim çerçevesinin üstündeki tutamaçla serbest açı verilir ve
   0 / 90 / 180 / 270 dereceye yaklaşınca yapışır; kontrol panelindeki "Ekrandakiler"
@@ -575,6 +576,14 @@ Kullanıcı isteği (2026-10-31): piramit masaya tepeden bakınca basık görün
 d4 kaldırıldı, yerine küp biçimli d6 geldi; zarlar d20, d10, d6. Sonuç yeniden üstteki yüzden okunur, köşeden
 okumaya özgü kod kalktı. Eski oturumdan kalan d4 atışları geçmişe alınmaz. Bu bölümden önceki d3 ve d4 anlatımları
 o sürümlerin kaydıdır.
+
+### 11. Görsel esnetme (1.2.0) — yapıldı
+
+Kullanıcı kararı (2026-10-31): görseller serbestçe esnetilebilir, "görsel bozulsun, sıkıntı olursa silerim".
+Baştan beri geçerli "oran her zaman korunur" kuralının yerini aldı. Sağ/sol ve üst/alt kenarlardan esnetilir;
+köşeler o anki oranı korur. Esnemiş öğede "Oranı düzelt" düğmesi çıkar: görsel kendi oranına, merkezi ve
+kapladığı alan yaklaşık aynı kalarak döner; arka plan oyun alanını yeniden kaplar. Kartlarda ad, seviye ve can
+yazısı basılmaz: fazla boyut çerçeveye ve can kutusuna gider, görsel çerçeveye kırpılır.
 
 ### Kararlar (2026-10-05)
 

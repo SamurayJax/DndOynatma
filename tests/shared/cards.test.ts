@@ -153,7 +153,15 @@ describe('kart bilgileri', () => {
 })
 
 describe('kart boyutu ve çevirme', () => {
-  it('kart boyutlanırken görselin değil kartın oranını korur', () => {
+  it('kart esnetilir; oranı düzelt kartın oranına döndürür', () => {
+    const stretched = apply(setup(), place('a', 'dusman'), { type: 'stage/updateItem', sceneId: SCENE, itemId: 'a', patch: { width: 700, height: 200 } })
+    expect(itemOf(stretched, 'a')).toMatchObject({ width: 700, height: 200 })
+    const fixed = itemOf(apply(stretched, { type: 'stage/resetRatio', sceneId: SCENE, itemId: 'a' }), 'a')
+    expect(fixed.width / fixed.height).toBeCloseTo(CARD_WIDTH / CARD_HEIGHT)
+    expect(fixed.card?.name).toBe('Goblin')
+  })
+
+    it('kart boyutlanırken görselin değil kartın oranını korur', () => {
     const state = apply(setup(), place('a', 'dusman'), { type: 'stage/updateItem', sceneId: SCENE, itemId: 'a', patch: { width: 150 } })
     const item = itemOf(state, 'a')
     expect(item.width).toBe(150)

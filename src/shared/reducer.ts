@@ -9,7 +9,7 @@
 import { Action, ReduceIssue, ReduceResult } from './actions'
 import { consumeEffects } from './character'
 import { ErrorCode } from './errors'
-import { categoryInfo, containRect, coverRect, findImage, isCardable, isPlayerPristine, playArea, Rect } from './layout'
+import { categoryInfo, containRect, coverRect, findImage, isCardable, isPlayerPristine, isStretched, naturalSize, playArea, Rect } from './layout'
 import {
   AmbientSound,
   AppSettings,
@@ -165,6 +165,8 @@ export function reduce(state: FullState, action: Action): ReduceResult {
       return reorderItem(state, action)
     case 'stage/clearItems':
       return clearItems(state, action)
+    case 'stage/resetRatio':
+      return resetRatio(state, action)
     case 'stage/setCardMode':
       return setCardMode(state, action)
     case 'stage/updateCard':
@@ -854,12 +856,30 @@ function parseItemPatch(raw: unknown): ItemPatch | null {
   return patch
 }
 
-/** Oranın kaynağı kütüphanedeki görseldir; görsel bulunamazsa öğenin o anki oranı korunur. */
+/** Boyut değişiminde korunan oran: öğenin o anki oranı; bozuk kayıtta öğenin kendi doğal oranı. */
 function referenceSize(app: AppState, item: StageItem): Size {
-  if (item.card !== undefined) return { width: CARD_WIDTH, height: CARD_HEIGHT }
+  if (hasValidSize(item)) return item
+  const natural = naturalSize(item, findImage(app, item.imageId))
+  return natural !== null && hasValidSize(natural) ? natural : { width: 1, height: 1 }
+}
+
+function resetRatio(state: FullState, action: ActionOf<'stage/resetRatio'>): ReduceResult {
+  const app = state.app
+  const scene = sceneById(app, action.sceneId)
+  if (!scene) return sceneNotFound(state, action.sceneId)
+  const item = findStageItem(scene, action.itemId)
+  if (!item) return itemNotFound(state, action.itemId)
   const image = findImage(app, item.imageId)
-  if (image && hasValidSize(image)) return image
-  return hasValidSize(item) ? item : { width: 1, height: 1 }
+  const natural = naturalSize(item, image)
+  if (natural === null || !isStretched(item, image)) return { state }
+
+  const area = playArea(app)
+  if (scene.background === item) {
+    return { state: withScene(state, scene, replaceStageItem(scene, item, { ...item, ...coverRect(natural.width, natural.height, area) })) }
+  }
+  const size = fitSize({ width: Math.sqrt((item.width * item.height * natural.width) / natural.height) }, natural)
+  const position = clampCenter(item.x + (item.width - size.width) / 2, item.y + (item.height - size.height) / 2, size.width, size.height, area)
+  return { state: withScene(state, scene, replaceStageItem(scene, item, { ...item, ...size, ...position })) }
 }
 
 /** Değişiklik yoksa aynı nesneyi döndürür. */
@@ -867,7 +887,11 @@ function applyItemPatch(item: StageItem, patch: ItemPatch, reference: Size, area
   let width = item.width
   let height = item.height
   if (patch.width !== undefined || patch.height !== undefined) {
-    const size = fitSize(patch, reference)
+    // İkisi birlikte geldiyse esnetmedir: oran serbest, yalnızca her kenarın alt sınırı var.
+    const size =
+      patch.width !== undefined && patch.height !== undefined
+        ? { width: Math.max(patch.width, MIN_ITEM_SIZE), height: Math.max(patch.height, MIN_ITEM_SIZE) }
+        : fitSize(patch, reference)
     // Aynı boyut yeniden hesaplanınca son basamaklar oynayabilir; bu bir değişiklik değildir.
     if (Math.abs(size.width - width) > SIZE_EPSILON || Math.abs(size.height - height) > SIZE_EPSILON) {
       width = size.width
@@ -884,7 +908,7 @@ function applyItemPatch(item: StageItem, patch: ItemPatch, reference: Size, area
   return shallowEqual(item, next) ? item : next
 }
 
-/** Oran her zaman görselinkidir: genişlik verildiyse yükseklik, verilmediyse yükseklikten genişlik türetilir. */
+/** Oran `reference`'tan gelir: genişlik verildiyse yükseklik, verilmediyse yükseklikten genişlik türetilir. */
 function fitSize(patch: ItemPatch, reference: Size): Size {
   let width: number
   let height: number

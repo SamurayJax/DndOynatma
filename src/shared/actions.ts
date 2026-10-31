@@ -65,10 +65,13 @@ export type AppAction =
   | { type: 'stage/updateCard'; sceneId: ID; itemId: ID; patch: Partial<StageCard> }
   | { type: 'stage/adjustCardHp'; sceneId: ID; itemId: ID; delta: number }
   /**
-   * itemId arka planın kimliğiyse arka planı günceller. En-boy oranı her zaman görselinkine
-   * çekilir; öğenin merkezi oyun alanının (portre sütununun sağı) içinde tutulur.
+   * itemId arka planın kimliğiyse arka planı günceller. Genişlik ve yükseklik birlikte verilirse
+   * olduğu gibi uygulanır (esnetme); yalnızca biri verilirse öğenin o anki oranı korunur. Öğenin
+   * merkezi oyun alanının (portre sütununun sağı) içinde tutulur.
    */
   | { type: 'stage/updateItem'; sceneId: ID; itemId: ID; patch: Partial<Pick<StageItem, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'label'>> }
+  /** Esnetilmiş öğeyi kendi oranına döndürür; merkezi ve kapladığı alan yaklaşık aynı kalır. */
+  | { type: 'stage/resetRatio'; sceneId: ID; itemId: ID }
   | { type: 'stage/removeItem'; sceneId: ID; itemId: ID }
   | { type: 'stage/reorderItem'; sceneId: ID; itemId: ID; to: 'front' | 'back' | 'forward' | 'backward' }
   /** Arka plan dışındaki tüm görselleri kaldırır. */

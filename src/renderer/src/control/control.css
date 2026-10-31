@@ -1041,6 +1041,16 @@
   align-self: flex-start;
 }
 
+.ctl-stage__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.ctl-stage__buttons:empty {
+  display: none;
+}
+
 .ctl-stage__row--background {
   grid-template-columns: 32px minmax(0, 1fr) auto;
   padding: var(--space-1) 6px;

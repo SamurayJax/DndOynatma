@@ -6,7 +6,7 @@ import type { Rect as Area } from '@shared/layout'
 import type { ID, LibraryImage, StageItem } from '@shared/types'
 import { imageUrl } from '@renderer/lib/media'
 import { dispatch } from '@renderer/lib/useAppState'
-import { clampPosition, normalizeRotation, referenceSize, rotatedHalfHeight, sameBox, settleBox } from './itemGeometry'
+import { clampPosition, normalizeRotation, rotatedHalfHeight, sameBox, settleBox } from './itemGeometry'
 import type { Box } from './itemGeometry'
 import { StageCardFace } from './StageCardFace'
 import { stagePalette, withAlpha } from './stageTheme'
@@ -191,7 +191,7 @@ export const StageItemNode = memo(function StageItemNode({
       return
     }
     setPending(next)
-    const resized = Math.abs(next.width - item.width) >= 0.01
+    const resized = Math.abs(next.width - item.width) >= 0.01 || Math.abs(next.height - item.height) >= 0.01
     const rotated = Math.abs(next.rotation - item.rotation) >= 0.01
     dispatch({
       type: 'stage/updateItem',
@@ -200,7 +200,7 @@ export const StageItemNode = memo(function StageItemNode({
       patch: {
         x: next.x,
         y: next.y,
-        ...(resized ? { width: next.width } : {}),
+        ...(resized ? { width: next.width, height: next.height } : {}),
         ...(rotated ? { rotation: next.rotation } : {})
       }
     })
@@ -233,7 +233,7 @@ export const StageItemNode = memo(function StageItemNode({
     const node = bodyRef.current
     if (!node) return
     const live = liveBox(node)
-    commit(settleBox(live.x, live.y, live.width, live.rotation, referenceSize(item, image), area))
+    commit(settleBox(live.x, live.y, live.width, live.height, live.rotation, area))
   }
 
   return (

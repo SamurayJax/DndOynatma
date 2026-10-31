@@ -37,7 +37,8 @@ interface Press {
 
 type BoundBoxFunc = NonNullable<Konva.TransformerConfig['boundBoxFunc']>
 
-const CORNER_ANCHORS = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+/** Köşeler oranı korur (`keepRatio`), kenarlar yalnızca o yönde esnetir. */
+const RESIZE_ANCHORS = ['top-left', 'top-center', 'top-right', 'middle-right', 'bottom-right', 'bottom-center', 'bottom-left', 'middle-left']
 /** Döndürme tutamacı bu açılara yaklaşınca yapışır; ters ya da yan duran görsel tam düzelir. */
 const ROTATION_SNAPS = [0, 90, 180, 270]
 const ROTATION_SNAP_TOLERANCE = 8
@@ -354,7 +355,7 @@ export function PlayStage({ fit, area }: PlayStageProps): JSX.Element {
             rotateAnchorOffset={36}
             flipEnabled={false}
             ignoreStroke
-            enabledAnchors={CORNER_ANCHORS}
+            enabledAnchors={RESIZE_ANCHORS}
             boundBoxFunc={boundBox}
             anchorSize={13}
             anchorCornerRadius={3}

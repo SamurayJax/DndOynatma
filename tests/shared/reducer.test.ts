@@ -217,6 +217,7 @@ const ALL_ACTION_TYPES: Record<Action['type'], true> = {
   'stage/removeItem': true,
   'stage/reorderItem': true,
   'stage/clearItems': true,
+  'stage/resetRatio': true,
   'stage/setCardMode': true,
   'stage/updateCard': true,
   'stage/adjustCardHp': true,
@@ -347,6 +348,9 @@ function everyAction(): Action[] {
     { type: 'stage/clearItems', sceneId: 's1' },
     { type: 'stage/clearItems', sceneId: 's3' },
     { type: 'stage/clearItems', sceneId: 'yok' },
+    { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { width: 300, height: 90 } },
+    { type: 'stage/resetRatio', sceneId: 's1', itemId: 'a1' },
+    { type: 'stage/resetRatio', sceneId: 's1', itemId: 'yok' },
     { type: 'stage/setCardMode', sceneId: 's1', itemId: 'a1', enabled: true },
     { type: 'stage/setCardMode', sceneId: 's1', itemId: 'yok', enabled: true },
     { type: 'stage/updateCard', sceneId: 's1', itemId: 'a1', patch: { hp: 1 } },
@@ -1394,9 +1398,36 @@ describe('stage/updateItem', () => {
       expect(itemOf(next, 's1', 'a1')).toMatchObject({ width: 150, height: 300 })
     })
 
-    it('ikisi de verilirse genişlik esas alınır, orana uymayan yükseklik atılır', () => {
+    it('ikisi de verilirse esnetilir: oran serbest', () => {
       const next = apply(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { width: 200, height: 999 } })
-      expect(itemOf(next, 's1', 'a1')).toMatchObject({ width: 200, height: 400 })
+      expect(itemOf(next, 's1', 'a1')).toMatchObject({ width: 200, height: 999 })
+    })
+
+    it('esnetme her kenarın alt sınırına uyar', () => {
+      const next = apply(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { width: 1, height: -5 } })
+      expect(itemOf(next, 's1', 'a1')).toMatchObject({ width: MIN_ITEM_SIZE, height: MIN_ITEM_SIZE })
+    })
+
+    it('esnemiş görselde tek ölçü verilince o anki oran korunur, kendi oranına sıçramaz', () => {
+      const stretched = apply(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { width: 400, height: 100 } })
+      const next = apply(stretched, { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { width: 200 } })
+      expect(itemOf(next, 's1', 'a1')).toMatchObject({ width: 200, height: 50 })
+    })
+
+    it('oranı düzelt: kendi oranına döner, merkez ve alan yakın kalır', () => {
+      const state = apply(makeState(), { type: 'stage/updateItem', sceneId: 's1', itemId: 'a1', patch: { x: 500, y: 200, width: 400, height: 100 } })
+      const before = itemOf(state, 's1', 'a1')
+      const item = itemOf(apply(state, { type: 'stage/resetRatio', sceneId: 's1', itemId: 'a1' }), 's1', 'a1')
+      expect(item.width / item.height).toBeCloseTo(NPC.width / NPC.height, 9)
+      expect(item.width * item.height).toBeCloseTo(before.width * before.height, 6)
+      expect(item.x + item.width / 2).toBeCloseTo(before.x + before.width / 2, 6)
+      expect(item.y + item.height / 2).toBeCloseTo(before.y + before.height / 2, 6)
+    })
+
+    it('oranı düzelt: esnemiş değilse durum değişmez, öğe yoksa bildirir', () => {
+      const state = makeState()
+      expect(reduce(state, { type: 'stage/resetRatio', sceneId: 's1', itemId: 'a1' }).state).toBe(state)
+      expect(reduce(state, { type: 'stage/resetRatio', sceneId: 's1', itemId: 'yok' }).state).toBe(state)
     })
 
     it('yatay görselde de oran korunur', () => {
@@ -1437,9 +1468,12 @@ describe('stage/updateItem', () => {
       expect(sceneOf(byHeight, 's1').background).toMatchObject({ width: 3840, height: 2160 })
     })
 
-    it('orana uymayan çifti düzeltir', () => {
-      const next = apply(makeState(), { type: 'stage/updateItem', sceneId: 's3', itemId: 'b3', patch: { width: 800, height: 100 } })
-      expect(sceneOf(next, 's3').background).toMatchObject({ width: 800, height: 800 })
+    it('arka plan da esnetilir; oranı düzelt alanı yeniden kaplar', () => {
+      const stretched = apply(makeState(), { type: 'stage/updateItem', sceneId: 's3', itemId: 'b3', patch: { width: 800, height: 100 } })
+      expect(sceneOf(stretched, 's3').background).toMatchObject({ width: 800, height: 100 })
+      const fixed = sceneOf(apply(stretched, { type: 'stage/resetRatio', sceneId: 's3', itemId: 'b3' }), 's3').background
+      expect(fixed?.width).toBeCloseTo(fixed?.height ?? 0, 9)
+      expect(fixed?.width).toBeGreaterThan(1000)
     })
   })
 

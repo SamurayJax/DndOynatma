@@ -13,7 +13,7 @@ oyuncular ekran paylaşımından (Discord / Teams) izler.
   kilitlidir, can 0 olunca soluklaşır.
 - **Kütüphane:** NPC'ler, Tüccarlar, Mekanlar, Sahneler, Düşmanlar, Boss'lar, Takım Eşyaları,
   İtemler. Görsele tıklayınca oyun ekranına gelir; oyuncular kütüphaneyi görmez.
-- **Oyun alanı:** görseller taşınır, oranı bozulmadan boyutlandırılır, döndürülür,
+- **Oyun alanı:** görseller taşınır, köşeden oranıyla büyütülür, kenardan esnetilir, döndürülür,
   öne/arkaya alınır, etiket alır ("7 LVL").
 - **Kartlar:** NPC, tüccar, düşman ve boss'lar düz görsel ya da ad, seviye ve canla çerçeveli kart olarak
   konur. Boss'ların beş çerçevesi var (Gölge, Işık, Kan, Buz, Zehir); can Ekrandakiler listesinden düşer.
@@ -77,6 +77,7 @@ Oyun ekranında:
 |---------------|----|
 | Tıkla, sürükle | görseli seç, taşı |
 | Köşeden sürükle | boyutlandır (oran korunur) |
+| Kenardan sürükle | yalnızca o yönde esnet; "Oranı düzelt" (Ekrandakiler) geri alır |
 | R / Shift+R | seçili görseli 90° döndür (saat yönü / ters yön) |
 | Ctrl+Z | kalem ya da silgi seçiliyken son izi geri al |
 | Üstteki tutamaç | serbest döndür (düz açılara yapışır) |

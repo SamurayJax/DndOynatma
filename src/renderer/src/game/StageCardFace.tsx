@@ -236,7 +236,6 @@ function coverCrop(picture: HTMLImageElement, width: number, height: number): { 
   return { x: (picture.width - cropWidth) / 2, y: (picture.height - cropHeight) * 0.25, width: cropWidth, height: cropHeight }
 }
 
-const NAME_WIDTH = 268
 const NAME_MAX_FONT = 36
 /** Bundan küçük yazı küçültülmüş kartta okunmaz; daha uzun ad üç noktayla kesilir. */
 const NAME_MIN_FONT = 17
@@ -244,13 +243,13 @@ const NAME_MIN_FONT = 17
 let measure: CanvasRenderingContext2D | null = null
 
 /** Ad bu yazı boyutunda tek satıra tam sığar (oyuncu kartlarındaki `useFitName` ile aynı fikir). */
-function nameFontSize(name: string, fontFamily: string): number {
+function nameFontSize(name: string, fontFamily: string, available: number): number {
   measure ??= document.createElement('canvas').getContext('2d')
   if (measure === null) return NAME_MIN_FONT
   measure.font = `700 ${NAME_MAX_FONT}px ${fontFamily}`
   const needed = measure.measureText(name).width
   // Ölçüler yuvarlandığı için küçük bir pay bırakılır.
-  return needed <= NAME_WIDTH ? NAME_MAX_FONT : Math.max(NAME_MIN_FONT, Math.floor((NAME_MAX_FONT * NAME_WIDTH * 0.98) / needed))
+  return needed <= available ? NAME_MAX_FONT : Math.max(NAME_MIN_FONT, Math.floor((NAME_MAX_FONT * available * 0.98) / needed))
 }
 
 export interface StageCardFaceProps {
@@ -266,24 +265,37 @@ export interface StageCardFaceProps {
 /**
  * NPC, tüccar, düşman ve boss kartı: görsel, seviye rozeti, ad ve sayıyla can. Oyuncu kartlarıyla aynı
  * düzendedir; boss çerçevelerinde taç ve temaya özgü süsler vardır.
+ *
+ * Kart esnetilse de yazılar basılmaz: çizim tek ölçekle büyür, fazla boy ya da en çerçeveye ve can
+ * kutusuna verilir. Görsel yeni çerçeveye kırpılır; yalnızca süsler kartla birlikte esner.
  */
 export const StageCardFace = memo(function StageCardFace({ card, picture, missing, width, height }: StageCardFaceProps): JSX.Element {
   const palette = stagePalette()
   const theme = THEMES[card.frame]
   const boss = card.frame !== 'standard'
-  const frame = boss ? { x: 28, y: 48, width: 244, height: 228 } : { x: 18, y: 18, width: 264, height: 264 }
+  // Tasarım ölçüsü: küçük kenar 300x420'ye oturur, öbürü uzar.
+  const unit = Math.min(width / CARD_WIDTH, height / CARD_HEIGHT)
+  const designWidth = width / unit
+  const designHeight = height / unit
+  const frame = boss
+    ? { x: 28, y: 48, width: designWidth - 56, height: designHeight - 192 }
+    : { x: 18, y: 18, width: designWidth - 36, height: designHeight - 156 }
   const badgeY = frame.y + frame.height - 20
+  const badgeX = designWidth / 2 - 58
+  const nameWidth = designWidth - 32
+  const nameY = designHeight - 114
+  const hpY = designHeight - 64
   const hpText = `${card.hp} / ${card.maxHp}`
   const down = card.hp === 0
 
   return (
-    <Group scaleX={width / CARD_WIDTH} scaleY={height / CARD_HEIGHT}>
+    <Group scaleX={unit} scaleY={unit}>
       <Rect
-        width={CARD_WIDTH}
-        height={CARD_HEIGHT}
+        width={designWidth}
+        height={designHeight}
         cornerRadius={18}
         fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-        fillLinearGradientEndPoint={{ x: 0, y: CARD_HEIGHT }}
+        fillLinearGradientEndPoint={{ x: 0, y: designHeight }}
         fillLinearGradientColorStops={[0, theme.background[0], 1, theme.background[1]]}
         stroke={theme.edge[0]}
         strokeWidth={boss ? 4 : 2.5}
@@ -292,10 +304,14 @@ export const StageCardFace = memo(function StageCardFace({ card, picture, missin
         shadowOpacity={boss ? 0.95 : 0.6}
       />
       <Group opacity={down ? 0.45 : 1} listening={false}>
-        {boss && card.frame !== 'standard' && <Ornaments frame={card.frame} />}
-        {boss && <Rect x={8} y={8} width={CARD_WIDTH - 16} height={CARD_HEIGHT - 16} cornerRadius={12} stroke={theme.edge[1]} strokeWidth={1.5} />}
+        {card.frame !== 'standard' && (
+          <Group scaleX={designWidth / CARD_WIDTH} scaleY={designHeight / CARD_HEIGHT}>
+            <Ornaments frame={card.frame} />
+          </Group>
+        )}
+        {boss && <Rect x={8} y={8} width={designWidth - 16} height={designHeight - 16} cornerRadius={12} stroke={theme.edge[1]} strokeWidth={1.5} />}
         {/* Işık çerçevesinin zemini açık; taç koyu tonla çizilmezse kaybolur. */}
-        {boss && <Path data={CROWN_PATH} fill={card.frame === 'radiant' ? theme.edge[1] : theme.edge[0]} stroke={card.frame === 'radiant' ? theme.name : theme.edge[1]} strokeWidth={2} />}
+        {boss && <Path data={CROWN_PATH} x={(designWidth - CARD_WIDTH) / 2} fill={card.frame === 'radiant' ? theme.edge[1] : theme.edge[0]} stroke={card.frame === 'radiant' ? theme.name : theme.edge[1]} strokeWidth={2} />}
 
         <Rect x={frame.x} y={frame.y} width={frame.width} height={frame.height} cornerRadius={12} fill={palette.bgDeep} />
         <Group clipFunc={roundedClip(frame.x, frame.y, frame.width, frame.height, 12)}>
@@ -319,7 +335,7 @@ export const StageCardFace = memo(function StageCardFace({ card, picture, missin
         />
 
         <Rect
-          x={92}
+          x={badgeX}
           y={badgeY}
           width={116}
           height={40}
@@ -330,31 +346,31 @@ export const StageCardFace = memo(function StageCardFace({ card, picture, missin
           stroke={theme.edge[1]}
           strokeWidth={1.5}
         />
-        <Text x={92} y={badgeY} width={116} height={40} align="center" verticalAlign="middle" text={`${card.level} LVL`} fontFamily={palette.fontBody} fontSize={23} fontStyle="700" fill={theme.badgeText} />
+        <Text x={badgeX} y={badgeY} width={116} height={40} align="center" verticalAlign="middle" text={`${card.level} LVL`} fontFamily={palette.fontBody} fontSize={23} fontStyle="700" fill={theme.badgeText} />
 
         <Text
           x={16}
-          y={306}
-          width={NAME_WIDTH}
+          y={nameY}
+          width={nameWidth}
           height={46}
           align="center"
           verticalAlign="middle"
           text={card.name}
           fontFamily={palette.fontHeading}
-          fontSize={nameFontSize(card.name, palette.fontHeading)}
+          fontSize={nameFontSize(card.name, palette.fontHeading, nameWidth)}
           fontStyle="700"
           fill={theme.name}
           wrap="none"
           ellipsis
         />
 
-        <Rect x={32} y={356} width={236} height={46} cornerRadius={12} fill={theme.hpBack} stroke={theme.edge[1]} strokeWidth={1.5} />
-        <Path data={HEART_PATH} x={40} y={363} scaleX={1.3} scaleY={1.3} fill={down ? palette.textMuted : theme.heart} />
-        <Text x={76} y={356} width={50} height={46} verticalAlign="middle" text="CAN" fontFamily={palette.fontBody} fontSize={17} fontStyle="700" fill={theme.hpText} />
+        <Rect x={32} y={hpY} width={designWidth - 64} height={46} cornerRadius={12} fill={theme.hpBack} stroke={theme.edge[1]} strokeWidth={1.5} />
+        <Path data={HEART_PATH} x={40} y={hpY + 7} scaleX={1.3} scaleY={1.3} fill={down ? palette.textMuted : theme.heart} />
+        <Text x={76} y={hpY} width={50} height={46} verticalAlign="middle" text="CAN" fontFamily={palette.fontBody} fontSize={17} fontStyle="700" fill={theme.hpText} />
         <Text
           x={118}
-          y={356}
-          width={140}
+          y={hpY}
+          width={designWidth - 160}
           height={46}
           align="right"
           verticalAlign="middle"
